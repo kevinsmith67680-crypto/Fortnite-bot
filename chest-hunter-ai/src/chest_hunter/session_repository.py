@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from datetime import datetime
 from typing import Any, Final
 
 from chest_hunter.database import DatabaseManager
@@ -225,11 +226,16 @@ class SessionRepository:
         chest_present: bool,
         chest_opened: bool = False,
         interaction_seconds: float = 0.0,
+        observed_at: datetime | None = None,
     ) -> ChestObservation:
         """Record the outcome of visiting a chest location during a running session.
 
         All checks and the insert run in a single ``BEGIN IMMEDIATE``
         transaction, so they cannot race with another writer.
+
+        ``observed_at`` defaults to the repository clock. Callers that buffer
+        observations (the Phase 2 agent) pass the time of the event itself; it
+        must be timezone-aware and not earlier than the session start.
 
         :raises ValidationError: invalid values, opened-but-absent, a location
             on another map, or a disabled location.
@@ -242,7 +248,10 @@ class SessionRepository:
             id=None,
             session_id=session_id,
             chest_location_id=chest_location_id,
-            observed_at=timestamp_now(self._clock),
+            observed_at=(
+                timestamp_now(self._clock) if observed_at is None
+                else format_timestamp(observed_at)
+            ),
             chest_present=chest_present,
             chest_opened=chest_opened,
             interaction_seconds=require_non_negative("interaction_seconds", interaction_seconds),
@@ -254,6 +263,13 @@ class SessionRepository:
                     raise SessionStateError(
                         f"Session {session.id} is {session.status.value}; observations can "
                         "only be recorded for running sessions."
+                    )
+                if parse_timestamp(observation.observed_at) < parse_timestamp(
+                    session.started_at
+                ):
+                    raise ValidationError(
+                        f"observed_at {observation.observed_at} is earlier than the start "
+                        f"of session {session.id} ({session.started_at})."
                     )
                 chest = conn.execute(
                     "SELECT id, map_id, enabled FROM chest_locations WHERE id = ?",

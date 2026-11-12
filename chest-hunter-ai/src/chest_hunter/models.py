@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Any
@@ -26,6 +26,12 @@ DEFAULT_SPAWN_PROBABILITY = 0.8
 DEFAULT_OPEN_SECONDS = 2.0
 
 MAP_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.\-]{0,63}$")
+
+STRATEGY_NAMES: tuple[str, ...] = ("nearest", "weighted", "lookahead")
+"""Route-planning strategies understood by the Phase 2 agent."""
+
+RUN_OUTCOMES: tuple[str, ...] = ("completed", "tick_limit", "failed", "cancelled")
+"""How an autonomous simulation run ended (stored in ``simulation_runs.outcome``)."""
 MAX_LOCATION_NAME_LENGTH = 200
 MAX_NOTES_LENGTH = 2000
 
@@ -370,3 +376,43 @@ class SessionStatistics:
     total_interaction_seconds: float
     duration_seconds: float | None
     chests_opened_per_minute: float | None
+
+
+@dataclass
+class SimulationRun:
+    """Parameters and results of one autonomous agent run (one session).
+
+    Stored in ``simulation_runs`` (schema version 2) so every simulation
+    session records the route-planning strategy, seed and configuration used.
+    Distances are in grid cells; times are simulated seconds.
+    """
+
+    session_id: int
+    strategy: str
+    seed: int
+    episode: int
+    created_at: str
+    parameters: dict[str, Any] = field(default_factory=dict)
+    outcome: str | None = None
+    failure_reason: str | None = None
+    ticks: int | None = None
+    simulated_seconds: float | None = None
+    travel_distance: float | None = None
+    recoveries: int | None = None
+    unreachable_targets: int | None = None
+    abandoned_targets: int | None = None
+    rewards: int | None = None
+    finished_at: str | None = None
+
+    def __post_init__(self) -> None:
+        self.session_id = require_positive_int("session_id", self.session_id)
+        self.strategy = require_text("strategy", self.strategy, 40)
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int) or self.seed < 0:
+            raise ValidationError(f"seed must be a non-negative integer, got {self.seed!r}.")
+        if isinstance(self.episode, bool) or not isinstance(self.episode, int) or self.episode < 0:
+            raise ValidationError(f"episode must be a non-negative integer, got {self.episode!r}.")
+        require_timestamp("created_at", self.created_at)
+        if self.outcome is not None and self.outcome not in RUN_OUTCOMES:
+            raise ValidationError(
+                f"outcome must be one of {', '.join(RUN_OUTCOMES)}; got {self.outcome!r}."
+            )

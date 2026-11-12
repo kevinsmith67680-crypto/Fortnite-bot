@@ -169,7 +169,52 @@ _SCHEMA_V1: tuple[str, ...] = (
     """,
 )
 
-MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = ((1, _SCHEMA_V1),)
+# Schema version 2 (Phase 2): one row per autonomous agent run, keyed by the
+# simulation session it drove. Phase 1 tables are not modified.
+_SCHEMA_V2: tuple[str, ...] = (
+    f"""
+    CREATE TABLE simulation_runs (
+        session_id           INTEGER PRIMARY KEY
+            REFERENCES simulation_sessions (id) ON DELETE RESTRICT,
+        strategy             TEXT    NOT NULL CHECK (length(trim(strategy)) > 0),
+        seed                 INTEGER NOT NULL CHECK (seed >= 0),
+        episode              INTEGER NOT NULL DEFAULT 0 CHECK (episode >= 0),
+        parameters_json      TEXT    NOT NULL,
+        outcome              TEXT
+            CHECK (outcome IS NULL
+                   OR outcome IN ('completed', 'tick_limit', 'failed', 'cancelled')),
+        failure_reason       TEXT,
+        ticks                INTEGER CHECK (ticks IS NULL OR ticks >= 0),
+        simulated_seconds    REAL
+            CHECK (simulated_seconds IS NULL
+                   OR simulated_seconds BETWEEN 0.0 AND {_MAX_REAL}),
+        travel_distance      REAL
+            CHECK (travel_distance IS NULL OR travel_distance BETWEEN 0.0 AND {_MAX_REAL}),
+        recoveries           INTEGER CHECK (recoveries IS NULL OR recoveries >= 0),
+        unreachable_targets  INTEGER
+            CHECK (unreachable_targets IS NULL OR unreachable_targets >= 0),
+        abandoned_targets    INTEGER CHECK (abandoned_targets IS NULL OR abandoned_targets >= 0),
+        rewards              INTEGER CHECK (rewards IS NULL OR rewards >= 0),
+        created_at           TEXT    NOT NULL,
+        finished_at          TEXT,
+        CHECK ((outcome IS NULL) = (finished_at IS NULL))
+    )
+    """,
+    """
+    CREATE INDEX idx_simulation_runs_strategy
+        ON simulation_runs (strategy, seed, episode)
+    """,
+    """
+    CREATE TRIGGER trg_simulation_runs_final
+    BEFORE UPDATE ON simulation_runs
+    WHEN OLD.outcome IS NOT NULL
+    BEGIN
+        SELECT RAISE(ABORT, 'simulation run has already finished');
+    END
+    """,
+)
+
+MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = ((1, _SCHEMA_V1), (2, _SCHEMA_V2))
 """Ordered ``(version, statements)`` pairs. Append new versions; never edit old ones."""
 
 SCHEMA_VERSION: int = MIGRATIONS[-1][0]
@@ -178,6 +223,7 @@ EXPECTED_TABLES: tuple[str, ...] = (
     "chest_locations",
     "simulation_sessions",
     "chest_observations",
+    "simulation_runs",
 )
 
 

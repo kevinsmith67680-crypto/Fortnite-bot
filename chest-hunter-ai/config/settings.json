@@ -5,7 +5,38 @@
   "simulation": {
     "default_map": "research_arena_01",
     "default_spawn_probability": 0.8,
-    "default_open_seconds": 2.0
+    "default_open_seconds": 2.0,
+    "map_width": 100,
+    "map_height": 100,
+    "cell_size": 8,
+    "world_units_per_cell": 10.0,
+    "tick_rate": 30,
+    "render_rate": 15,
+    "default_seed": 42,
+    "max_ticks": 100000,
+    "player_speed": 5.0,
+    "player_acceleration": 12.0,
+    "player_radius": 0.3,
+    "agent_start": null,
+    "interaction_radius": 1.5,
+    "chest_interaction_seconds": 2.0,
+    "interaction_failure_probability": 0.0,
+    "reward_probability": 0.0,
+    "obstacle_density": 0.12
+  },
+  "navigation": {
+    "allow_diagonal": true,
+    "prevent_corner_cutting": true,
+    "cache_paths": true,
+    "default_strategy": "weighted",
+    "stuck_timeout_seconds": 5.0,
+    "smooth_paths": true,
+    "lookahead_depth": 2
+  },
+  "agent": {
+    "max_recovery_attempts": 3,
+    "arrival_tolerance": 0.5,
+    "observation_batch_size": 10
   },
   "logging": {
     "level": "INFO"

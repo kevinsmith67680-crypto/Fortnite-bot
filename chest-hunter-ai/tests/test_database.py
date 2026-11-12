@@ -5,10 +5,19 @@ from __future__ import annotations
 import sqlite3
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from chest_hunter.database import EXPECTED_TABLES, SCHEMA_VERSION, DatabaseManager
-from chest_hunter.exceptions import DatabaseError, DatabaseIntegrityError
+from chest_hunter.database import EXPECTED_TABLES, MIGRATIONS, SCHEMA_VERSION, DatabaseManager
+from chest_hunter.exceptions import (
+    ConflictError,
+    DatabaseError,
+    DatabaseIntegrityError,
+    RecordNotFoundError,
+    ValidationError,
+)
+from chest_hunter.run_repository import RunRepository
+from chest_hunter.session_repository import SessionRepository
 
 NOW = "2026-01-01T00:00:00.000000+00:00"
 LATER = "2026-01-01T00:10:00.000000+00:00"
@@ -382,6 +391,80 @@ class PersistenceTests(DatabaseTestCase):
         self.db.close()
         self.db.close()
         self.assertEqual(self.db.schema_version(), SCHEMA_VERSION)
+
+
+
+class SchemaVersion2Tests(DatabaseTestCase):
+    def test_schema_version_is_two(self) -> None:
+        self.assertEqual(SCHEMA_VERSION, 2)
+        self.assertEqual(self.db.initialize(), 2)
+        self.assertIn("simulation_runs", EXPECTED_TABLES)
+
+    def test_version_1_database_is_migrated_without_data_loss(self) -> None:
+        with self.db.transaction() as conn:
+            for statement in MIGRATIONS[0][1]:
+                conn.execute(statement)
+            conn.execute("PRAGMA user_version = 1")
+            chest_id = insert_chest(conn)
+            session_id = insert_session(conn)
+            insert_observation(conn, session_id, chest_id)
+        self.assertEqual(self.db.schema_version(), 1)
+
+        self.assertEqual(self.db.initialize(), 2)
+        counts = [self.db.query_one(f"SELECT COUNT(*) FROM {table}")[0]  # type: ignore[index]
+                  for table in ("chest_locations", "simulation_sessions", "chest_observations",
+                                "simulation_runs")]
+        self.assertEqual(counts, [1, 1, 1, 0])
+
+    def test_run_repository_lifecycle(self) -> None:
+        self.db.initialize()
+        session = SessionRepository(self.db).start_session("arena")
+        assert session.id is not None
+        runs = RunRepository(self.db)
+        created = runs.create_run(session.id, strategy="weighted", seed=42, episode=3,
+                                  parameters={"speed": 5.0})
+        self.assertEqual(runs.get_run(session.id), created)
+        with self.assertRaises(ConflictError):
+            runs.create_run(session.id, strategy="nearest", seed=1)
+        with self.assertRaises(RecordNotFoundError):
+            runs.create_run(999, strategy="nearest", seed=1)
+        with self.assertRaises(ValidationError):
+            runs.create_run(session.id, strategy="nearest", seed=1, parameters={"x": object()})
+
+        finished = runs.finish_run(session.id, outcome="completed", ticks=900,
+                                   simulated_seconds=30.0, travel_distance=120.5,
+                                   recoveries=1, unreachable_targets=2, rewards=3)
+        self.assertEqual((finished.outcome, finished.ticks, finished.rewards),
+                         ("completed", 900, 3))
+        self.assertIsNotNone(finished.finished_at)
+        with self.assertRaises(ConflictError):
+            runs.finish_run(session.id, outcome="failed")
+        with self.assertRaises(ValidationError):
+            runs.finish_run(session.id, outcome="exploded")
+        with self.assertRaises(RecordNotFoundError):
+            runs.finish_run(12345, outcome="completed")
+        self.assertEqual([r.session_id for r in runs.list_runs(strategy="weighted")],
+                         [session.id])
+        self.assertEqual(runs.list_runs(strategy="nearest"), [])
+
+    def test_observed_at_can_be_supplied_but_not_before_session_start(self) -> None:
+        self.db.initialize()
+        start = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+        sessions = SessionRepository(self.db, clock=lambda: start)
+        session = sessions.start_session("arena")
+        with self.db.transaction() as conn:
+            chest_id = insert_chest(conn)
+        assert session.id is not None
+        later = start + timedelta(seconds=90)
+        observation = sessions.record_observation(session.id, chest_id, chest_present=False,
+                                                  observed_at=later)
+        self.assertEqual(observation.observed_at, "2026-01-01T12:01:30.000000+00:00")
+        with self.assertRaises(ValidationError):
+            sessions.record_observation(session.id, chest_id, chest_present=False,
+                                        observed_at=start - timedelta(seconds=1))
+        with self.assertRaises(ValidationError):
+            sessions.record_observation(session.id, chest_id, chest_present=False,
+                                        observed_at=datetime(2026, 1, 2))  # naive
 
 
 if __name__ == "__main__":

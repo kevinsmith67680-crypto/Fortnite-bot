@@ -16,7 +16,8 @@ import sqlite3
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import NoReturn
+from pathlib import Path
+from typing import TYPE_CHECKING, NoReturn
 
 from chest_hunter import __version__
 from chest_hunter.chest_repository import (
@@ -29,8 +30,12 @@ from chest_hunter.database import SCHEMA_VERSION, DatabaseManager
 from chest_hunter.demo_data import DEMO_CHESTS, seed_demo_chests
 from chest_hunter.exceptions import ChestHunterError, DatabaseError, RecordNotFoundError
 from chest_hunter.logging_config import VALID_LEVELS, configure_logging
-from chest_hunter.models import ChestLocation, SessionStatus, SimulationSession
+from chest_hunter.models import STRATEGY_NAMES, ChestLocation, SessionStatus, SimulationSession
+from chest_hunter.run_repository import RunRepository
 from chest_hunter.session_repository import SessionRepository
+
+if TYPE_CHECKING:  # pragma: no cover
+    from chest_hunter.agent.runner import SimulationRunner
 
 EXIT_OK = 0
 EXIT_FAILURE = 1
@@ -161,6 +166,26 @@ def _positive_int(text: str) -> int:
     return value
 
 
+def _non_negative_int(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected a non-negative integer, got {text!r}") from None
+    if value < 0:
+        raise argparse.ArgumentTypeError(f"expected a non-negative integer, got {text!r}")
+    return value
+
+
+def _strategy_list(text: str) -> tuple[str, ...]:
+    names = tuple(dict.fromkeys(part.strip().lower() for part in text.split(",") if part.strip()))
+    unknown = [name for name in names if name not in STRATEGY_NAMES]
+    if not names or unknown:
+        raise argparse.ArgumentTypeError(
+            f"expected a comma-separated list from {','.join(STRATEGY_NAMES)}, got {text!r}"
+        )
+    return names
+
+
 def _log_level(text: str) -> str:
     level = text.strip().upper()
     if level not in VALID_LEVELS:
@@ -190,6 +215,9 @@ examples:
   {PROG} complete-session --session 1
   {PROG} session-stats --session 1
   {PROG} map-stats --map research_arena_01
+  {PROG} simulate --map research_arena_01 --strategy weighted --seed 42 --headless
+  {PROG} simulate --render
+  {PROG} benchmark --episodes 100 --strategies nearest,weighted
 
 Run '{PROG} COMMAND --help' for the options of a command.
 """
@@ -338,6 +366,50 @@ def build_parser() -> argparse.ArgumentParser:
                      metavar="N",
                      help="samples required before reporting observed spawn frequency "
                           f"(default: {DEFAULT_MIN_SPAWN_SAMPLES})")
+
+    sub = add("simulate", "Run the autonomous agent in the 2D simulator (Phase 2).",
+              _cmd_simulate)
+    sub.add_argument("--map", metavar="MAP_ID",
+                     help="map whose chest locations are loaded (default: simulation.default_map)")
+    sub.add_argument("--strategy", choices=STRATEGY_NAMES,
+                     help="route-planning strategy (default: navigation.default_strategy)")
+    sub.add_argument("--seed", type=_non_negative_int, metavar="N",
+                     help="seed for map layout, chest spawns and rewards "
+                          "(default: simulation.default_seed)")
+    sub.add_argument("--episode", type=_non_negative_int, default=0, metavar="N",
+                     help="episode number: different chest spawns on the same map (default: 0)")
+    sub.add_argument("--max-ticks", type=_positive_int, metavar="N",
+                     help="stop after N fixed ticks (default: simulation.max_ticks)")
+    sub.add_argument("--speed", type=int, choices=(1, 2, 5, 10), default=1,
+                     help="initial GUI playback speed; headless runs are never throttled")
+    mode = sub.add_mutually_exclusive_group()
+    mode.add_argument("--headless", dest="render", action="store_false",
+                      help="run without a window and print statistics (default)")
+    mode.add_argument("--render", dest="render", action="store_true",
+                      help="open the Tkinter window (needs a display)")
+    sub.set_defaults(render=False)
+
+    sub = add("benchmark", "Compare route-planning strategies on paired seeded episodes.",
+              _cmd_benchmark)
+    sub.add_argument("--map", metavar="MAP_ID",
+                     help="map to benchmark (default: simulation.default_map)")
+    sub.add_argument("--episodes", type=_positive_int, default=100, metavar="N",
+                     help="paired episodes per strategy (default: 100)")
+    sub.add_argument("--strategies", type=_strategy_list, default=("nearest", "weighted"),
+                     metavar="LIST",
+                     help=f"comma-separated, from {','.join(STRATEGY_NAMES)} "
+                          "(default: nearest,weighted)")
+    sub.add_argument("--seed", type=_non_negative_int, metavar="N",
+                     help="base seed (default: simulation.default_seed)")
+    sub.add_argument("--max-ticks", type=_positive_int, metavar="N",
+                     help="tick budget per episode (default: simulation.max_ticks)")
+    sub.add_argument("--csv", metavar="PATH",
+                     help="per-episode CSV output (default: data/benchmark_results.csv)")
+    sub.add_argument("--vary-obstacles", action="store_true",
+                     help="use a different obstacle layout for every episode index")
+    sub.add_argument("--persist", action="store_true",
+                     help="store benchmark sessions in the database instead of in memory")
+    sub.add_argument("--quiet", action="store_true", help="no progress output")
 
     return parser
 
@@ -556,6 +628,159 @@ def _cmd_session_stats(args: argparse.Namespace, ctx: CommandContext) -> int:
             ]
         )
     )
+    run = RunRepository(ctx.db).get_run(args.session)
+    if run is not None:
+        print("Autonomous agent run")
+        print(
+            format_key_values(
+                [
+                    ("Strategy", run.strategy),
+                    ("Seed / episode", f"{run.seed} / {run.episode}"),
+                    ("Outcome", run.outcome or "running"),
+                    ("Simulated time", "-" if run.simulated_seconds is None
+                     else f"{run.simulated_seconds:.3f} s ({run.ticks} ticks)"),
+                    ("Travel distance", "-" if run.travel_distance is None
+                     else f"{run.travel_distance:.1f} cells"),
+                    ("Recoveries", "-" if run.recoveries is None else str(run.recoveries)),
+                    ("Unreachable / abandoned", "-" if run.unreachable_targets is None
+                     else f"{run.unreachable_targets} / {run.abandoned_targets}"),
+                ]
+                + ([("Failure reason", run.failure_reason)] if run.failure_reason else [])
+            )
+        )
+    return EXIT_OK
+
+
+def _print_run_report(ctx: CommandContext, runner: SimulationRunner) -> None:
+    m = runner.metrics
+    controller = runner.controller
+    sim = ctx.settings.simulation
+    rate = m.chests_per_minute
+    tps = m.ticks_per_cpu_second
+    units = ctx.settings.simulation.world_units_per_cell
+    print(f"Autonomous run finished: session {runner.session_id}, strategy {runner.strategy}, "
+          f"seed {runner.seed}, episode {runner.episode}")
+    print(
+        format_key_values(
+            [
+                ("Outcome", f"{m.outcome} ({controller.end_reason if controller else '-'})"),
+                ("Simulated time", f"{m.simulated_seconds:.3f} s ({m.ticks} ticks at "
+                                   f"{sim.tick_rate} Hz)"),
+                ("Chest locations", f"{m.candidate_locations} candidates, "
+                                    f"{m.locations_visited} visited, "
+                                    f"{m.unreachable_targets} unreachable, "
+                                    f"{m.abandoned_targets} abandoned"),
+                ("Chests", f"{m.chests_spawned} spawned, {m.chests_found} found, "
+                           f"{m.chests_opened} opened, {m.failed_interactions} failed "
+                           "interaction(s)"),
+                ("Chests opened/minute", "-" if rate is None
+                 else f"{rate:.2f} (simulated time)"),
+                ("Travel distance", f"{m.travel_distance:.1f} cells "
+                                    f"({m.travel_distance * units:.0f} world units)"),
+                ("Recoveries", str(m.recoveries)),
+                ("Tokens (fictional)", str(m.rewards)),
+                ("A* searches", f"{m.astar_searches} ({m.astar_cache_hits} cache hits) for "
+                                f"{controller.routes_planned if controller else 0} route(s)"),
+                ("Observations stored", f"{m.observations_recorded} in {m.db_flushes} "
+                                        "transaction(s)"),
+                ("CPU time", f"{m.cpu_seconds:.3f} s"
+                             + ("" if tps is None else f" ({tps:,.0f} ticks per CPU second)")),
+            ]
+        )
+    )
+    if runner.session_id is not None:
+        print()
+        _cmd_session_stats(argparse.Namespace(session=runner.session_id), ctx)
+
+
+def _cmd_simulate(args: argparse.Namespace, ctx: CommandContext) -> int:
+    from chest_hunter.agent.runner import SimulationRunner, load_world, make_oracle
+
+    settings = ctx.settings
+    map_id = args.map or settings.simulation.default_map
+    seed = settings.simulation.default_seed if args.seed is None else args.seed
+    strategy = args.strategy or settings.navigation.default_strategy
+    world = load_world(ctx.db, settings, map_id=map_id, map_seed=seed)
+    oracle = make_oracle(settings)
+
+    def factory(strategy_name: str) -> SimulationRunner:
+        return SimulationRunner(ctx.db, settings, map_id=map_id, strategy=strategy_name,
+                                seed=seed, episode=args.episode, max_ticks=args.max_ticks,
+                                world=world, oracle=oracle)
+
+    if args.render:
+        finished: list[SimulationRunner] = []
+        try:
+            import tkinter
+
+            from chest_hunter.simulation.renderer import run_gui
+        except ImportError as exc:
+            raise ChestHunterError(
+                f"The GUI needs Tkinter ({exc}). Install it (e.g. 'sudo apt install "
+                "python3-tk') or use --headless."
+            ) from exc
+        try:
+            run_gui(factory, strategies=STRATEGY_NAMES, strategy=strategy,
+                    cell_size=settings.simulation.cell_size,
+                    tick_rate=settings.simulation.tick_rate,
+                    render_rate=settings.simulation.render_rate,
+                    speed=args.speed, on_finish=finished.append)
+        except tkinter.TclError as exc:
+            raise ChestHunterError(
+                f"Could not open the GUI window ({exc}). Use --headless, or run with a display."
+            ) from exc
+        if not finished:
+            print("GUI closed before an episode finished; any running session was aborted.")
+            return EXIT_OK
+        _print_run_report(ctx, finished[-1])
+        return EXIT_OK if finished[-1].metrics.outcome in ("completed", "tick_limit") \
+            else EXIT_FAILURE
+
+    runner = factory(strategy)
+    print(f"Simulating map {map_id} headless: strategy {strategy}, seed {seed}, "
+          f"episode {args.episode}, max {runner.max_ticks} ticks ...")
+    result = runner.run()
+    _print_run_report(ctx, runner)
+    return EXIT_OK if result.outcome in ("completed", "tick_limit") else EXIT_FAILURE
+
+
+def _cmd_benchmark(args: argparse.Namespace, ctx: CommandContext) -> int:
+    from chest_hunter.analytics.benchmark import run_benchmark
+
+    settings = ctx.settings
+    map_id = args.map or settings.simulation.default_map
+    seed = settings.simulation.default_seed if args.seed is None else args.seed
+    csv_path = Path(args.csv).expanduser().resolve() if args.csv else (
+        settings.base_dir / "data" / "benchmark_results.csv")
+    step = max(1, (args.episodes * len(args.strategies)) // 10)
+
+    def progress(done: int, total: int) -> None:
+        if not args.quiet and (done % step == 0 or done == total):
+            print(f"  ... {done}/{total} episodes", file=sys.stderr, flush=True)
+
+    budget = args.max_ticks or settings.simulation.max_ticks
+    print(f"Benchmark on map {map_id}: {args.episodes} paired episode(s) x "
+          f"{len(args.strategies)} strategies, seed {seed}, budget {budget} ticks "
+          f"({budget / settings.simulation.tick_rate:.0f} simulated s), obstacles "
+          f"{'vary per episode' if args.vary_obstacles else 'fixed'}.")
+    report = run_benchmark(
+        ctx.db, settings, map_id=map_id, strategies=args.strategies,
+        episodes=args.episodes, seed=seed, max_ticks=args.max_ticks,
+        vary_obstacles=args.vary_obstacles, csv_path=csv_path,
+        persist_db=ctx.db if args.persist else None, progress=progress,
+    )
+    print()
+    print(report.format_table())
+    print()
+    if report.comparisons:
+        print(report.format_comparisons())
+        print()
+    print("Chests/min is measured in SIMULATED time (fixed 1/"
+          f"{settings.simulation.tick_rate} s timestep); CPU s/episode is real process CPU "
+          "time on this machine.")
+    print(f"Setup (map + distance fields): {report.setup_seconds:.2f} s; "
+          f"total wall time {report.total_wall_seconds:.1f} s.")
+    print(f"Per-episode results written to {csv_path}")
     return EXIT_OK
 
 

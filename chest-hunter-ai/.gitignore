@@ -18,6 +18,9 @@ data/*.db-journal
 data/*.db-wal
 data/*.db-shm
 
+# Generated benchmark results
+data/*.csv
+
 # Editors / OS
 .idea/
 .vscode/

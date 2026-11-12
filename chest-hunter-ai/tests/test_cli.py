@@ -399,5 +399,80 @@ class FormattingTests(unittest.TestCase):
         self.assertEqual(lines[3], "22  long name  1.00")
 
 
+
+class SimulationCommandTests(CliTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.ok("init-db")
+        self.ok("seed-demo")
+
+    def test_help_lists_phase2_commands(self) -> None:
+        _, out, _ = self.run_cli("--help", config=False)
+        self.assertIn("simulate", out)
+        self.assertIn("benchmark", out)
+        code, out, _ = self.run_cli("simulate", "--help", config=False)
+        self.assertEqual(code, EXIT_OK)
+        for option in ("--strategy", "--seed", "--max-ticks", "--speed", "--headless", "--render"):
+            self.assertIn(option, out)
+
+    def test_simulate_headless_persists_and_reports(self) -> None:
+        out = self.ok("simulate", "--map", "research_arena_01", "--strategy", "weighted",
+                      "--seed", "42", "--headless")
+        self.assertIn("Autonomous run finished: session 1, strategy weighted, seed 42", out)
+        self.assertRegex(out, r"Outcome:\s+completed")
+        self.assertRegex(out, r"Chests opened/minute:\s+\d+\.\d+ \(simulated time\)")
+        self.assertIn("Session 1 on map research_arena_01 [completed]", out)
+        self.assertRegex(out, rf"Locations visited:\s+{len(DEMO_CHESTS)}")
+        stats = self.ok("session-stats", "--session", "1")
+        self.assertRegex(stats, r"Strategy:\s+weighted")
+        self.assertRegex(stats, r"Seed / episode:\s+42 / 0")
+        self.assertIn("completed", self.ok("list-sessions"))
+
+    def test_simulate_tick_limit_uses_defaults(self) -> None:
+        out = self.ok("simulate", "--max-ticks", "60")
+        self.assertIn("tick_limit", out)
+        self.assertIn("strategy weighted, seed 42", out)  # config defaults
+        self.assertRegex(out, r"Simulated time:\s+2\.000 s \(60 ticks")
+
+    def test_simulate_argument_validation(self) -> None:
+        self.fails("simulate", "--strategy", "random", code=EXIT_USAGE)
+        self.fails("simulate", "--seed", "-1", code=EXIT_USAGE)
+        self.fails("simulate", "--max-ticks", "0", code=EXIT_USAGE)
+        self.fails("simulate", "--speed", "3", code=EXIT_USAGE)
+        self.fails("simulate", "--headless", "--render", code=EXIT_USAGE)
+        err = self.fails("simulate", "--map", "empty_map")
+        self.assertIn("no enabled chest locations", err)
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "needs X11 semantics for DISPLAY")
+    def test_render_without_a_display_fails_cleanly(self) -> None:
+        env = subprocess_env()
+        env.pop("DISPLAY", None)
+        env.pop("WAYLAND_DISPLAY", None)
+        result = subprocess.run(
+            [sys.executable, "-m", "chest_hunter", "--config", str(self.config_path),
+             "simulate", "--render", "--max-ticks", "10"],
+            cwd=self.tmp, env=env, capture_output=True, text=True, timeout=120,
+        )
+        self.assertEqual(result.returncode, EXIT_FAILURE, result.stdout + result.stderr)
+        self.assertIn("error:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_benchmark_command_writes_csv_without_touching_sessions(self) -> None:
+        csv_path = self.tmp / "bench.csv"
+        out = self.ok("benchmark", "--episodes", "2", "--max-ticks", "300", "--csv",
+                      str(csv_path), "--quiet")
+        self.assertIn("Nearest", out)
+        self.assertIn("ProbabilityWeighted", out)
+        self.assertIn("SIMULATED time", out)
+        self.assertIn("paired episodes", out)
+        lines = csv_path.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lines), 1 + 2 * 2)
+        self.assertIn("No sessions found", self.ok("list-sessions"))
+
+    def test_benchmark_argument_validation(self) -> None:
+        self.fails("benchmark", "--strategies", "nearest,teleport", code=EXIT_USAGE)
+        self.fails("benchmark", "--episodes", "0", code=EXIT_USAGE)
+
+
 if __name__ == "__main__":
     unittest.main()
