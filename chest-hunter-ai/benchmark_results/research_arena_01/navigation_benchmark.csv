@@ -1,0 +1,301 @@
+episode,mode,outcome,end_reason,simulated_seconds,ticks,spawn_locations,chests_spawned,chests_available,chests_opened,chests_opened_truth,percent_available_opened,chests_per_minute,seconds_per_chest,failed_interactions,recoveries,unreachable_targets,abandoned_targets,targets_selected,targets_reached,navigation_success_rate,locations_recorded,travel_distance_cells,astar_searches,cpu_seconds,wall_seconds
+0,oracle,completed,all reachable chest locations visited,137.4,4122,35,25,25,25,25,100.0,10.917,5.496,0,0,0,0,35,35,1.0,35,368.367,33,0.0279,0.028
+0,chest_vision,completed,all spawn points resolved,123.3,3699,35,25,25,24,25,96.0,11.6788,5.1375,0,1,0,1,24,24,1.0,34,289.761,52,5.8156,5.5383
+0,visual,completed,all spawn points resolved,177.3333,5320,35,25,25,24,25,96.0,8.1203,7.3889,0,1,0,0,24,24,1.0,35,521.989,160,8.0158,8.0496
+1,oracle,completed,all reachable chest locations visited,129.3667,3881,35,21,21,21,21,100.0,9.7398,6.1603,0,0,0,0,35,35,1.0,35,368.39,33,0.0276,0.0277
+1,chest_vision,completed,all spawn points resolved,109.3,3279,35,21,21,21,21,100.0,11.5279,5.2048,0,0,0,1,21,21,1.0,34,273.352,50,4.5856,4.6373
+1,visual,completed,all spawn points resolved,204.3333,6130,35,21,21,21,21,100.0,6.1664,9.7302,0,0,0,1,21,21,1.0,34,713.51,221,8.4623,8.5258
+2,oracle,completed,all reachable chest locations visited,139.4667,4184,35,26,26,26,26,100.0,11.1855,5.3641,0,0,0,0,35,35,1.0,35,368.4,33,0.029,0.029
+2,chest_vision,completed,all spawn points resolved,135.8333,4075,35,26,26,25,26,96.154,11.0429,5.4333,1,1,0,1,25,25,1.0,34,334.531,54,6.3332,6.438
+2,visual,completed,all spawn points resolved,173.0333,5191,35,26,26,25,26,96.154,8.6688,6.9213,0,1,0,0,25,25,1.0,35,500.58,180,8.6499,8.727
+3,oracle,completed,all reachable chest locations visited,139.5,4185,35,26,26,26,26,100.0,11.1828,5.3654,0,0,0,0,35,35,1.0,35,368.391,33,0.0416,0.0416
+3,chest_vision,completed,all spawn points resolved,134.7333,4042,35,26,26,25,26,96.154,11.1331,5.3893,0,1,0,0,25,25,1.0,35,333.654,52,5.8593,5.9135
+3,visual,completed,all spawn points resolved,164.3667,4931,35,26,26,26,26,100.0,9.491,6.3218,0,1,0,0,26,25,0.9615,35,459.214,137,8.0072,8.0591
+4,oracle,completed,all reachable chest locations visited,139.3667,4181,35,26,26,26,26,100.0,11.1935,5.3603,0,0,0,0,35,35,1.0,35,368.39,33,0.0239,0.0239
+4,chest_vision,completed,all spawn points resolved,131.1333,3934,35,26,26,25,26,96.154,11.4387,5.2453,0,1,0,0,25,25,1.0,35,313.579,52,6.2273,6.3095
+4,visual,completed,all spawn points resolved,165.3667,4961,35,26,26,25,26,96.154,9.0708,6.6147,0,1,0,0,25,25,1.0,35,462.078,142,8.3983,8.4952
+5,oracle,completed,all reachable chest locations visited,137.3667,4121,35,25,25,25,25,100.0,10.9197,5.4947,0,0,0,0,35,35,1.0,35,368.394,33,0.0305,0.0315
+5,chest_vision,completed,all spawn points resolved,129.6333,3889,35,25,25,25,25,100.0,11.5711,5.1853,0,0,0,1,25,25,1.0,34,324.456,57,5.878,5.9259
+5,visual,completed,all spawn points resolved,238.6333,7159,35,25,25,25,25,100.0,6.2858,9.5453,0,0,0,1,25,25,1.0,34,805.71,192,10.2646,10.4203
+6,oracle,completed,all reachable chest locations visited,141.3667,4241,35,27,27,27,27,100.0,11.4596,5.2358,0,0,0,0,35,35,1.0,35,368.413,33,0.0285,0.0285
+6,chest_vision,completed,all spawn points resolved,144.7667,4343,35,27,27,26,27,96.296,10.776,5.5679,0,1,0,1,26,26,1.0,34,369.609,56,6.6751,6.7173
+6,visual,completed,all spawn points resolved,179.5333,5386,35,27,27,26,27,96.296,8.6892,6.9051,0,1,0,0,26,26,1.0,35,517.67,138,8.5136,8.5743
+7,oracle,completed,all reachable chest locations visited,139.4,4182,35,26,26,26,26,100.0,11.1908,5.3615,0,0,0,0,35,35,1.0,35,368.407,33,0.0286,0.0286
+7,chest_vision,completed,all spawn points resolved,140.0,4200,35,26,26,26,26,100.0,11.1429,5.3846,0,0,0,1,26,26,1.0,34,354.835,60,6.0842,6.1044
+7,visual,completed,all spawn points resolved,236.4,7092,35,26,26,26,26,100.0,6.599,9.0923,0,1,0,1,26,26,1.0,34,763.018,217,9.9078,9.9773
+8,oracle,completed,all reachable chest locations visited,131.4,3942,35,22,22,22,22,100.0,10.0457,5.9727,0,0,0,0,35,35,1.0,35,368.406,33,0.0275,0.0286
+8,chest_vision,completed,all spawn points resolved,122.1,3663,35,22,22,22,22,100.0,10.8108,5.55,0,0,0,0,22,22,1.0,35,326.743,48,5.2786,5.3335
+8,visual,completed,all spawn points resolved,169.0333,5071,35,22,22,22,22,100.0,7.8091,7.6833,0,0,0,0,22,22,1.0,35,524.004,145,7.2732,7.3288
+9,oracle,completed,all reachable chest locations visited,147.4,4422,35,30,30,30,30,100.0,12.2117,4.9133,0,0,0,0,35,35,1.0,35,368.351,33,0.0349,0.0351
+9,chest_vision,completed,all spawn points resolved,149.2333,4477,35,30,30,30,30,100.0,12.0616,4.9744,0,0,0,0,30,30,1.0,35,362.641,62,6.8187,6.867
+9,visual,completed,all spawn points resolved,194.3333,5830,35,30,30,30,30,100.0,9.2624,6.4778,0,0,0,0,30,30,1.0,35,565.132,175,9.8801,10.0466
+10,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.39,33,0.0379,0.0379
+10,chest_vision,completed,all spawn points resolved,135.0333,4051,35,27,27,27,27,100.0,11.997,5.0012,0,0,0,1,27,27,1.0,34,324.439,57,6.3146,6.4449
+10,visual,completed,all spawn points resolved,232.2333,6967,35,27,27,27,27,100.0,6.9757,8.6012,0,0,0,1,27,27,1.0,34,762.892,234,8.6747,8.7193
+11,oracle,completed,all reachable chest locations visited,137.4333,4123,35,25,25,25,25,100.0,10.9144,5.4973,0,0,0,0,35,35,1.0,35,368.408,33,0.0266,0.0268
+11,chest_vision,completed,all spawn points resolved,121.2667,3638,35,25,25,25,25,100.0,12.3694,4.8507,0,0,0,1,25,25,1.0,34,284.292,54,5.2694,5.3032
+11,visual,completed,all spawn points resolved,209.0667,6272,35,25,25,25,25,100.0,7.1747,8.3627,0,0,0,1,25,25,1.0,34,659.78,207,9.2195,9.3518
+12,oracle,completed,all reachable chest locations visited,141.3333,4240,35,27,27,27,27,100.0,11.4623,5.2346,0,0,0,0,35,35,1.0,35,368.378,33,0.0289,0.0289
+12,chest_vision,completed,all spawn points resolved,143.1333,4294,35,27,27,26,27,96.296,10.8989,5.5051,0,1,0,1,26,26,1.0,34,364.159,55,6.4697,6.5066
+12,visual,completed,all spawn points resolved,182.3333,5470,35,27,27,26,27,96.296,8.5558,7.0128,0,1,0,0,26,26,1.0,35,534.465,144,8.164,8.2396
+13,oracle,completed,all reachable chest locations visited,137.4667,4124,35,25,25,25,25,100.0,10.9117,5.4987,0,0,0,0,35,35,1.0,35,368.395,33,0.0284,0.0284
+13,chest_vision,completed,all spawn points resolved,133.1667,3995,35,25,25,24,25,96.0,10.8135,5.5486,0,1,0,1,24,24,1.0,34,334.486,56,5.8618,5.9152
+13,visual,completed,all spawn points resolved,222.9667,6689,35,25,25,24,25,96.0,6.4584,9.2903,1,2,0,1,25,24,0.96,35,717.234,210,9.5737,9.647
+14,oracle,completed,all reachable chest locations visited,141.4333,4243,35,27,27,27,27,100.0,11.4542,5.2383,0,0,0,0,35,35,1.0,35,368.378,33,0.029,0.029
+14,chest_vision,completed,all spawn points resolved,142.3,4269,35,27,27,27,27,100.0,11.3844,5.2704,0,0,0,1,27,27,1.0,34,358.47,58,5.9471,5.9857
+14,visual,completed,all spawn points resolved,251.0333,7531,35,27,27,27,27,100.0,6.4533,9.2975,0,0,0,1,27,27,1.0,34,853.726,223,10.8459,10.9732
+15,oracle,completed,all reachable chest locations visited,139.4,4182,35,26,26,26,26,100.0,11.1908,5.3615,0,0,0,0,35,35,1.0,35,368.4,33,0.0279,0.0279
+15,chest_vision,completed,all spawn points resolved,128.3333,3850,35,26,26,25,26,96.154,11.6883,5.1333,0,1,0,0,25,25,1.0,35,305.062,53,6.0355,6.079
+15,visual,completed,all spawn points resolved,160.9333,4828,35,26,26,25,26,96.154,9.3206,6.4373,0,1,0,0,25,25,1.0,35,446.879,133,8.0938,8.1825
+16,oracle,completed,all reachable chest locations visited,135.4333,4063,35,24,24,24,24,100.0,10.6325,5.6431,0,0,0,0,35,35,1.0,35,368.365,33,0.028,0.0298
+16,chest_vision,completed,all spawn points resolved,133.0667,3992,35,24,24,24,24,100.0,10.8216,5.5444,0,0,0,1,24,24,1.0,34,347.816,54,5.9005,5.9655
+16,visual,completed,all spawn points resolved,228.6333,6859,35,24,24,24,24,100.0,6.2983,9.5264,0,1,0,1,24,24,1.0,34,733.4,220,9.4103,9.4938
+17,oracle,completed,all reachable chest locations visited,145.4,4362,35,29,29,29,29,100.0,11.967,5.0138,0,0,0,0,35,35,1.0,35,368.408,33,0.0288,0.0288
+17,chest_vision,completed,all spawn points resolved,151.3667,4541,35,29,29,29,29,100.0,11.4953,5.2195,0,0,0,1,29,29,1.0,34,376.906,63,7.2904,7.39
+17,visual,completed,all spawn points resolved,263.3333,7900,35,29,29,29,29,100.0,6.6076,9.0805,0,0,0,1,29,29,1.0,34,879.186,212,11.0231,11.1395
+18,oracle,completed,all reachable chest locations visited,133.4,4002,35,23,23,23,23,100.0,10.3448,5.8,0,0,0,0,35,35,1.0,35,368.395,33,0.0291,0.0291
+18,chest_vision,completed,all spawn points resolved,123.8667,3716,35,23,23,22,23,95.652,10.6566,5.6303,0,1,0,1,23,23,1.0,34,308.596,49,5.5555,5.6283
+18,visual,completed,all spawn points resolved,257.8667,7736,35,23,23,22,23,95.652,5.1189,11.7212,1,1,0,1,22,22,1.0,34,922.638,210,9.5142,9.6043
+19,oracle,completed,all reachable chest locations visited,147.4333,4423,35,30,30,30,30,100.0,12.2089,4.9144,0,0,0,0,35,35,1.0,35,368.36,33,0.0243,0.0243
+19,chest_vision,completed,all spawn points resolved,144.8,4344,35,30,30,29,30,96.667,12.0166,4.9931,1,1,0,1,30,29,0.9667,34,337.179,64,6.9653,6.9947
+19,visual,completed,all spawn points resolved,190.8333,5725,35,30,30,29,30,96.667,9.1179,6.5805,0,1,0,0,29,29,1.0,35,535.063,157,9.2103,9.2927
+20,oracle,completed,all reachable chest locations visited,137.3667,4121,35,25,25,25,25,100.0,10.9197,5.4947,0,0,0,0,35,35,1.0,35,368.384,33,0.044,0.044
+20,chest_vision,completed,all spawn points resolved,131.5333,3946,35,25,25,25,25,100.0,11.404,5.2613,0,0,0,1,25,25,1.0,34,327.572,56,5.7667,5.7893
+20,visual,completed,all spawn points resolved,203.3667,6101,35,25,25,25,25,100.0,7.3758,8.1347,0,0,0,1,25,25,1.0,34,651.735,193,8.9823,9.0561
+21,oracle,completed,all reachable chest locations visited,147.3667,4421,35,30,30,30,30,100.0,12.2144,4.9122,0,0,0,0,35,35,1.0,35,368.403,33,0.0406,0.0406
+21,chest_vision,completed,all spawn points resolved,150.1,4503,35,30,30,29,30,96.667,11.5923,5.1759,1,1,0,1,29,29,1.0,34,358.362,65,7.1661,7.2375
+21,visual,completed,all spawn points resolved,191.1333,5734,35,30,30,29,30,96.667,9.1036,6.5908,0,1,0,0,29,29,1.0,35,530.466,153,9.7159,9.8362
+22,oracle,completed,all reachable chest locations visited,147.4333,4423,35,30,30,30,30,100.0,12.2089,4.9144,0,0,0,0,35,35,1.0,35,368.38,33,0.033,0.033
+22,chest_vision,completed,all spawn points resolved,152.2333,4567,35,30,30,30,30,100.0,11.824,5.0744,0,0,0,1,30,30,1.0,34,372.485,61,6.9694,7.0266
+22,visual,completed,all spawn points resolved,266.4667,7994,35,30,30,30,30,100.0,6.7551,8.8822,0,0,0,1,30,30,1.0,34,879.019,216,11.1364,11.2287
+23,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.354,33,0.0301,0.0301
+23,chest_vision,completed,all spawn points resolved,145.4667,4364,35,27,27,27,27,100.0,11.1366,5.3877,0,0,0,1,27,27,1.0,34,358.504,61,6.448,6.5098
+23,visual,completed,all spawn points resolved,206.1,6183,35,27,27,27,27,100.0,7.8603,7.6333,0,0,0,1,27,27,1.0,34,635.333,188,9.1246,9.1783
+24,oracle,completed,all reachable chest locations visited,145.4,4362,35,29,29,29,29,100.0,11.967,5.0138,0,0,0,0,35,35,1.0,35,368.354,33,0.0231,0.0232
+24,chest_vision,completed,all spawn points resolved,149.4333,4483,35,29,29,29,29,100.0,11.644,5.1529,0,0,0,1,29,29,1.0,34,364.349,62,6.4832,6.569
+24,visual,completed,all spawn points resolved,241.8667,7256,35,29,29,29,29,100.0,7.194,8.3402,0,0,0,1,29,29,1.0,34,765.581,209,10.7017,10.7566
+25,oracle,completed,all reachable chest locations visited,137.4667,4124,35,25,25,25,25,100.0,10.9117,5.4987,0,0,0,0,35,35,1.0,35,368.399,33,0.0222,0.0222
+25,chest_vision,completed,all spawn points resolved,136.0333,4081,35,25,25,25,25,100.0,11.0267,5.4413,0,0,0,1,25,25,1.0,34,355.295,55,5.6738,5.7025
+25,visual,completed,all spawn points resolved,167.7,5031,35,25,25,25,25,100.0,8.9445,6.708,0,0,0,1,25,25,1.0,34,486.223,144,8.0953,8.1337
+26,oracle,completed,all reachable chest locations visited,131.4667,3944,35,22,22,22,22,100.0,10.0406,5.9758,0,0,0,0,35,35,1.0,35,368.372,33,0.0288,0.029
+26,chest_vision,completed,all spawn points resolved,118.2,3546,35,22,22,22,22,100.0,11.1675,5.3727,0,0,0,0,22,22,1.0,35,303.97,46,4.7848,4.8516
+26,visual,completed,all spawn points resolved,147.6,4428,35,22,22,22,22,100.0,8.9431,6.7091,0,0,0,0,22,22,1.0,35,429.399,158,6.8165,6.879
+27,oracle,completed,all reachable chest locations visited,125.4333,3763,35,19,19,19,19,100.0,9.0885,6.6018,0,0,0,0,35,35,1.0,35,368.446,33,0.0214,0.0216
+27,chest_vision,completed,all spawn points resolved,113.6,3408,35,19,19,19,19,100.0,10.0352,5.9789,0,0,0,1,19,19,1.0,34,310.009,46,4.6339,4.6497
+27,visual,completed,all spawn points resolved,203.7333,6112,35,19,19,19,19,100.0,5.5955,10.7228,0,0,0,1,19,19,1.0,34,713.498,184,8.6224,8.692
+28,oracle,completed,all reachable chest locations visited,135.3667,4061,35,24,24,24,24,100.0,10.6378,5.6403,0,0,0,0,35,35,1.0,35,368.366,33,0.0229,0.023
+28,chest_vision,completed,all spawn points resolved,122.9667,3689,35,24,24,24,24,100.0,11.7105,5.1236,0,0,0,1,24,24,1.0,34,303.258,52,5.7978,5.8227
+28,visual,completed,all spawn points resolved,211.8,6354,35,24,24,24,24,100.0,6.7989,8.825,0,0,0,1,24,24,1.0,34,705.599,229,8.7681,8.8425
+29,oracle,completed,all reachable chest locations visited,143.4667,4304,35,28,28,28,28,100.0,11.71,5.1238,0,0,0,0,35,35,1.0,35,368.406,33,0.0222,0.0223
+29,chest_vision,completed,all spawn points resolved,146.6,4398,35,28,28,28,28,100.0,11.4598,5.2357,0,0,0,1,28,28,1.0,34,367.909,61,6.3825,6.3969
+29,visual,completed,all spawn points resolved,256.5667,7697,35,28,28,28,28,100.0,6.548,9.1631,0,0,0,1,28,28,1.0,34,858.69,209,10.5585,10.6735
+30,oracle,completed,all reachable chest locations visited,147.4,4422,35,30,30,30,30,100.0,12.2117,4.9133,0,0,0,0,35,35,1.0,35,368.398,33,0.0293,0.0293
+30,chest_vision,completed,all spawn points resolved,147.9667,4439,35,30,30,29,30,96.667,11.7594,5.1023,0,1,0,1,29,29,1.0,34,347.588,61,6.8158,6.8693
+30,visual,completed,all spawn points resolved,223.2667,6698,35,30,30,29,30,96.667,7.7934,7.6989,1,1,0,1,29,29,1.0,34,673.372,203,9.8117,9.8343
+31,oracle,completed,all reachable chest locations visited,149.4,4482,35,31,31,31,31,100.0,12.4498,4.8194,0,0,0,0,35,35,1.0,35,368.374,33,0.023,0.023
+31,chest_vision,completed,all spawn points resolved,156.9667,4709,35,31,31,30,31,96.774,11.4674,5.2322,1,1,0,1,31,30,0.9677,34,379.036,65,6.5513,6.5843
+31,visual,completed,all spawn points resolved,193.7,5811,35,31,31,30,31,96.774,9.2927,6.4567,0,1,0,0,30,30,1.0,35,539.885,170,9.6197,9.7286
+32,oracle,completed,all reachable chest locations visited,145.4667,4364,35,29,29,29,29,100.0,11.9615,5.0161,0,0,0,0,35,35,1.0,35,368.407,33,0.0231,0.0231
+32,chest_vision,completed,all spawn points resolved,136.2333,4087,35,29,29,28,29,96.552,12.3318,4.8655,0,1,0,0,28,28,1.0,35,308.724,58,6.488,6.5515
+32,visual,completed,all spawn points resolved,182.5,5475,35,29,29,28,29,96.552,9.2055,6.5179,0,1,0,0,28,28,1.0,35,509.845,153,8.6085,8.6644
+33,oracle,completed,all reachable chest locations visited,141.5,4245,35,27,27,27,27,100.0,11.4488,5.2407,0,0,0,0,35,35,1.0,35,368.379,33,0.0284,0.0284
+33,chest_vision,completed,all spawn points resolved,134.8,4044,35,27,27,26,27,96.296,11.5727,5.1846,0,1,0,0,26,26,1.0,35,327.712,55,6.2093,6.2551
+33,visual,completed,all spawn points resolved,255.2333,7657,35,27,27,26,27,96.296,6.1121,9.8167,1,1,0,1,26,26,1.0,34,860.657,234,10.6728,10.7752
+34,oracle,completed,all reachable chest locations visited,143.4667,4304,35,28,28,28,28,100.0,11.71,5.1238,0,0,0,0,35,35,1.0,35,368.361,33,0.0293,0.0293
+34,chest_vision,completed,all spawn points resolved,145.8667,4376,35,28,28,28,28,100.0,11.5174,5.2095,0,0,0,1,28,28,1.0,34,363.88,60,6.8208,6.8297
+34,visual,completed,all spawn points resolved,285.9667,8579,35,28,28,28,28,100.0,5.8748,10.2131,0,1,0,1,28,28,1.0,34,976.897,231,11.4329,11.5242
+35,oracle,completed,all reachable chest locations visited,131.4,3942,35,22,22,22,22,100.0,10.0457,5.9727,0,0,0,0,35,35,1.0,35,368.378,33,0.0268,0.0271
+35,chest_vision,completed,all spawn points resolved,125.5,3765,35,22,22,22,22,100.0,10.5179,5.7045,0,0,0,0,22,22,1.0,35,341.545,48,5.338,5.3637
+35,visual,completed,all spawn points resolved,149.9,4497,35,22,22,22,22,100.0,8.8059,6.8136,0,0,0,0,22,22,1.0,35,442.947,150,7.3639,7.5101
+36,oracle,completed,all reachable chest locations visited,131.3667,3941,35,22,22,22,22,100.0,10.0482,5.9712,0,0,0,0,35,35,1.0,35,368.398,33,0.0225,0.0226
+36,chest_vision,completed,all spawn points resolved,124.0667,3722,35,22,22,22,22,100.0,10.6394,5.6394,0,0,0,1,22,22,1.0,34,325.231,51,5.3764,5.4553
+36,visual,completed,all spawn points resolved,170.3667,5111,35,22,22,22,22,100.0,7.748,7.7439,0,0,0,1,22,22,1.0,34,537.593,158,7.8531,7.8962
+37,oracle,completed,all reachable chest locations visited,149.4,4482,35,31,31,31,31,100.0,12.4498,4.8194,0,0,0,0,35,35,1.0,35,368.375,33,0.0469,0.0469
+37,chest_vision,completed,all spawn points resolved,149.0333,4471,35,31,31,30,31,96.774,12.0778,4.9678,0,1,0,0,30,30,1.0,35,348.036,63,8.0688,8.1435
+37,visual,completed,all spawn points resolved,186.7667,5603,35,31,31,30,31,96.774,9.6377,6.2256,0,1,0,0,30,30,1.0,35,509.338,143,10.3241,10.3954
+38,oracle,completed,all reachable chest locations visited,137.3333,4120,35,25,25,25,25,100.0,10.9223,5.4933,0,0,0,0,35,35,1.0,35,368.388,33,0.031,0.031
+38,chest_vision,completed,all spawn points resolved,128.7333,3862,35,25,25,25,25,100.0,11.652,5.1493,0,0,0,1,25,25,1.0,34,316.304,55,6.0185,6.0641
+38,visual,completed,all spawn points resolved,199.3,5979,35,25,25,25,25,100.0,7.5263,7.972,0,0,0,1,25,25,1.0,34,633.2,192,9.3568,9.4632
+39,oracle,completed,all reachable chest locations visited,135.4667,4064,35,24,24,24,24,100.0,10.6299,5.6444,0,0,0,0,35,35,1.0,35,368.364,33,0.0263,0.0264
+39,chest_vision,completed,all spawn points resolved,120.5333,3616,35,24,24,23,24,95.833,11.4491,5.2406,0,1,0,1,24,23,0.9583,34,285.587,53,5.407,5.451
+39,visual,completed,all spawn points resolved,163.4,4902,35,24,24,23,24,95.833,8.4455,7.1043,1,1,0,1,23,23,1.0,34,474.966,138,7.5721,7.6269
+40,oracle,completed,all reachable chest locations visited,135.4333,4063,35,24,24,24,24,100.0,10.6325,5.6431,0,0,0,0,35,35,1.0,35,368.411,33,0.0317,0.0317
+40,chest_vision,completed,all spawn points resolved,136.3667,4091,35,24,24,24,24,100.0,10.5598,5.6819,0,0,0,1,24,24,1.0,34,360.471,52,6.0933,6.148
+40,visual,completed,all spawn points resolved,188.2333,5647,35,24,24,24,24,100.0,7.6501,7.8431,0,0,0,1,24,24,1.0,34,584.294,177,8.3261,8.4516
+41,oracle,completed,all reachable chest locations visited,133.4333,4003,35,23,23,23,23,100.0,10.3422,5.8014,0,0,0,0,35,35,1.0,35,368.385,33,0.0287,0.0289
+41,chest_vision,completed,all spawn points resolved,129.0667,3872,35,23,23,23,23,100.0,10.6921,5.6116,0,0,0,1,23,23,1.0,34,342.693,52,5.6109,5.6717
+41,visual,completed,all spawn points resolved,172.1333,5164,35,23,23,23,23,100.0,8.017,7.4841,0,0,0,1,23,23,1.0,34,526.963,157,8.2362,8.3146
+42,oracle,completed,all reachable chest locations visited,139.3333,4180,35,26,26,26,26,100.0,11.1962,5.359,0,0,0,0,35,35,1.0,35,368.379,33,0.0263,0.0265
+42,chest_vision,completed,all spawn points resolved,139.1333,4174,35,26,26,25,26,96.154,10.781,5.5653,1,1,0,1,25,25,1.0,34,352.8,55,5.9786,6.0564
+42,visual,completed,all spawn points resolved,171.4667,5144,35,26,26,25,26,96.154,8.7481,6.8587,1,1,0,1,25,25,1.0,34,490.899,140,8.2186,8.3128
+43,oracle,completed,all reachable chest locations visited,135.4333,4063,35,24,24,24,24,100.0,10.6325,5.6431,0,0,0,0,35,35,1.0,35,368.36,33,0.0241,0.0241
+43,chest_vision,completed,all spawn points resolved,122.3667,3671,35,24,24,24,24,100.0,11.7679,5.0986,0,0,0,0,24,24,1.0,35,301.6,51,5.629,5.705
+43,visual,completed,all spawn points resolved,158.8667,4766,35,24,24,24,24,100.0,9.0642,6.6194,0,0,0,0,24,24,1.0,35,469.258,155,7.8793,7.9563
+44,oracle,completed,all reachable chest locations visited,135.4667,4064,35,24,24,24,24,100.0,10.6299,5.6444,0,0,0,0,35,35,1.0,35,368.389,33,0.0329,0.0329
+44,chest_vision,completed,all spawn points resolved,121.1667,3635,35,24,24,23,24,95.833,11.3893,5.2681,1,1,0,1,23,23,1.0,34,288.585,53,5.4883,5.5143
+44,visual,completed,all spawn points resolved,160.4,4812,35,24,24,24,24,100.0,8.9776,6.6833,0,1,0,0,24,24,1.0,35,457.603,145,8.17,8.2528
+45,oracle,completed,all reachable chest locations visited,133.4333,4003,35,23,23,23,23,100.0,10.3422,5.8014,0,0,0,0,35,35,1.0,35,368.406,33,0.0257,0.0257
+45,chest_vision,completed,all spawn points resolved,133.3667,4001,35,23,23,23,23,100.0,10.3474,5.7986,0,0,0,1,23,23,1.0,34,364.387,51,5.9083,6.0081
+45,visual,completed,all spawn points resolved,227.3,6819,35,23,23,23,23,100.0,6.0713,9.8826,0,0,0,1,23,23,1.0,34,778.825,224,9.8924,9.987
+46,oracle,completed,all reachable chest locations visited,131.4333,3943,35,22,22,22,22,100.0,10.0431,5.9742,0,0,0,0,35,35,1.0,35,368.401,33,0.0277,0.0278
+46,chest_vision,completed,all spawn points resolved,117.3667,3521,35,22,22,22,22,100.0,11.2468,5.3348,0,0,0,1,22,22,1.0,34,288.918,50,4.8944,4.9329
+46,visual,completed,all spawn points resolved,209.5667,6287,35,22,22,22,22,100.0,6.2987,9.5258,0,0,0,1,22,22,1.0,34,693.161,200,8.8373,8.9126
+47,oracle,completed,all reachable chest locations visited,137.4667,4124,35,25,25,25,25,100.0,10.9117,5.4987,0,0,0,0,35,35,1.0,35,368.362,33,0.0284,0.0284
+47,chest_vision,completed,all spawn points resolved,123.4667,3704,35,25,25,24,25,96.0,11.6631,5.1444,0,1,0,1,25,25,1.0,34,284.552,54,5.5832,5.6177
+47,visual,completed,all spawn points resolved,234.1667,7025,35,25,25,24,25,96.0,6.1495,9.7569,0,1,0,1,24,24,1.0,34,770.345,222,9.5016,9.6032
+48,oracle,completed,all reachable chest locations visited,145.4,4362,35,29,29,29,29,100.0,11.967,5.0138,0,0,0,0,35,35,1.0,35,368.395,33,0.026,0.026
+48,chest_vision,completed,all spawn points resolved,141.2,4236,35,29,29,28,29,96.552,11.898,5.0429,0,1,0,0,28,28,1.0,35,331.332,58,6.4333,6.4805
+48,visual,completed,all spawn points resolved,194.9333,5848,35,29,29,28,29,96.552,8.6183,6.9619,0,1,0,0,28,28,1.0,35,556.861,181,9.6701,9.7793
+49,oracle,completed,all reachable chest locations visited,143.4333,4303,35,28,28,28,28,100.0,11.7128,5.1226,0,0,0,0,35,35,1.0,35,368.407,33,0.0237,0.0239
+49,chest_vision,completed,all spawn points resolved,138.6667,4160,35,28,28,27,28,96.429,11.6827,5.1358,0,1,0,1,28,28,1.0,34,321.349,61,6.8895,6.9567
+49,visual,completed,all spawn points resolved,257.0333,7711,35,28,28,27,28,96.429,6.3027,9.5198,1,1,0,1,27,27,1.0,34,831.018,222,10.4188,10.4961
+50,oracle,completed,all reachable chest locations visited,139.5,4185,35,26,26,26,26,100.0,11.1828,5.3654,0,0,0,0,35,35,1.0,35,368.376,33,0.0286,0.0287
+50,chest_vision,completed,all spawn points resolved,128.4333,3853,35,26,26,25,26,96.154,11.6792,5.1373,1,1,0,1,25,25,1.0,34,303.458,57,5.8012,5.8301
+50,visual,completed,all spawn points resolved,236.2,7086,35,26,26,25,26,96.154,6.3506,9.448,1,1,0,1,25,25,1.0,34,776.804,209,9.3948,9.4917
+51,oracle,completed,all reachable chest locations visited,141.3667,4241,35,27,27,27,27,100.0,11.4596,5.2358,0,0,0,0,35,35,1.0,35,368.392,33,0.0286,0.0286
+51,chest_vision,completed,all spawn points resolved,132.9333,3988,35,27,27,26,27,96.296,11.7352,5.1128,0,1,0,1,26,26,1.0,34,313.688,58,6.3095,6.3514
+51,visual,completed,all spawn points resolved,166.5333,4996,35,27,27,26,27,96.296,9.3675,6.4051,0,1,0,0,26,26,1.0,35,452.543,125,8.7591,8.8327
+52,oracle,completed,all reachable chest locations visited,141.4667,4244,35,27,27,27,27,100.0,11.4515,5.2395,0,0,0,0,35,35,1.0,35,368.361,33,0.0291,0.0291
+52,chest_vision,completed,all spawn points resolved,137.0667,4112,35,27,27,26,27,96.296,11.3813,5.2718,1,1,0,1,26,26,1.0,34,330.324,58,6.4466,6.5081
+52,visual,completed,all spawn points resolved,210.8667,6326,35,27,27,26,27,96.296,7.398,8.1103,1,1,0,1,26,26,1.0,34,668.035,186,9.3725,9.4716
+53,oracle,completed,all reachable chest locations visited,143.4333,4303,35,28,28,28,28,100.0,11.7128,5.1226,0,0,0,0,35,35,1.0,35,368.378,33,0.0275,0.0275
+53,chest_vision,completed,all spawn points resolved,140.7667,4223,35,28,28,27,28,96.429,11.5084,5.2136,0,1,0,1,27,27,1.0,34,338.723,59,6.1594,6.2025
+53,visual,completed,all spawn points resolved,186.8333,5605,35,28,28,27,28,96.429,8.6708,6.9198,0,1,0,0,27,27,1.0,35,529.829,164,9.4003,9.4735
+54,oracle,completed,all reachable chest locations visited,135.4333,4063,35,24,24,24,24,100.0,10.6325,5.6431,0,0,0,0,35,35,1.0,35,368.372,33,0.0228,0.0232
+54,chest_vision,completed,all spawn points resolved,124.4333,3733,35,24,24,24,24,100.0,11.5725,5.1847,0,0,0,0,24,24,1.0,35,308.635,52,5.4473,5.4997
+54,visual,completed,all spawn points resolved,157.6,4728,35,24,24,24,24,100.0,9.1371,6.5667,0,0,0,0,24,24,1.0,35,460.735,158,8.2212,8.2819
+55,oracle,completed,all reachable chest locations visited,135.4667,4064,35,24,24,24,24,100.0,10.6299,5.6444,0,0,0,0,35,35,1.0,35,368.387,33,0.0308,0.0308
+55,chest_vision,completed,all spawn points resolved,128.5,3855,35,24,24,24,24,100.0,11.2062,5.3542,0,0,0,0,24,24,1.0,35,330.233,50,5.9113,5.936
+55,visual,completed,all spawn points resolved,151.4,4542,35,24,24,24,24,100.0,9.5112,6.3083,0,0,0,0,24,24,1.0,35,427.41,148,7.4796,7.5436
+56,oracle,completed,all reachable chest locations visited,133.4333,4003,35,23,23,23,23,100.0,10.3422,5.8014,0,0,0,0,35,35,1.0,35,368.395,33,0.0367,0.0622
+56,chest_vision,completed,all spawn points resolved,125.2667,3758,35,23,23,22,23,95.652,10.5375,5.6939,0,1,0,1,23,23,1.0,34,316.354,51,6.0256,6.1118
+56,visual,completed,all spawn points resolved,219.2333,6577,35,23,23,22,23,95.652,6.021,9.9652,1,1,0,1,22,22,1.0,34,744.669,216,9.3543,9.41
+57,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.402,33,0.0313,0.0314
+57,chest_vision,completed,all spawn points resolved,142.6667,4280,35,27,27,27,27,100.0,11.3551,5.284,0,0,0,1,27,27,1.0,34,360.914,58,6.336,6.3644
+57,visual,completed,all spawn points resolved,253.7,7611,35,27,27,27,27,100.0,6.3855,9.3963,0,0,0,1,27,27,1.0,34,874.859,230,11.0752,11.1599
+58,oracle,completed,all reachable chest locations visited,143.4667,4304,35,28,28,28,28,100.0,11.71,5.1238,0,0,0,0,35,35,1.0,35,368.37,33,0.0367,0.0367
+58,chest_vision,completed,all spawn points resolved,138.4333,4153,35,28,28,28,28,100.0,12.1358,4.944,0,0,0,0,28,28,1.0,35,329.506,56,6.7736,6.8174
+58,visual,completed,all spawn points resolved,167.8,5034,35,28,28,28,28,100.0,10.0119,5.9929,0,0,0,0,28,28,1.0,35,461.584,164,7.7585,7.8078
+59,oracle,completed,all reachable chest locations visited,139.4333,4183,35,26,26,26,26,100.0,11.1881,5.3628,0,0,0,0,35,35,1.0,35,368.398,33,0.0307,0.0357
+59,chest_vision,completed,all spawn points resolved,132.4,3972,35,26,26,26,26,100.0,11.7825,5.0923,0,0,0,1,26,26,1.0,34,324.049,56,6.5254,6.6012
+59,visual,completed,all spawn points resolved,216.1333,6484,35,26,26,26,26,100.0,7.2178,8.3128,0,0,0,1,26,26,1.0,34,695.052,210,9.8827,9.9683
+60,oracle,completed,all reachable chest locations visited,137.4667,4124,35,25,25,25,25,100.0,10.9117,5.4987,0,0,0,0,35,35,1.0,35,368.395,33,0.0288,0.0288
+60,chest_vision,completed,all spawn points resolved,128.8333,3865,35,25,25,25,25,100.0,11.6429,5.1533,0,0,0,1,25,25,1.0,34,321.509,54,6.1069,6.1792
+60,visual,completed,all spawn points resolved,246.6333,7399,35,25,25,25,25,100.0,6.0819,9.8653,0,0,0,1,25,25,1.0,34,844.157,210,10.1892,10.2533
+61,oracle,completed,all reachable chest locations visited,145.4333,4363,35,29,29,29,29,100.0,11.9642,5.0149,0,0,0,0,35,35,1.0,35,368.365,33,0.0285,0.0287
+61,chest_vision,completed,all spawn points resolved,144.6,4338,35,29,29,28,29,96.552,11.6183,5.1643,0,1,0,1,28,28,1.0,34,345.794,61,6.664,6.7152
+61,visual,completed,all spawn points resolved,181.2,5436,35,29,29,28,29,96.552,9.2715,6.4714,0,1,0,1,28,28,1.0,34,504.855,145,9.0182,9.0898
+62,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.371,33,0.0294,0.0294
+62,chest_vision,completed,all spawn points resolved,144.3667,4331,35,27,27,27,27,100.0,11.2214,5.3469,0,0,0,1,27,27,1.0,34,365.664,61,6.459,6.5339
+62,visual,completed,all spawn points resolved,274.6,8238,35,27,27,27,27,100.0,5.8995,10.1704,0,0,0,1,27,27,1.0,34,953.456,226,11.2195,11.2796
+63,oracle,completed,all reachable chest locations visited,139.4,4182,35,26,26,26,26,100.0,11.1908,5.3615,0,0,0,0,35,35,1.0,35,368.382,33,0.029,0.0291
+63,chest_vision,completed,all spawn points resolved,140.4667,4214,35,26,26,25,26,96.154,10.6787,5.6187,1,1,0,1,26,25,0.9615,34,361.191,55,6.0381,6.0813
+63,visual,completed,all spawn points resolved,176.5,5295,35,26,26,25,26,96.154,8.4986,7.06,0,1,0,0,25,25,1.0,35,515.061,149,8.0619,8.1232
+64,oracle,completed,all reachable chest locations visited,147.4333,4423,35,30,30,30,30,100.0,12.2089,4.9144,0,0,0,0,35,35,1.0,35,368.377,33,0.0295,0.0295
+64,chest_vision,completed,all spawn points resolved,155.0333,4651,35,30,30,30,30,100.0,11.6104,5.1678,0,0,0,1,30,30,1.0,34,380.627,66,7.6496,7.7166
+64,visual,completed,all spawn points resolved,268.1667,8045,35,30,30,30,30,100.0,6.7122,8.9389,0,0,0,1,30,30,1.0,34,891.932,226,11.5694,11.6804
+65,oracle,completed,all reachable chest locations visited,133.4,4002,35,23,23,23,23,100.0,10.3448,5.8,0,0,0,0,35,35,1.0,35,368.388,33,0.0298,0.0299
+65,chest_vision,completed,all spawn points resolved,118.4667,3554,35,23,23,23,23,100.0,11.6488,5.1507,0,0,0,1,23,23,1.0,34,294.022,52,5.2151,5.2529
+65,visual,completed,all spawn points resolved,187.1667,5615,35,23,23,23,23,100.0,7.3731,8.1377,0,0,0,1,23,23,1.0,34,601.043,170,8.1663,8.2551
+66,oracle,completed,all reachable chest locations visited,145.4667,4364,35,29,29,29,29,100.0,11.9615,5.0161,0,0,0,0,35,35,1.0,35,368.381,33,0.0291,0.0291
+66,chest_vision,completed,all spawn points resolved,143.9333,4318,35,29,29,29,29,100.0,12.0889,4.9632,0,0,0,1,29,29,1.0,34,335.732,61,7.2681,7.3369
+66,visual,completed,all spawn points resolved,260.6,7818,35,29,29,29,29,100.0,6.6769,8.9862,0,0,0,1,29,29,1.0,34,847.093,234,10.9852,11.0418
+67,oracle,completed,all reachable chest locations visited,141.3667,4241,35,27,27,27,27,100.0,11.4596,5.2358,0,0,0,0,35,35,1.0,35,368.386,33,0.0294,0.0294
+67,chest_vision,completed,all spawn points resolved,145.0333,4351,35,27,27,26,27,96.296,10.7561,5.5782,1,1,0,1,26,26,1.0,34,369.825,55,6.8206,6.8526
+67,visual,completed,all spawn points resolved,178.8333,5365,35,27,27,26,27,96.296,8.7232,6.8782,0,1,0,0,26,26,1.0,35,510.278,153,8.651,8.6895
+68,oracle,completed,all reachable chest locations visited,139.4,4182,35,26,26,26,26,100.0,11.1908,5.3615,0,0,0,0,35,35,1.0,35,368.404,33,0.0228,0.0228
+68,chest_vision,completed,all spawn points resolved,132.9667,3989,35,26,26,25,26,96.154,11.281,5.3187,1,1,0,1,25,25,1.0,34,327.26,56,5.8835,5.9356
+68,visual,completed,all spawn points resolved,158.0,4740,35,26,26,25,26,96.154,9.4937,6.32,0,1,0,0,25,25,1.0,35,430.436,120,8.0884,8.1647
+69,oracle,completed,all reachable chest locations visited,137.3667,4121,35,25,25,25,25,100.0,10.9197,5.4947,0,0,0,0,35,35,1.0,35,368.406,33,0.0288,0.0288
+69,chest_vision,completed,all spawn points resolved,129.8667,3896,35,25,25,25,25,100.0,11.5503,5.1947,0,0,0,1,25,25,1.0,34,320.059,55,6.2058,6.2738
+69,visual,completed,all spawn points resolved,211.4,6342,35,25,25,25,25,100.0,7.0956,8.456,0,0,0,1,25,25,1.0,34,701.361,208,9.0905,9.2087
+70,oracle,completed,all reachable chest locations visited,137.4,4122,35,25,25,25,25,100.0,10.917,5.496,0,0,0,0,35,35,1.0,35,368.39,33,0.025,0.0251
+70,chest_vision,completed,all spawn points resolved,127.4333,3823,35,25,25,25,25,100.0,11.7709,5.0973,0,0,0,1,25,25,1.0,34,312.55,56,5.6626,5.6964
+70,visual,completed,all spawn points resolved,208.5,6255,35,25,25,25,25,100.0,7.1942,8.34,0,0,0,1,25,25,1.0,34,677.873,216,9.1698,9.2662
+71,oracle,completed,all reachable chest locations visited,143.4667,4304,35,28,28,28,28,100.0,11.71,5.1238,0,0,0,0,35,35,1.0,35,368.36,33,0.0285,0.0285
+71,chest_vision,completed,all spawn points resolved,136.7333,4102,35,28,28,27,28,96.429,11.8479,5.0642,0,1,0,0,27,27,1.0,35,322.195,55,6.6077,6.6525
+71,visual,completed,all spawn points resolved,189.3333,5680,35,28,28,27,28,96.429,8.5563,7.0123,0,1,0,0,27,27,1.0,35,541.234,164,9.15,9.1926
+72,oracle,completed,all reachable chest locations visited,141.4333,4243,35,27,27,27,27,100.0,11.4542,5.2383,0,0,0,0,35,35,1.0,35,368.384,33,0.0291,0.0291
+72,chest_vision,completed,all spawn points resolved,140.6,4218,35,27,27,27,27,100.0,11.522,5.2074,0,0,0,1,27,27,1.0,34,342.912,59,6.3678,6.4001
+72,visual,completed,all spawn points resolved,257.5667,7727,35,27,27,27,27,100.0,6.2896,9.5395,0,0,0,1,27,27,1.0,34,882.86,225,10.7991,10.8971
+73,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.392,33,0.029,0.029
+73,chest_vision,completed,all spawn points resolved,130.6333,3919,35,27,27,26,27,96.296,11.9418,5.0244,0,1,0,0,26,26,1.0,35,305.602,55,6.4205,6.5197
+73,visual,completed,all spawn points resolved,162.2,4866,35,27,27,26,27,96.296,9.6178,6.2385,0,1,0,0,26,26,1.0,35,437.654,124,8.3124,8.4108
+74,oracle,completed,all reachable chest locations visited,135.4333,4063,35,24,24,24,24,100.0,10.6325,5.6431,0,0,0,0,35,35,1.0,35,368.368,33,0.0285,0.029
+74,chest_vision,completed,all spawn points resolved,129.2667,3878,35,24,24,23,24,95.833,10.6756,5.6203,0,1,0,1,24,23,0.9583,34,330.467,52,5.7662,5.8342
+74,visual,completed,all spawn points resolved,181.9,5457,35,24,24,23,24,95.833,7.5866,7.9087,0,1,0,0,23,23,1.0,35,551.61,180,8.1924,8.269
+75,oracle,completed,all reachable chest locations visited,145.4,4362,35,29,29,29,29,100.0,11.967,5.0138,0,0,0,0,35,35,1.0,35,368.373,33,0.0294,0.0294
+75,chest_vision,completed,all spawn points resolved,145.7667,4373,35,29,29,29,29,100.0,11.9369,5.0264,0,0,0,0,29,29,1.0,35,353.88,61,7.1027,7.163
+75,visual,completed,all spawn points resolved,191.9,5757,35,29,29,29,29,100.0,9.0672,6.6172,0,0,0,0,29,29,1.0,35,553.621,156,9.6998,9.7877
+76,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.382,33,0.0223,0.0223
+76,chest_vision,completed,all spawn points resolved,135.6333,4069,35,27,27,27,27,100.0,11.944,5.0235,0,0,0,0,27,27,1.0,35,328.203,58,6.1357,6.1743
+76,visual,completed,all spawn points resolved,166.0667,4982,35,27,27,27,27,100.0,9.7551,6.1506,0,0,0,0,27,27,1.0,35,464.011,144,8.5753,8.6777
+77,oracle,completed,all reachable chest locations visited,141.4333,4243,35,27,27,27,27,100.0,11.4542,5.2383,0,0,0,0,35,35,1.0,35,368.401,33,0.0234,0.0234
+77,chest_vision,completed,all spawn points resolved,135.3667,4061,35,27,27,26,27,96.296,11.5243,5.2064,1,1,0,1,27,26,0.963,34,326.856,57,6.2935,6.3795
+77,visual,completed,all spawn points resolved,168.7667,5063,35,27,27,26,27,96.296,9.2435,6.491,0,1,0,0,26,26,1.0,35,469.113,154,8.7834,8.8761
+78,oracle,completed,all reachable chest locations visited,137.4,4122,35,25,25,25,25,100.0,10.917,5.496,0,0,0,0,35,35,1.0,35,368.388,33,0.0242,0.0242
+78,chest_vision,completed,all spawn points resolved,134.6333,4039,35,25,25,25,25,100.0,11.1414,5.3853,0,0,0,1,25,25,1.0,34,338.766,56,6.6129,6.686
+78,visual,completed,all spawn points resolved,251.6667,7550,35,25,25,25,25,100.0,5.9603,10.0667,0,0,0,1,25,25,1.0,34,857.423,224,10.579,10.6892
+79,oracle,completed,all reachable chest locations visited,149.3667,4481,35,31,31,31,31,100.0,12.4526,4.8183,0,0,0,0,35,35,1.0,35,368.389,33,0.0291,0.0298
+79,chest_vision,completed,all spawn points resolved,151.8667,4556,35,31,31,30,31,96.774,11.8525,5.0622,1,1,0,1,30,30,1.0,34,352.967,64,7.8372,7.9841
+79,visual,completed,all spawn points resolved,193.4,5802,35,31,31,30,31,96.774,9.3071,6.4467,0,1,0,0,30,30,1.0,35,533.113,154,9.8789,9.9774
+80,oracle,completed,all reachable chest locations visited,133.4,4002,35,23,23,23,23,100.0,10.3448,5.8,0,0,0,0,35,35,1.0,35,368.413,33,0.0285,0.029
+80,chest_vision,completed,all spawn points resolved,118.0333,3541,35,23,23,22,23,95.652,11.1833,5.3652,0,1,0,0,22,22,1.0,35,287.061,48,5.486,5.5348
+80,visual,completed,all spawn points resolved,166.7,5001,35,23,23,22,23,95.652,7.9184,7.5773,0,1,0,0,22,22,1.0,35,504.355,141,7.8302,7.9656
+81,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.39,33,0.0335,0.0336
+81,chest_vision,completed,all spawn points resolved,135.5,4065,35,27,27,27,27,100.0,11.9557,5.0185,0,0,0,1,27,27,1.0,34,320.091,60,6.4819,6.5591
+81,visual,completed,all spawn points resolved,221.8,6654,35,27,27,27,27,100.0,7.3039,8.2148,0,0,0,1,27,27,1.0,34,709.611,235,9.4727,9.5586
+82,oracle,completed,all reachable chest locations visited,145.3667,4361,35,29,29,29,29,100.0,11.9697,5.0126,0,0,0,0,35,35,1.0,35,368.382,33,0.0308,0.0308
+82,chest_vision,completed,all spawn points resolved,144.8,4344,35,29,29,29,29,100.0,12.0166,4.9931,0,0,0,1,29,29,1.0,34,342.217,60,6.6486,6.6913
+82,visual,completed,all spawn points resolved,227.6333,6829,35,29,29,29,29,100.0,7.6439,7.8494,0,0,0,1,29,29,1.0,34,704.206,215,10.6715,10.8177
+83,oracle,completed,all reachable chest locations visited,143.4,4302,35,28,28,28,28,100.0,11.7155,5.1214,0,0,0,0,35,35,1.0,35,368.372,33,0.0284,0.0284
+83,chest_vision,completed,all spawn points resolved,146.5,4395,35,28,28,28,28,100.0,11.4676,5.2321,0,0,0,1,28,28,1.0,34,366.675,61,6.9072,6.9622
+83,visual,completed,all spawn points resolved,234.2333,7027,35,28,28,28,28,100.0,7.1723,8.3655,0,1,0,1,28,28,1.0,34,747.243,177,10.2596,10.4077
+84,oracle,completed,all reachable chest locations visited,141.3667,4241,35,27,27,27,27,100.0,11.4596,5.2358,0,0,0,0,35,35,1.0,35,368.401,33,0.0266,0.0266
+84,chest_vision,completed,all spawn points resolved,142.4333,4273,35,27,27,27,27,100.0,11.3737,5.2753,0,0,0,1,27,27,1.0,34,358.988,59,6.6385,6.7096
+84,visual,completed,all spawn points resolved,220.2667,6608,35,27,27,27,27,100.0,7.3547,8.158,0,0,0,1,27,27,1.0,34,705.635,219,10.2194,10.3391
+85,oracle,completed,all reachable chest locations visited,139.4333,4183,35,26,26,26,26,100.0,11.1881,5.3628,0,0,0,0,35,35,1.0,35,368.397,33,0.0294,0.0294
+85,chest_vision,completed,all spawn points resolved,135.3667,4061,35,26,26,25,26,96.154,11.081,5.4147,0,1,0,1,25,25,1.0,34,333.483,54,6.0886,6.1538
+85,visual,completed,all spawn points resolved,178.1,5343,35,26,26,25,26,96.154,8.4222,7.124,0,1,0,0,25,25,1.0,35,523.242,168,8.3693,8.4417
+86,oracle,completed,all reachable chest locations visited,135.4667,4064,35,24,24,24,24,100.0,10.6299,5.6444,0,0,0,0,35,35,1.0,35,368.361,33,0.0281,0.0282
+86,chest_vision,completed,all spawn points resolved,126.4333,3793,35,24,24,24,24,100.0,11.3894,5.2681,0,0,0,1,24,24,1.0,34,321.548,52,5.433,5.4884
+86,visual,completed,all spawn points resolved,235.9333,7078,35,24,24,24,24,100.0,6.1034,9.8306,0,0,0,1,24,24,1.0,34,817.04,253,9.4833,9.579
+87,oracle,completed,all reachable chest locations visited,133.4,4002,35,23,23,23,23,100.0,10.3448,5.8,0,0,0,0,35,35,1.0,35,368.418,33,0.0256,0.0256
+87,chest_vision,completed,all spawn points resolved,123.1667,3695,35,23,23,23,23,100.0,11.2043,5.3551,0,0,0,1,23,23,1.0,34,314.022,54,5.4081,5.4936
+87,visual,completed,all spawn points resolved,208.3333,6250,35,23,23,23,23,100.0,6.624,9.058,0,0,0,1,23,23,1.0,34,702.073,203,8.4697,8.5375
+88,oracle,completed,all reachable chest locations visited,141.4,4242,35,27,27,27,27,100.0,11.4569,5.237,0,0,0,0,35,35,1.0,35,368.413,33,0.0289,0.0289
+88,chest_vision,completed,all spawn points resolved,142.7667,4283,35,27,27,26,27,96.296,10.9269,5.491,0,1,0,1,26,26,1.0,34,351.793,57,6.2834,6.3318
+88,visual,completed,all spawn points resolved,199.2,5976,35,27,27,26,27,96.296,7.8313,7.6615,1,1,0,1,26,26,1.0,34,600.751,179,9.3488,9.4675
+89,oracle,completed,all reachable chest locations visited,135.4,4062,35,24,24,24,24,100.0,10.6352,5.6417,0,0,0,0,35,35,1.0,35,368.378,33,0.038,0.038
+89,chest_vision,completed,all spawn points resolved,122.5667,3677,35,24,24,24,24,100.0,11.7487,5.1069,0,0,0,0,24,24,1.0,35,304.313,51,5.1219,5.1766
+89,visual,completed,all spawn points resolved,165.0,4950,35,24,24,24,24,100.0,8.7273,6.875,0,0,0,0,24,24,1.0,35,493.923,155,7.9306,7.9827
+90,oracle,completed,all reachable chest locations visited,141.3333,4240,35,27,27,27,27,100.0,11.4623,5.2346,0,0,0,0,35,35,1.0,35,368.373,33,0.0326,0.0392
+90,chest_vision,completed,all spawn points resolved,139.0333,4171,35,27,27,27,27,100.0,11.6519,5.1494,0,0,0,1,27,27,1.0,34,346.783,57,6.7705,6.8287
+90,visual,completed,all spawn points resolved,211.9667,6359,35,27,27,27,27,100.0,7.6427,7.8506,0,0,0,1,27,27,1.0,34,661.928,206,9.4888,9.6328
+91,oracle,completed,all reachable chest locations visited,145.4333,4363,35,29,29,29,29,100.0,11.9642,5.0149,0,0,0,0,35,35,1.0,35,368.374,33,0.0312,0.0325
+91,chest_vision,completed,all spawn points resolved,145.3667,4361,35,29,29,28,29,96.552,11.557,5.1917,1,1,0,1,28,28,1.0,34,350.128,60,6.605,6.6917
+91,visual,completed,all spawn points resolved,273.3333,8200,35,29,29,28,29,96.552,6.1463,9.7619,0,1,0,1,28,28,1.0,34,904.23,273,11.5689,11.7261
+92,oracle,completed,all reachable chest locations visited,143.4333,4303,35,28,28,28,28,100.0,11.7128,5.1226,0,0,0,0,35,35,1.0,35,368.374,33,0.0234,0.0236
+92,chest_vision,completed,all spawn points resolved,143.7,4311,35,28,28,28,28,100.0,11.691,5.1321,0,0,0,1,28,28,1.0,34,349.404,60,6.3785,6.4371
+92,visual,completed,all spawn points resolved,223.5667,6707,35,28,28,28,28,100.0,7.5145,7.9845,0,0,0,1,28,28,1.0,34,700.605,193,9.7166,9.7906
+93,oracle,completed,all reachable chest locations visited,137.3667,4121,35,25,25,25,25,100.0,10.9197,5.4947,0,0,0,0,35,35,1.0,35,368.368,33,0.0251,0.0251
+93,chest_vision,completed,all spawn points resolved,127.4333,3823,35,25,25,25,25,100.0,11.7709,5.0973,0,0,0,1,25,25,1.0,34,312.52,58,5.4052,5.456
+93,visual,completed,all spawn points resolved,205.5333,6166,35,25,25,25,25,100.0,7.2981,8.2213,0,0,0,1,25,25,1.0,34,662.037,216,9.2936,9.3901
+94,oracle,completed,all reachable chest locations visited,135.4333,4063,35,24,24,24,24,100.0,10.6325,5.6431,0,0,0,0,35,35,1.0,35,368.391,33,0.024,0.0242
+94,chest_vision,completed,all spawn points resolved,138.4667,4154,35,24,24,24,24,100.0,10.3996,5.7694,0,0,0,1,24,24,1.0,34,375.086,51,5.8382,5.9184
+94,visual,completed,all spawn points resolved,230.5667,6917,35,24,24,24,24,100.0,6.2455,9.6069,0,0,0,1,24,24,1.0,34,786.336,223,9.3657,9.4462
+95,oracle,completed,all reachable chest locations visited,133.4,4002,35,23,23,23,23,100.0,10.3448,5.8,0,0,0,0,35,35,1.0,35,368.408,33,0.0275,0.0275
+95,chest_vision,completed,all spawn points resolved,118.5,3555,35,23,23,22,23,95.652,11.1392,5.3864,1,1,0,1,22,22,1.0,34,292.93,50,5.1085,5.169
+95,visual,completed,all spawn points resolved,200.5,6015,35,23,23,22,23,95.652,6.5835,9.1136,1,1,0,1,22,22,1.0,34,644.119,197,8.4472,8.5044
+96,oracle,completed,all reachable chest locations visited,131.4667,3944,35,22,22,22,22,100.0,10.0406,5.9758,0,0,0,0,35,35,1.0,35,368.414,33,0.029,0.029
+96,chest_vision,completed,all spawn points resolved,124.5667,3737,35,22,22,21,22,95.455,10.1151,5.9317,1,1,0,1,22,21,0.9545,34,320.405,51,5.0605,5.1262
+96,visual,completed,all spawn points resolved,204.0,6120,35,22,22,21,22,95.455,6.1765,9.7143,1,1,0,1,21,21,1.0,34,670.836,238,7.9545,8.0546
+97,oracle,completed,all reachable chest locations visited,145.4333,4363,35,29,29,29,29,100.0,11.9642,5.0149,0,0,0,0,35,35,1.0,35,368.351,33,0.0278,0.0279
+97,chest_vision,completed,all spawn points resolved,144.7333,4342,35,29,29,29,29,100.0,12.0221,4.9908,0,0,0,1,29,29,1.0,34,340.188,61,7.0125,7.0921
+97,visual,completed,all spawn points resolved,237.2667,7118,35,29,29,29,29,100.0,7.3335,8.1816,0,0,0,1,29,29,1.0,34,763.677,187,10.2138,10.2834
+98,oracle,completed,all reachable chest locations visited,145.4667,4364,35,29,29,29,29,100.0,11.9615,5.0161,0,0,0,0,35,35,1.0,35,368.359,33,0.0261,0.0261
+98,chest_vision,completed,all spawn points resolved,146.7667,4403,35,29,29,28,29,96.552,11.4467,5.2417,1,1,0,1,29,28,0.9655,34,350.943,61,6.6639,6.7076
+98,visual,completed,all spawn points resolved,180.1667,5405,35,29,29,28,29,96.552,9.3247,6.4345,1,1,0,0,29,28,0.9655,35,498.048,163,8.8055,8.8634
+99,oracle,completed,all reachable chest locations visited,133.4333,4003,35,23,23,23,23,100.0,10.3422,5.8014,0,0,0,0,35,35,1.0,35,368.356,33,0.0288,0.0298
+99,chest_vision,completed,all spawn points resolved,121.0333,3631,35,23,23,23,23,100.0,11.4018,5.2623,0,0,0,1,23,23,1.0,34,298.98,49,5.6787,5.7358
+99,visual,completed,all spawn points resolved,198.9,5967,35,23,23,23,23,100.0,6.9382,8.6478,0,0,0,1,23,23,1.0,34,641.921,176,9.1111,9.2358

@@ -1,0 +1,468 @@
+{
+  "map_id": "research_arena_01",
+  "episodes_requested": 100,
+  "episodes_completed": 100,
+  "modes": [
+    "oracle",
+    "chest_vision",
+    "visual"
+  ],
+  "seed": 42,
+  "max_ticks": 100000,
+  "time_basis": "rates use simulated time; cpu/wall seconds are real time",
+  "units": {
+    "simulated_seconds": "simulated seconds (fixed 1/tick_rate timestep)",
+    "chests_per_minute": "chests opened per simulated minute",
+    "seconds_per_chest": "simulated seconds per opened chest",
+    "travel_distance_cells": "grid cells travelled (true path)",
+    "cpu_seconds": "process CPU seconds on the benchmark machine",
+    "wall_seconds": "real elapsed seconds on the benchmark machine",
+    "*_error_*_cells": "Euclidean position error in grid cells",
+    "inference_ms_*": "milliseconds of perception per analysed frame",
+    "chests_available": "spawned chests reachable from the start (ground truth)",
+    "chests_opened": "openings the agent verified and recorded (its own evidence)",
+    "chests_opened_truth": "chests the simulator marks as opened (ground truth, evaluation only)",
+    "navigation_success_rate": "selected chest targets that were reached / selected",
+    "peak_rss_mb": "peak resident memory of the benchmark process (MiB)"
+  },
+  "configuration": {
+    "simulation": {
+      "default_map": "research_arena_01",
+      "default_spawn_probability": 0.8,
+      "default_open_seconds": 2.0,
+      "map_width": 100,
+      "map_height": 100,
+      "cell_size": 8,
+      "world_units_per_cell": 10.0,
+      "tick_rate": 30,
+      "render_rate": 15,
+      "default_seed": 42,
+      "max_ticks": 100000,
+      "player_speed": 5.0,
+      "player_acceleration": 12.0,
+      "player_radius": 0.3,
+      "agent_start": null,
+      "interaction_radius": 1.5,
+      "chest_interaction_seconds": 2.0,
+      "interaction_failure_probability": 0.0,
+      "reward_probability": 0.0,
+      "obstacle_density": 0.12,
+      "decoration_density": 0.004
+    },
+    "vision": {
+      "enabled": true,
+      "default_width": 640,
+      "default_height": 360,
+      "view_width_cells": 40,
+      "detector": "hybrid",
+      "confidence_threshold": 0.85,
+      "max_tracks": 100,
+      "track_expiration_seconds": 3.0,
+      "track_memory_seconds": 600.0,
+      "use_regions_of_interest": true,
+      "noise_std": 6.0,
+      "lighting_variation": 0.08,
+      "frame_dropout": 0.0,
+      "rate_travel": 2.0,
+      "rate_explore": 5.0,
+      "rate_tracking": 10.0,
+      "rate_verify": 10.0,
+      "rate_idle": 1.0,
+      "template_dir": "assets/templates"
+    },
+    "localization": {
+      "smoothing_alpha": 0.4,
+      "max_missing_observations": 5,
+      "min_confidence": 0.5,
+      "dead_reckoning_seconds": 2.0
+    },
+    "visual_navigation": {
+      "exploration_strategy": "frontier",
+      "replan_on_obstacle_discovery": true,
+      "maximum_recovery_attempts": 3,
+      "use_spawn_priors": true,
+      "prior_weight": 300.0,
+      "stop_when_spawn_points_resolved": true,
+      "unknown_cell_cost": 0.5,
+      "empty_confirmations": 2
+    },
+    "navigation": {
+      "allow_diagonal": true,
+      "prevent_corner_cutting": true,
+      "cache_paths": true,
+      "default_strategy": "weighted",
+      "stuck_timeout_seconds": 5.0,
+      "smooth_paths": true,
+      "lookahead_depth": 2
+    }
+  },
+  "per_mode": {
+    "oracle": {
+      "chests_per_minute": {
+        "mean": 11.183726,
+        "median": 11.1908,
+        "min": 9.0885,
+        "max": 12.4526
+      },
+      "percent_available_opened": {
+        "mean": 100.0,
+        "median": 100.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "seconds_per_chest": {
+        "mean": 5.385541,
+        "median": 5.3615,
+        "min": 4.8183,
+        "max": 6.6018
+      },
+      "simulated_seconds": {
+        "mean": 139.557001,
+        "median": 139.45,
+        "min": 125.4333,
+        "max": 149.4
+      },
+      "recoveries": {
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "failed_interactions": {
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "navigation_success_rate": {
+        "mean": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "travel_distance_cells": {
+        "mean": 368.38572999999997,
+        "median": 368.3875,
+        "min": 368.351,
+        "max": 368.446
+      },
+      "cpu_seconds": {
+        "mean": 0.028687,
+        "median": 0.0286,
+        "min": 0.0214,
+        "max": 0.0469
+      },
+      "wall_seconds": {
+        "mean": 0.02918,
+        "median": 0.0288,
+        "min": 0.0216,
+        "max": 0.0622
+      },
+      "outcomes": {
+        "completed": 100
+      },
+      "total_opened": 2607,
+      "total_available": 2607,
+      "verification": {
+        "opened_recorded_total": 2607,
+        "opened_truth_total": 2607,
+        "over_reported_total": 0,
+        "under_reported_total": 0,
+        "episodes_with_mismatch": 0
+      }
+    },
+    "chest_vision": {
+      "chests_per_minute": {
+        "mean": 11.400293,
+        "median": 11.501850000000001,
+        "min": 10.0352,
+        "max": 12.3694
+      },
+      "percent_available_opened": {
+        "mean": 98.37982,
+        "median": 100.0,
+        "min": 95.455,
+        "max": 100.0
+      },
+      "seconds_per_chest": {
+        "mean": 5.272863999999999,
+        "median": 5.21655,
+        "min": 4.8507,
+        "max": 5.9789
+      },
+      "simulated_seconds": {
+        "mean": 134.839668,
+        "median": 135.3667,
+        "min": 109.3,
+        "max": 156.9667
+      },
+      "recoveries": {
+        "mean": 0.43,
+        "median": 0.0,
+        "min": 0,
+        "max": 1
+      },
+      "failed_interactions": {
+        "mean": 0.17,
+        "median": 0.0,
+        "min": 0,
+        "max": 1
+      },
+      "navigation_success_rate": {
+        "mean": 0.9969549999999999,
+        "median": 1.0,
+        "min": 0.9545,
+        "max": 1.0
+      },
+      "travel_distance_cells": {
+        "mean": 332.56131999999997,
+        "median": 330.8995,
+        "min": 273.352,
+        "max": 380.627
+      },
+      "cpu_seconds": {
+        "mean": 6.147464,
+        "median": 6.14755,
+        "min": 4.5856,
+        "max": 8.0688
+      },
+      "wall_seconds": {
+        "mean": 6.200664000000001,
+        "median": 6.190849999999999,
+        "min": 4.6373,
+        "max": 8.1435
+      },
+      "outcomes": {
+        "completed": 100
+      },
+      "total_opened": 2564,
+      "total_available": 2607,
+      "verification": {
+        "opened_recorded_total": 2564,
+        "opened_truth_total": 2607,
+        "over_reported_total": 0,
+        "under_reported_total": 43,
+        "episodes_with_mismatch": 43
+      },
+      "vision": {
+        "precision_pooled": 1.0,
+        "recall_pooled": 0.9836441403550936,
+        "false_positives_per_episode": {
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0,
+          "max": 0
+        },
+        "class_errors_total": 0,
+        "localisation_success_rate": {
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "estimate_error_mean_cells": {
+          "mean": 0.007192500000000001,
+          "median": 0.007005,
+          "min": 0.00568,
+          "max": 0.00998
+        },
+        "estimate_error_max_cells": {
+          "mean": 0.2292708,
+          "median": 0.25241,
+          "min": 0.09411,
+          "max": 0.30617
+        },
+        "inference_ms_mean": {
+          "mean": 3.79832,
+          "median": 3.7880000000000003,
+          "min": 3.406,
+          "max": 4.296
+        },
+        "inference_ms_peak": {
+          "mean": 10.277259999999998,
+          "median": 9.1585,
+          "min": 5.352,
+          "max": 33.849
+        },
+        "analyses_per_sim_second": {
+          "mean": 8.072935,
+          "median": 8.1059,
+          "min": 7.4017,
+          "max": 8.6088
+        }
+      }
+    },
+    "visual": {
+      "chests_per_minute": {
+        "mean": 7.684824,
+        "median": 7.55645,
+        "min": 5.1189,
+        "max": 10.0119
+      },
+      "percent_available_opened": {
+        "mean": 98.45995,
+        "median": 100.0,
+        "min": 95.455,
+        "max": 100.0
+      },
+      "seconds_per_chest": {
+        "mean": 8.017504,
+        "median": 7.9403500000000005,
+        "min": 5.9929,
+        "max": 11.7212
+      },
+      "simulated_seconds": {
+        "mean": 204.861332,
+        "median": 201.93335000000002,
+        "min": 147.6,
+        "max": 285.9667
+      },
+      "recoveries": {
+        "mean": 0.48,
+        "median": 0.0,
+        "min": 0,
+        "max": 2
+      },
+      "failed_interactions": {
+        "mean": 0.14,
+        "median": 0.0,
+        "min": 0,
+        "max": 1
+      },
+      "navigation_success_rate": {
+        "mean": 0.99887,
+        "median": 1.0,
+        "min": 0.96,
+        "max": 1.0
+      },
+      "travel_distance_cells": {
+        "mean": 641.5315800000001,
+        "median": 643.02,
+        "min": 427.41,
+        "max": 976.897
+      },
+      "cpu_seconds": {
+        "mean": 9.202887,
+        "median": 9.19005,
+        "min": 6.8165,
+        "max": 11.5694
+      },
+      "wall_seconds": {
+        "mean": 9.289045,
+        "median": 9.27945,
+        "min": 6.879,
+        "max": 11.7261
+      },
+      "outcomes": {
+        "completed": 100
+      },
+      "total_opened": 2566,
+      "total_available": 2607,
+      "verification": {
+        "opened_recorded_total": 2566,
+        "opened_truth_total": 2607,
+        "over_reported_total": 0,
+        "under_reported_total": 41,
+        "episodes_with_mismatch": 41
+      },
+      "vision": {
+        "precision_pooled": 0.9999544129632956,
+        "recall_pooled": 0.9926632629692255,
+        "false_positives_per_episode": {
+          "mean": 0.33,
+          "median": 0.0,
+          "min": 0,
+          "max": 8
+        },
+        "class_errors_total": 0,
+        "localisation_success_rate": {
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "estimate_error_mean_cells": {
+          "mean": 0.024720100000000002,
+          "median": 0.025154999999999997,
+          "min": 0.0177,
+          "max": 0.03431
+        },
+        "estimate_error_max_cells": {
+          "mean": 0.2774902,
+          "median": 0.28812,
+          "min": 0.22877,
+          "max": 0.30536
+        },
+        "inference_ms_mean": {
+          "mean": 4.02163,
+          "median": 4.0305,
+          "min": 3.503,
+          "max": 4.507
+        },
+        "inference_ms_peak": {
+          "mean": 11.42111,
+          "median": 9.996500000000001,
+          "min": 6.71,
+          "max": 34.837
+        },
+        "analyses_per_sim_second": {
+          "mean": 7.685734,
+          "median": 7.713,
+          "min": 6.6934,
+          "max": 8.5294
+        }
+      }
+    }
+  },
+  "paired_vs_oracle": {
+    "chest_vision": {
+      "mean_difference_chests_per_minute": 0.216567,
+      "median_difference_chests_per_minute": 0.11944999999999961,
+      "better": 59,
+      "worse": 41,
+      "tied": 0
+    },
+    "visual": {
+      "mean_difference_chests_per_minute": -3.4989019999999997,
+      "median_difference_chests_per_minute": -3.5586500000000005,
+      "better": 0,
+      "worse": 100,
+      "tied": 0
+    }
+  },
+  "detector_comparison": {
+    "color": {
+      "frames": 60,
+      "precision": 1.0,
+      "recall": 0.9408602150537635,
+      "false_positives": 0,
+      "class_errors": 0,
+      "detector_ms_mean": 1.1678067333074675
+    },
+    "template": {
+      "frames": 60,
+      "precision": 1.0,
+      "recall": 0.9164420485175202,
+      "false_positives": 0,
+      "class_errors": 0,
+      "detector_ms_mean": 38.682299416723254
+    },
+    "hybrid": {
+      "frames": 60,
+      "precision": 1.0,
+      "recall": 0.9408602150537635,
+      "false_positives": 0,
+      "class_errors": 0,
+      "detector_ms_mean": 2.7224256999640297
+    }
+  },
+  "machine": {
+    "python": "3.13.18",
+    "platform": "Linux-6.18.44-fc-v378-x86_64-with-glibc2.39"
+  },
+  "run": {
+    "wall_seconds": 1560.8467286800005,
+    "cpu_seconds": 1546.778217957,
+    "peak_rss_mb": 403.859375
+  }
+}

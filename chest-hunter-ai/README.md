@@ -891,10 +891,75 @@ python scripts/compare_detectors.py          # detectors A/B/C at every resoluti
     as a hit, missing one is not a miss.
   * Stacked chests are merged into one ground-truth object.
 
-<!-- PHASE3_BENCHMARK_RESULTS -->
-**Results:** the 100-episode runs for both maps were still in progress when
-this section was written. The measured numbers follow in the next commit,
-generated directly from `summary.json`.
+**Results (measured; 100 of 100 paired episodes per mode on each map, seed 42).**
+
+**Map `visual_arena_01`, seed 42: 100 of 100 paired episodes completed per mode.**
+
+| Mode | Chests/min mean | median | min-max | % of available opened | Sim s/chest | Recoveries/ep | Nav success | Outcomes | Recorded / simulator openings | CPU s/ep |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A oracle | 7.141 | 7.186 | 4.58-8.65 | 100.0 (1394/1394) | 8.49 | 0.00 | 1.000 | completed 100 | 1394 / 1394 | 0.03 |
+| B chest-vision | 7.256 | 7.229 | 4.72-8.37 | 100.0 (1394/1394) | 8.32 | 0.00 | 1.000 | completed 100 | 1394 / 1394 | 3.63 |
+| C visual | 5.460 | 5.415 | 3.83-7.00 | 100.0 (1394/1394) | 11.23 | 0.28 | 0.936 | completed 100 | 1394 / 1394 | 6.20 |
+
+| Mode | Precision (pooled) | Recall (pooled) | False positives/ep | Open/closed confusions | Localisation success | Pose error mean (cells) | worst-case max (cells) | Perception ms mean | peak | Analyses / sim s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| B chest-vision | 1.000 | 0.986 | 0.00 | 0 | 1.000 | 0.0117 | 0.30 | 3.18 | 21.1 | 6.20 |
+| C visual | 1.000 | 0.972 | 0.00 | 0 | 1.000 | 0.0338 | 0.31 | 3.47 | 28.3 | 7.45 |
+
+* Paired against oracle, B chest-vision: mean +0.115 chests/min (median +0.108); better in 60, worse in 40, tied in 0 episodes.
+* Paired against oracle, C visual: mean -1.681 chests/min (median -1.725); better in 0, worse in 100, tied in 0 episodes.
+* Run cost: 16.7 min wall, 16.6 min CPU, peak RSS 463 MiB.
+* Detector comparison on 60 labelled frames at 640x360: color recall 0.986 at 1.06 ms, template recall 0.959 at 38.81 ms, hybrid recall 0.986 at 1.81 ms; precision 1.000 for all.
+
+**Map `research_arena_01`, seed 42: 100 of 100 paired episodes completed per mode.**
+
+| Mode | Chests/min mean | median | min-max | % of available opened | Sim s/chest | Recoveries/ep | Nav success | Outcomes | Recorded / simulator openings | CPU s/ep |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A oracle | 11.184 | 11.191 | 9.09-12.45 | 100.0 (2607/2607) | 5.39 | 0.00 | 1.000 | completed 100 | 2607 / 2607 | 0.03 |
+| B chest-vision | 11.400 | 11.502 | 10.04-12.37 | 98.4 (2564/2607) | 5.27 | 0.43 | 0.997 | completed 100 | 2564 / 2607 | 6.15 |
+| C visual | 7.685 | 7.556 | 5.12-10.01 | 98.5 (2566/2607) | 8.02 | 0.48 | 0.999 | completed 100 | 2566 / 2607 | 9.20 |
+
+| Mode | Precision (pooled) | Recall (pooled) | False positives/ep | Open/closed confusions | Localisation success | Pose error mean (cells) | worst-case max (cells) | Perception ms mean | peak | Analyses / sim s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| B chest-vision | 1.000 | 0.984 | 0.00 | 0 | 1.000 | 0.0072 | 0.31 | 3.80 | 33.8 | 8.07 |
+| C visual | 1.000 | 0.993 | 0.33 | 0 | 1.000 | 0.0247 | 0.31 | 4.02 | 34.8 | 7.69 |
+
+* Paired against oracle, B chest-vision: mean +0.217 chests/min (median +0.119); better in 59, worse in 41, tied in 0 episodes.
+* Paired against oracle, C visual: mean -3.499 chests/min (median -3.559); better in 0, worse in 100, tied in 0 episodes.
+* Run cost: 26.0 min wall, 25.8 min CPU, peak RSS 404 MiB.
+* Detector comparison on 60 labelled frames at 640x360: color recall 0.941 at 1.17 ms, template recall 0.916 at 38.68 ms, hybrid recall 0.941 at 2.72 ms; precision 1.000 for all.
+
+What the numbers say:
+
+* **Every mode opened every available chest on the acceptance arena** (1,394 of
+  1,394), and the agent's own records matched the simulator exactly.
+* **Seeing chests is not the bottleneck.**
+  * Chest-vision (B) was slightly *faster* than the Phase 2 oracle (A) on both
+    maps: better in 60 and 59 of 100 paired episodes.
+  * The oracle only learns that a spawn point is empty by walking to it. The
+    camera rules out empty spots from up to 20 cells away.
+* **Mapping the walls is the cost.**
+  * The full visual agent (C) is 24% (acceptance arena) and 31% (demo arena)
+    slower than the oracle, and worse in all 100 paired episodes on each map.
+  * The time goes into exploring and replanning around walls it has not seen
+    yet. Open/closed confusions were zero on both maps.
+  * On the acceptance arena, C made no false positives at all. On the demo
+    arena it made 0.33 per episode, pooled precision still rounding to
+    1.000. None led to a wrong opening (zero over-reports).
+* **The only recording errors are the stacked pair.**
+  * On the demo arena, B and C missed one opening record in 43 and 41
+    episodes respectively.
+  * Each one was the Blue House attic/basement pair, 0.28 cells apart: the
+    chest is opened, but the spot it was credited to had already been judged
+    empty, so the opening is not recorded (reproduced and traced for episode
+    0, and consistent with the limitation in section 19).
+  * Openings were **never over-reported** in any mode or map.
+* **Cost.**
+  * Perception averaged 3.2-4.0 ms per analysed frame, at 6-8 analyses per
+    simulated second.
+  * A full visual episode cost 6-9 CPU seconds for 2-4 simulated minutes.
+  * The benchmark processes peaked at 404-463 MiB RSS (three modes, 100
+    episodes and all result rows kept in memory).
 
 
 ## 15. Running the tests
