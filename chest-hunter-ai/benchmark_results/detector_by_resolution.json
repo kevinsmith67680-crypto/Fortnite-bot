@@ -1,0 +1,111 @@
+{
+  "map_id": "visual_arena_01",
+  "seed": 42,
+  "frames_per_resolution": 60,
+  "results": {
+    "320x180": {
+      "color": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.38620689655172413,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 0.24634523333967687
+      },
+      "template": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9517241379310345,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 11.29787374998917
+      },
+      "hybrid": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9724137931034482,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 0.7848341333290895
+      }
+    },
+    "480x270": {
+      "color": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9862068965517241,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 0.528201583332096
+      },
+      "template": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9586206896551724,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 24.365866816670707
+      },
+      "hybrid": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9862068965517241,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 1.1666004833273291
+      }
+    },
+    "640x360": {
+      "color": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9862068965517241,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 1.0342977166790963
+      },
+      "template": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9586206896551724,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 41.06678221665258
+      },
+      "hybrid": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9862068965517241,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 2.331832749988886
+      }
+    },
+    "800x450": {
+      "color": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9931506849315068,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 1.7544105833167123
+      },
+      "template": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9586206896551724,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 60.80551478333215
+      },
+      "hybrid": {
+        "frames": 60,
+        "precision": 1.0,
+        "recall": 0.9931506849315068,
+        "false_positives": 0,
+        "class_errors": 0,
+        "detector_ms_mean": 3.66884921665284
+      }
+    }
+  }
+}

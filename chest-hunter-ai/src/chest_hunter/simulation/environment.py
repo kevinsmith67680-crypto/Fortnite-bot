@@ -33,7 +33,7 @@ from chest_hunter.simulation.collision import (
     circle_collides,
     segment_clear,
 )
-from chest_hunter.simulation.entities import Chest, Obstacle, PlayerAgent
+from chest_hunter.simulation.entities import Chest, Decoration, Obstacle, PlayerAgent
 from chest_hunter.simulation.map_generator import MapGenerator
 
 logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class World:
     start: Point
     transform: WorldTransform
     excluded_location_ids: tuple[int, ...] = ()
+    decorations: tuple[Decoration, ...] = ()
 
     @property
     def start_cell(self) -> Cell:
@@ -108,11 +109,15 @@ def build_world(
     *,
     map_id: str,
     map_seed: int,
+    extra_obstacles: Sequence[Obstacle] = (),
 ) -> World:
     """Place database chest locations on a procedurally generated grid.
 
     Disabled locations and locations outside the grid are excluded (their IDs
-    are kept in ``excluded_location_ids`` for reporting).
+    are kept in ``excluded_location_ids`` for reporting). ``extra_obstacles``
+    (e.g. a scenario's walled enclosure) are added after generation and are
+    not subject to the generator's protected zones. Walkable decorations are
+    scattered deterministically for the visual simulator.
     """
     transform = WorldTransform(settings.world_units_per_cell)
     width, height = settings.map_width, settings.map_height
@@ -140,17 +145,49 @@ def build_world(
     protected = [spec.cell for spec in specs] + [start_cell]
     generated = MapGenerator(width, height, density=settings.obstacle_density,
                              seed=map_seed).generate(protected)
+    grid = generated.grid
+    obstacles = list(generated.obstacles)
+    for obstacle in extra_obstacles:
+        grid.fill_rect(int(obstacle.position_x), int(obstacle.position_y),
+                       int(obstacle.width), int(obstacle.height))
+        obstacles.append(obstacle)
+    grid.version = 0
     start = GridMap.cell_center(start_cell)
+    decorations = _place_decorations(grid, settings, map_seed,
+                                     [spec.cell for spec in specs] + [start_cell])
     return World(
         map_id=map_id,
         map_seed=map_seed,
-        grid=generated.grid,
-        obstacles=generated.obstacles,
+        grid=grid,
+        obstacles=tuple(obstacles),
         chests=tuple(specs),
         start=start,
         transform=transform,
         excluded_location_ids=tuple(excluded),
+        decorations=decorations,
     )
+
+
+def _place_decorations(grid: GridMap, settings: SimulationSettings, map_seed: int,
+                       keep_clear: Sequence[Cell]) -> tuple[Decoration, ...]:
+    """Scatter gold-coloured, walkable props at least 2 cells from chests and the start."""
+    count = round(settings.decoration_density * grid.width * grid.height)
+    if count <= 0:
+        return ()
+    rng = random.Random(f"chest-hunter:decor:{map_seed}:{grid.width}x{grid.height}")
+    blocked_zone = {(cx + dx, cy + dy) for cx, cy in keep_clear
+                    for dx in range(-2, 3) for dy in range(-2, 3)}
+    placed: list[Decoration] = []
+    used: set[Cell] = set()
+    attempts = 0
+    while len(placed) < count and attempts < count * 50:
+        attempts += 1
+        cell = (rng.randrange(1, grid.width - 1), rng.randrange(1, grid.height - 1))
+        if cell in used or cell in blocked_zone or grid.is_blocked(*cell):
+            continue
+        used.add(cell)
+        placed.append(Decoration(cell[0] + 0.5, cell[1] + 0.5))
+    return tuple(placed)
 
 
 class InteractionResult(StrEnum):
@@ -202,6 +239,12 @@ class Environment:
     ``dt = 1 / tick_rate`` simulated seconds) and never reads the wall clock.
     """
 
+    hold_target: int | None
+    hold_progress_ticks: int
+    _held_this_tick: bool
+    reward_flash_until: int
+    last_hold_result: tuple[int, int, InteractionResult] | None
+
     def __init__(self, world: World, settings: SimulationSettings, *, seed: int,
                  episode: int = 0) -> None:
         self.world = world
@@ -217,6 +260,8 @@ class Environment:
         self.rewards = TokenRewardModel(settings.reward_probability, seed=seed, episode=episode)
         self.events: list[EpisodeEvent] = []
         self._interaction_rngs: dict[int, random.Random] = {}
+        self.hidden_chests: set[int] = set()  # test hook: present but not rendered
+        self._reset_interaction_state()
         self.reset(episode)
 
     # -- lifecycle ----------------------------------------------------------
@@ -230,6 +275,7 @@ class Environment:
         self.tick = 0
         self.events = []
         self._interaction_rngs = {}
+        self._reset_interaction_state()
         self.rewards = TokenRewardModel(self.settings.reward_probability,
                                         seed=self.seed, episode=self.episode)
         self.chests = {}
@@ -269,7 +315,18 @@ class Environment:
         return self.tick * self.dt
 
     def advance(self) -> None:
+        if not self._held_this_tick:  # releasing the key cancels a hold
+            self.hold_progress_ticks = 0
+            self.hold_target = None
+        self._held_this_tick = False
         self.tick += 1
+
+    def _reset_interaction_state(self) -> None:
+        self.hold_target = None
+        self.hold_progress_ticks = 0
+        self._held_this_tick = False
+        self.reward_flash_until = -1
+        self.last_hold_result = None
 
     # -- queries ------------------------------------------------------------
 
@@ -333,6 +390,60 @@ class Environment:
         chest.open()
         self.events.append(EpisodeEvent(self.tick, "opened", chest_id))
         return InteractionResult.OPENED
+
+    # -- action interface (no chest IDs needed) -----------------------------------
+
+    def interactable_chest(self) -> Chest | None:
+        """The present, unopened chest the agent could open right now (nearest wins)."""
+        agent = self.agent
+        best: Chest | None = None
+        best_distance = float("inf")
+        for chest in self.chests.values():
+            if not chest.present or chest.opened:
+                continue
+            distance = agent.distance_to(chest.position_x, chest.position_y)
+            if distance < best_distance and self.can_interact(chest.id):
+                best, best_distance = chest, distance
+        return best
+
+    def hold_interact(self) -> InteractionResult:
+        """Hold the interact key for one tick (like pressing "E" in a game).
+
+        Progress accumulates while the same chest stays interactable and is
+        lost if the key is released or the agent leaves range. After
+        ``chest_interaction_seconds`` the chest opens (subject to the
+        configured failure probability). The return value is for the
+        simulator and tests; a visual agent must verify the outcome from
+        rendered frames instead of trusting it.
+        """
+        self._held_this_tick = True
+        chest = self.interactable_chest()
+        if chest is None:
+            self.hold_target = None
+            self.hold_progress_ticks = 0
+            return InteractionResult.NOT_PRESENT
+        if chest.id != self.hold_target:
+            self.hold_target = chest.id
+            self.hold_progress_ticks = 0
+        self.hold_progress_ticks += 1
+        elapsed = self.hold_progress_ticks * self.dt
+        if elapsed + 1e-9 < self.settings.chest_interaction_seconds:
+            return InteractionResult.INCOMPLETE
+        result = self.try_open(chest.id, elapsed)
+        if result is InteractionResult.OPENED and self.grant_reward(chest.id):
+            self.reward_flash_until = self.tick + round(1.0 / self.dt)
+        self.last_hold_result = (self.tick, chest.id, result)
+        self.hold_target = None
+        self.hold_progress_ticks = 0
+        return result
+
+    @property
+    def hold_fraction(self) -> float:
+        """Interaction progress 0-1 shown by the progress bar."""
+        total = self.settings.chest_interaction_seconds
+        if total <= 0 or self.hold_progress_ticks == 0:
+            return 0.0
+        return min(1.0, self.hold_progress_ticks * self.dt / total)
 
     def grant_reward(self, chest_id: int) -> bool:
         """Roll the separate fictional token reward for an opened chest."""

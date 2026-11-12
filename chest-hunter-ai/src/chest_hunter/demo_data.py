@@ -13,6 +13,7 @@ overwritten), so repeated seeding never creates duplicates or clobbers edits.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from chest_hunter.chest_repository import ChestRepository
@@ -97,14 +98,15 @@ class SeedResult:
 
 
 def seed_demo_chests(
-    db: DatabaseManager, map_id: str = DEMO_MAP_ID, *, clock: Clock = utc_now
+    db: DatabaseManager, map_id: str = DEMO_MAP_ID, *, clock: Clock = utc_now,
+    chests: Sequence[DemoChest] = DEMO_CHESTS,
 ) -> SeedResult:
-    """Insert the demo spawn points on ``map_id`` atomically, skipping existing positions."""
+    """Insert spawn points (default: the demo arena) atomically, skipping existing positions."""
     map_id = require_map_id(map_id)
     repository = ChestRepository(db, clock=clock)
     inserted = skipped = 0
     with db.transaction():
-        for chest in DEMO_CHESTS:
+        for chest in chests:
             if repository.find_chest_at(map_id, chest.x, chest.y, chest.z) is not None:
                 skipped += 1
                 continue

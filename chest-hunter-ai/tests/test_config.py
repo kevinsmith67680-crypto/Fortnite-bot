@@ -85,7 +85,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_unknown_top_level_sections_are_tolerated(self) -> None:
         data = valid_config()
-        data["vision"] = {"detector": "none"}  # reserved for later phases
+        data["experimental_future_module"] = {"setting": "x"}  # reserved for later phases
         load_config(self.write(data))
 
     def test_missing_file(self) -> None:
@@ -191,6 +191,54 @@ class Phase2ConfigTests(unittest.TestCase):
         data["agent"] = {"arrival_tolerance": 2.0}
         with self.assertRaisesRegex(ConfigError, "arrival_tolerance"):
             load_config(self.write(data))
+
+
+
+class Phase3ConfigTests(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.path = Path(tmp.name) / "settings.json"
+
+    def load(self, data: Any) -> Any:
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        return load_config(self.path)
+
+    def test_defaults(self) -> None:
+        settings = self.load(valid_config())
+        self.assertEqual((settings.vision.default_width, settings.vision.default_height),
+                         (640, 360))
+        self.assertEqual(settings.vision.detector, "hybrid")
+        self.assertEqual(settings.vision.confidence_threshold, 0.85)
+        self.assertEqual(settings.localization.smoothing_alpha, 0.4)
+        self.assertEqual(settings.visual_navigation.exploration_strategy, "frontier")
+        self.assertFalse(settings.visual_debug.show_occupancy_grid)
+        self.assertTrue(settings.template_dir().name == "templates")
+
+    def test_validation(self) -> None:
+        cases = [
+            ({"vision": {"default_width": 500, "default_height": 360}}, "not supported"),
+            ({"vision": {"view_width_cells": 30}}, "multiple"),
+            ({"vision": {"detector": "yolo"}}, "detector"),
+            ({"vision": {"confidence_threshold": 0}}, "confidence_threshold"),
+            ({"vision": {"frame_dropout": 0.95}}, "frame_dropout"),
+            ({"localization": {"smoothing_alpha": 1.5}}, "smoothing_alpha"),
+            ({"visual_navigation": {"exploration_strategy": "random"}}, "exploration_strategy"),
+            ({"visual_debug": {"show_detections": "yes"}}, "show_detections"),
+        ]
+        for extra, message in cases:
+            with self.subTest(extra=extra):
+                data = valid_config()
+                data.update(extra)
+                with self.assertRaises(ConfigError) as ctx:
+                    self.load(data)
+                self.assertIn(message, str(ctx.exception))
+
+    def test_supported_resolutions(self) -> None:
+        for width, height in ((320, 180), (480, 270), (640, 360), (800, 450)):
+            data = valid_config()
+            data["vision"] = {"default_width": width, "default_height": height}
+            self.assertEqual(self.load(data).vision.default_width, width)
 
 
 if __name__ == "__main__":

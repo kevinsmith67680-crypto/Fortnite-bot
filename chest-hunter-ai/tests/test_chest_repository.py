@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from chest_hunter.chest_repository import ChestRepository
@@ -27,7 +27,7 @@ class ManualClock:
     """Deterministic clock for timestamp assertions."""
 
     def __init__(self) -> None:
-        self.now = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        self.now = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
 
     def __call__(self) -> datetime:
         return self.now
@@ -156,9 +156,8 @@ class ValidationTests(ChestRepositoryTestCase):
 
     def test_invalid_ids_are_rejected(self) -> None:
         for bad in (0, -1, True, "1"):
-            with self.subTest(bad=bad):
-                with self.assertRaises(ValidationError):
-                    self.repo.get_chest(bad)  # type: ignore[arg-type]
+            with self.subTest(bad=bad), self.assertRaises(ValidationError):
+                self.repo.get_chest(bad)  # type: ignore[arg-type]
 
 
 class UpdateTests(ChestRepositoryTestCase):
@@ -196,9 +195,8 @@ class UpdateTests(ChestRepositoryTestCase):
         assert chest.id is not None
         for kwargs in ({"spawn_probability": 1.2}, {"x": float("nan")},
                        {"estimated_open_seconds": -1.0}):
-            with self.subTest(kwargs=kwargs):
-                with self.assertRaises(ValidationError):
-                    self.repo.update_chest(chest.id, **kwargs)  # type: ignore[arg-type]
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValidationError):
+                self.repo.update_chest(chest.id, **kwargs)  # type: ignore[arg-type]
         self.assertEqual(self.repo.get_chest(chest.id), chest)
 
     def test_update_onto_existing_position_is_rejected(self) -> None:

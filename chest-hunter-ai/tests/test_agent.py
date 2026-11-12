@@ -9,7 +9,7 @@ import textwrap
 import unittest
 from collections import Counter
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +36,7 @@ from chest_hunter.simulation.environment import ChestSpec, World, WorldTransform
 
 MAP = "test_arena"
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
-BASE_TIME = datetime(2026, 1, 1, tzinfo=timezone.utc)
+BASE_TIME = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def make_settings(sim: dict[str, Any] | None = None, nav: dict[str, Any] | None = None,

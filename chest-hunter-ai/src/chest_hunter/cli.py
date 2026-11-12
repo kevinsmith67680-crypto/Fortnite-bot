@@ -176,6 +176,16 @@ def _non_negative_int(text: str) -> int:
     return value
 
 
+def _mode_list(text: str) -> tuple[str, ...]:
+    names = tuple(dict.fromkeys(part.strip().lower().replace("-", "_")
+                                for part in text.split(",") if part.strip()))
+    allowed = ("oracle", "chest_vision", "visual")
+    if not names or any(name not in allowed for name in names):
+        raise argparse.ArgumentTypeError(
+            f"expected a comma-separated list from oracle,chest-vision,visual, got {text!r}")
+    return names
+
+
 def _strategy_list(text: str) -> tuple[str, ...]:
     names = tuple(dict.fromkeys(part.strip().lower() for part in text.split(",") if part.strip()))
     unknown = [name for name in names if name not in STRATEGY_NAMES]
@@ -275,7 +285,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = add("seed-demo", "Insert the demo research-arena chest locations (idempotent).",
               _cmd_seed_demo)
     sub.add_argument("--map", metavar="MAP_ID",
-                     help="map to seed (default: simulation.default_map)")
+                     help="map to seed (default: simulation.default_map, or the scenario's map)")
+    sub.add_argument("--scenario", choices=("research_arena", "visual_arena"),
+                     default="research_arena",
+                     help="research_arena: 35 demo locations (default); visual_arena: the 20-"
+                          "location Phase 3 acceptance arena (map visual_arena_01)")
 
     sub = add("list-chests", "List known chest locations.", _cmd_list_chests)
     sub.add_argument("--map", metavar="MAP_ID", help="only this map (default: all maps)")
@@ -367,7 +381,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="samples required before reporting observed spawn frequency "
                           f"(default: {DEFAULT_MIN_SPAWN_SAMPLES})")
 
-    sub = add("simulate", "Run the autonomous agent in the 2D simulator (Phase 2).",
+    sub = add("simulate", "Run the autonomous agent (oracle or vision-based) in the 2D simulator.",
               _cmd_simulate)
     sub.add_argument("--map", metavar="MAP_ID",
                      help="map whose chest locations are loaded (default: simulation.default_map)")
@@ -382,6 +396,10 @@ def build_parser() -> argparse.ArgumentParser:
                      help="stop after N fixed ticks (default: simulation.max_ticks)")
     sub.add_argument("--speed", type=int, choices=(1, 2, 5, 10), default=1,
                      help="initial GUI playback speed; headless runs are never throttled")
+    sub.add_argument("--agent", choices=("oracle", "visual", "chest-vision"), default="oracle",
+                     help="oracle: Phase 2 agent with perfect map knowledge (default); visual: "
+                          "Phase 3 vision-based agent; chest-vision: visual chests with the "
+                          "true obstacle map")
     mode = sub.add_mutually_exclusive_group()
     mode.add_argument("--headless", dest="render", action="store_false",
                       help="run without a window and print statistics (default)")
@@ -409,6 +427,25 @@ def build_parser() -> argparse.ArgumentParser:
                      help="use a different obstacle layout for every episode index")
     sub.add_argument("--persist", action="store_true",
                      help="store benchmark sessions in the database instead of in memory")
+    sub.add_argument("--quiet", action="store_true", help="no progress output")
+
+    sub = add("benchmark-vision",
+              "Compare oracle, chest-vision and full visual agents on paired episodes.",
+              _cmd_benchmark_vision)
+    sub.add_argument("--map", metavar="MAP_ID",
+                     help="map to benchmark (default: simulation.default_map)")
+    sub.add_argument("--episodes", type=_positive_int, default=100, metavar="N",
+                     help="paired episodes per mode (default: 100)")
+    sub.add_argument("--seed", type=_non_negative_int, metavar="N",
+                     help="base seed (default: simulation.default_seed)")
+    sub.add_argument("--max-ticks", type=_positive_int, metavar="N",
+                     help="tick budget per episode (default: simulation.max_ticks)")
+    sub.add_argument("--modes", type=_mode_list, default=("oracle", "chest_vision", "visual"),
+                     metavar="LIST", help="comma-separated from oracle,chest-vision,visual")
+    sub.add_argument("--output-dir", metavar="PATH",
+                     help="directory for the CSV/JSON results (default: benchmark_results)")
+    sub.add_argument("--detector-frames", type=_non_negative_int, default=60, metavar="N",
+                     help="labelled frames for the detector-method comparison (0 = skip)")
     sub.add_argument("--quiet", action="store_true", help="no progress output")
 
     return parser
@@ -454,11 +491,19 @@ def _cmd_init_db(args: argparse.Namespace, ctx: CommandContext) -> int:
 
 
 def _cmd_seed_demo(args: argparse.Namespace, ctx: CommandContext) -> int:
-    map_id = args.map or ctx.settings.simulation.default_map
-    result = seed_demo_chests(ctx.db, map_id)
+    if args.scenario == "visual_arena":
+        from chest_hunter.scenarios import VISUAL_ARENA_CHESTS, VISUAL_ARENA_ID
+
+        result = seed_demo_chests(ctx.db, args.map or VISUAL_ARENA_ID,
+                                  chests=VISUAL_ARENA_CHESTS)
+        total = result.total
+    else:
+        map_id = args.map or ctx.settings.simulation.default_map
+        result = seed_demo_chests(ctx.db, map_id)
+        total = len(DEMO_CHESTS)
     print(
         f"Seeded map {result.map_id}: {result.inserted} inserted, "
-        f"{result.skipped} already present ({len(DEMO_CHESTS)} demo locations)."
+        f"{result.skipped} already present ({total} demo locations)."
     )
     return EXIT_OK
 
@@ -688,6 +733,32 @@ def _print_run_report(ctx: CommandContext, runner: SimulationRunner) -> None:
             ]
         )
     )
+    evaluator = runner.vision_evaluator
+    if evaluator is not None:
+        v = evaluator.summary()
+        controller = runner.visual_controller
+
+        def fmt(x: object, digits: int = 3) -> str:
+            return "-" if x is None else f"{x:.{digits}f}"
+
+        print("Visual perception (evaluated against ground truth; the agent never saw it)")
+        print(format_key_values([
+            ("Frames analysed", f"{v['frames_analysed']} ({v['frames_failed']} failed captures)"),
+            ("Detection precision", fmt(v["precision"])),
+            ("Detection recall", fmt(v["recall"])),
+            ("False positives", str(v["false_positives"])),
+            ("Open/closed confusions", str(v["class_errors"])),
+            ("Localisation success", fmt(v["localisation_success_rate"])),
+            ("Pose error mean / max", f"{fmt(v['estimate_error_cells']['mean'], 4)} / "
+                                      f"{fmt(v['estimate_error_cells']['max'], 3)} cells"),
+            ("Perception time", f"{fmt(v['inference_ms']['mean'], 2)} ms mean, "
+                                f"{fmt(v['inference_ms']['peak'], 2)} ms peak per frame"),
+            ("Opened per simulator", f"{sum(1 for c in runner.env.chests.values() if c.opened)}"
+                                     f" (agent recorded {runner.metrics.chests_opened})"),
+            ("Targets selected / reached", f"{controller.targets_selected} / "
+                                           f"{controller.targets_reached}"),
+            ("Replans after new walls", str(controller.replans)),
+        ]))
     if runner.session_id is not None:
         print()
         _cmd_session_stats(argparse.Namespace(session=runner.session_id), ctx)
@@ -703,10 +774,13 @@ def _cmd_simulate(args: argparse.Namespace, ctx: CommandContext) -> int:
     world = load_world(ctx.db, settings, map_id=map_id, map_seed=seed)
     oracle = make_oracle(settings)
 
+    agent = args.agent.replace("-", "_")
+
     def factory(strategy_name: str) -> SimulationRunner:
         return SimulationRunner(ctx.db, settings, map_id=map_id, strategy=strategy_name,
                                 seed=seed, episode=args.episode, max_ticks=args.max_ticks,
-                                world=world, oracle=oracle)
+                                world=world, oracle=oracle, agent=agent,
+                                evaluate=agent != "oracle")
 
     if args.render:
         finished: list[SimulationRunner] = []
@@ -724,7 +798,8 @@ def _cmd_simulate(args: argparse.Namespace, ctx: CommandContext) -> int:
                     cell_size=settings.simulation.cell_size,
                     tick_rate=settings.simulation.tick_rate,
                     render_rate=settings.simulation.render_rate,
-                    speed=args.speed, on_finish=finished.append)
+                    speed=args.speed, on_finish=finished.append,
+                    debug=settings.visual_debug if agent != "oracle" else None)
         except tkinter.TclError as exc:
             raise ChestHunterError(
                 f"Could not open the GUI window ({exc}). Use --headless, or run with a display."
@@ -737,11 +812,39 @@ def _cmd_simulate(args: argparse.Namespace, ctx: CommandContext) -> int:
             else EXIT_FAILURE
 
     runner = factory(strategy)
-    print(f"Simulating map {map_id} headless: strategy {strategy}, seed {seed}, "
-          f"episode {args.episode}, max {runner.max_ticks} ticks ...")
+    print(f"Simulating map {map_id} headless: {args.agent} agent, strategy {runner.strategy}, "
+          f"seed {seed}, episode {args.episode}, max {runner.max_ticks} ticks ...")
     result = runner.run()
     _print_run_report(ctx, runner)
     return EXIT_OK if result.outcome in ("completed", "tick_limit") else EXIT_FAILURE
+
+
+def _cmd_benchmark_vision(args: argparse.Namespace, ctx: CommandContext) -> int:
+    from chest_hunter.analytics.visual_benchmark import format_summary, run_visual_benchmark
+
+    settings = ctx.settings
+    map_id = args.map or settings.simulation.default_map
+    seed = settings.simulation.default_seed if args.seed is None else args.seed
+    output = Path(args.output_dir).expanduser().resolve() if args.output_dir else (
+        settings.base_dir / "benchmark_results")
+    step = max(1, (args.episodes * len(args.modes)) // 20)
+
+    def progress(done: int, total: int) -> None:
+        if not args.quiet and (done % step == 0 or done == total):
+            print(f"  ... {done}/{total} episode runs", file=sys.stderr, flush=True)
+
+    print(f"Visual benchmark on map {map_id}: {args.episodes} paired episode(s) x modes "
+          f"{', '.join(args.modes)}, seed {seed}.")
+    summary = run_visual_benchmark(ctx.db, settings, map_id=map_id, modes=args.modes,
+                                   episodes=args.episodes, seed=seed, max_ticks=args.max_ticks,
+                                   output_dir=output, detector_frames=args.detector_frames,
+                                   progress=progress)
+    print()
+    print(format_summary(summary))
+    print("Chests/min uses SIMULATED time; CPU and wall seconds are real time on this machine.")
+    print(f"Results written to {output}/navigation_benchmark.csv, vision_benchmark.csv, "
+          "summary.json")
+    return EXIT_OK
 
 
 def _cmd_benchmark(args: argparse.Namespace, ctx: CommandContext) -> int:

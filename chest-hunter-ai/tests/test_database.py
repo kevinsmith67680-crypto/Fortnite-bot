@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from chest_hunter.database import EXPECTED_TABLES, MIGRATIONS, SCHEMA_VERSION, DatabaseManager
@@ -199,12 +199,10 @@ class ForeignKeyAndConstraintTests(DatabaseTestCase):
         with self.db.transaction() as conn:
             chest_id = insert_chest(conn)
             session_id = insert_session(conn)
-        with self.assertRaises(DatabaseIntegrityError):
-            with self.db.transaction() as conn:
-                insert_observation(conn, session_id, chest_id + 999)
-        with self.assertRaises(DatabaseIntegrityError):
-            with self.db.transaction() as conn:
-                insert_observation(conn, session_id + 999, chest_id)
+        with self.assertRaises(DatabaseIntegrityError), self.db.transaction() as conn:
+            insert_observation(conn, session_id, chest_id + 999)
+        with self.assertRaises(DatabaseIntegrityError), self.db.transaction() as conn:
+            insert_observation(conn, session_id + 999, chest_id)
 
     def test_foreign_key_enforced_on_insert_without_validation_trigger(self) -> None:
         # The validation trigger would reject these rows first; drop it so the
@@ -263,12 +261,10 @@ class ForeignKeyAndConstraintTests(DatabaseTestCase):
         with self.db.transaction() as conn:
             chest_id = insert_chest(conn)
             session_id = insert_session(conn)
-        with self.assertRaises(DatabaseIntegrityError):
-            with self.db.transaction() as conn:
-                insert_observation(conn, session_id, chest_id, present=0, opened=1)
-        with self.assertRaises(DatabaseIntegrityError):
-            with self.db.transaction() as conn:
-                insert_observation(conn, session_id, chest_id, seconds=-1.0)
+        with self.assertRaises(DatabaseIntegrityError), self.db.transaction() as conn:
+            insert_observation(conn, session_id, chest_id, present=0, opened=1)
+        with self.assertRaises(DatabaseIntegrityError), self.db.transaction() as conn:
+            insert_observation(conn, session_id, chest_id, seconds=-1.0)
 
     def test_schema_rejects_duplicate_opening_in_same_session(self) -> None:
         with self.db.transaction() as conn:
@@ -345,11 +341,10 @@ class TransactionTests(DatabaseTestCase):
         self.assertEqual(self.count_chests(), 2)
 
     def test_transaction_rolls_back_every_statement_on_error(self) -> None:
-        with self.assertRaises(RuntimeError):
-            with self.db.transaction() as conn:
-                insert_chest(conn, x=1.0)
-                insert_chest(conn, x=2.0)
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), self.db.transaction() as conn:
+            insert_chest(conn, x=1.0)
+            insert_chest(conn, x=2.0)
+            raise RuntimeError("boom")
         self.assertEqual(self.count_chests(), 0)
         self.assertFalse(self.db.connection.in_transaction)
 
@@ -449,7 +444,7 @@ class SchemaVersion2Tests(DatabaseTestCase):
 
     def test_observed_at_can_be_supplied_but_not_before_session_start(self) -> None:
         self.db.initialize()
-        start = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+        start = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
         sessions = SessionRepository(self.db, clock=lambda: start)
         session = sessions.start_session("arena")
         with self.db.transaction() as conn:

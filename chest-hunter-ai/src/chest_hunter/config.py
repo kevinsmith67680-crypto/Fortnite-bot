@@ -98,6 +98,7 @@ class SimulationSettings:
     interaction_failure_probability: float = 0.0
     reward_probability: float = 0.0
     obstacle_density: float = 0.12
+    decoration_density: float = 0.004
 
     @property
     def tick_seconds(self) -> float:
@@ -124,6 +125,59 @@ class AgentSettings:
 
 
 @dataclass(frozen=True)
+class VisionSettings:
+    enabled: bool = True
+    default_width: int = 640
+    default_height: int = 360
+    view_width_cells: int = 40
+    detector: str = "hybrid"
+    confidence_threshold: float = 0.85
+    max_tracks: int = 100
+    track_expiration_seconds: float = 3.0
+    track_memory_seconds: float = 600.0
+    use_regions_of_interest: bool = True
+    noise_std: float = 6.0
+    lighting_variation: float = 0.08
+    frame_dropout: float = 0.0
+    rate_travel: float = 2.0
+    rate_explore: float = 5.0
+    rate_tracking: float = 10.0
+    rate_verify: float = 10.0
+    rate_idle: float = 1.0
+    template_dir: str = "assets/templates"
+
+
+@dataclass(frozen=True)
+class LocalizationSettings:
+    smoothing_alpha: float = 0.4
+    max_missing_observations: int = 5
+    min_confidence: float = 0.5
+    dead_reckoning_seconds: float = 2.0
+
+
+@dataclass(frozen=True)
+class VisualNavigationSettings:
+    exploration_strategy: str = "frontier"
+    replan_on_obstacle_discovery: bool = True
+    maximum_recovery_attempts: int = 3
+    use_spawn_priors: bool = True
+    prior_weight: float = 300.0
+    stop_when_spawn_points_resolved: bool = True
+    unknown_cell_cost: float = 0.5
+    empty_confirmations: int = 2
+
+
+@dataclass(frozen=True)
+class VisualDebugSettings:
+    enabled: bool = True
+    show_detections: bool = True
+    show_object_tracks: bool = True
+    show_occupancy_grid: bool = False
+    show_localization: bool = True
+    show_camera_view: bool = True
+
+
+@dataclass(frozen=True)
 class LoggingSettings:
     level: str
 
@@ -139,6 +193,14 @@ class Settings:
     base_dir: Path
     navigation: NavigationSettings = field(default_factory=NavigationSettings)
     agent: AgentSettings = field(default_factory=AgentSettings)
+    vision: VisionSettings = field(default_factory=VisionSettings)
+    localization: LocalizationSettings = field(default_factory=LocalizationSettings)
+    visual_navigation: VisualNavigationSettings = field(default_factory=VisualNavigationSettings)
+    visual_debug: VisualDebugSettings = field(default_factory=VisualDebugSettings)
+
+    def template_dir(self) -> Path:
+        """Absolute directory of the perception templates."""
+        return _resolve_path(self.vision.template_dir, self.base_dir)
 
     def with_database_path(self, path: str | os.PathLike[str]) -> Settings:
         """Return a copy that uses ``path`` (resolved against ``base_dir``) as the database."""
@@ -197,6 +259,12 @@ def _choice(*choices: str) -> Parser:
     return parse
 
 
+def _non_empty_string(name: str, value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError(f"{name} must be a non-empty string, got {value!r}.")
+    return value.strip()
+
+
 def _optional_point(name: str, value: Any) -> tuple[float, float] | None:
     if value is None:
         return None
@@ -244,6 +312,7 @@ _SIMULATION_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
     ("interaction_failure_probability", 0.0, _float_range(0.0, 1.0)),
     ("reward_probability", 0.0, _float_range(0.0, 1.0)),
     ("obstacle_density", 0.12, _float_range(0.0, 0.4)),
+    ("decoration_density", 0.004, _float_range(0.0, 0.05)),
 )
 
 _NAVIGATION_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
@@ -262,6 +331,57 @@ _AGENT_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
     ("observation_batch_size", 10, _int_range(1, 10_000)),
 )
 
+_VISION_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("enabled", True, _boolean),
+    ("default_width", 640, _int_range(64, 1920)),
+    ("default_height", 360, _int_range(36, 1080)),
+    ("view_width_cells", 40, _int_range(10, 100)),
+    ("detector", "hybrid", _choice("color", "template", "hybrid")),
+    ("confidence_threshold", 0.85, _float_range(0.0, 1.0, low_open=True)),
+    ("max_tracks", 100, _int_range(1, 10_000)),
+    ("track_expiration_seconds", 3.0, _float_range(0.0, 3600.0, low_open=True)),
+    ("track_memory_seconds", 600.0, _float_range(0.0, 86_400.0, low_open=True)),
+    ("use_regions_of_interest", True, _boolean),
+    ("noise_std", 6.0, _float_range(0.0, 50.0)),
+    ("lighting_variation", 0.08, _float_range(0.0, 0.5)),
+    ("frame_dropout", 0.0, _float_range(0.0, 0.9)),
+    ("rate_travel", 2.0, _float_range(0.1, 60.0)),
+    ("rate_explore", 5.0, _float_range(0.1, 60.0)),
+    ("rate_tracking", 10.0, _float_range(0.1, 60.0)),
+    ("rate_verify", 10.0, _float_range(0.1, 60.0)),
+    ("rate_idle", 1.0, _float_range(0.0, 60.0)),
+    ("template_dir", "assets/templates", lambda n, v: _non_empty_string(n, v)),
+)
+
+_LOCALIZATION_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("smoothing_alpha", 0.4, _float_range(0.0, 1.0, low_open=True)),
+    ("max_missing_observations", 5, _int_range(1, 1000)),
+    ("min_confidence", 0.5, _float_range(0.0, 1.0)),
+    ("dead_reckoning_seconds", 2.0, _float_range(0.0, 60.0, low_open=True)),
+)
+
+_VISUAL_NAVIGATION_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("exploration_strategy", "frontier", _choice("frontier")),
+    ("replan_on_obstacle_discovery", True, _boolean),
+    ("maximum_recovery_attempts", 3, _int_range(0, 20)),
+    ("use_spawn_priors", True, _boolean),
+    ("prior_weight", 300.0, _float_range(0.0, 1e6)),
+    ("stop_when_spawn_points_resolved", True, _boolean),
+    ("unknown_cell_cost", 0.5, _float_range(0.0, 100.0)),
+    ("empty_confirmations", 2, _int_range(1, 50)),
+)
+
+_VISUAL_DEBUG_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("enabled", True, _boolean),
+    ("show_detections", True, _boolean),
+    ("show_object_tracks", True, _boolean),
+    ("show_occupancy_grid", False, _boolean),
+    ("show_localization", True, _boolean),
+    ("show_camera_view", True, _boolean),
+)
+
+SUPPORTED_FRAME_SIZES: Final = ((320, 180), (480, 270), (640, 360), (800, 450))
+
 FIELD_UNITS: Final[dict[str, str]] = {
     "simulation.map_width": "grid cells",
     "simulation.map_height": "grid cells",
@@ -279,11 +399,27 @@ FIELD_UNITS: Final[dict[str, str]] = {
     "simulation.interaction_failure_probability": "probability 0-1 per attempt",
     "simulation.reward_probability": "probability 0-1 of a fictional token per opening",
     "simulation.obstacle_density": "target fraction 0-0.4 of blocked cells",
+    "simulation.decoration_density": "walkable gold props per cell (visual distractors)",
     "navigation.stuck_timeout_seconds": "simulated seconds without progress",
     "navigation.lookahead_depth": "chests considered per decision (lookahead strategy)",
     "agent.max_recovery_attempts": "recoveries per target before abandoning it",
     "agent.arrival_tolerance": "grid cells",
     "agent.observation_batch_size": "observations per database transaction",
+    "vision.default_width/default_height": "camera frame size in pixels (320x180 .. 800x450)",
+    "vision.view_width_cells": "grid cells visible across the frame (sets pixels per cell)",
+    "vision.confidence_threshold": "minimum detection score 0-1 (template-matching score)",
+    "vision.track_expiration_seconds": "simulated seconds an in-view track may go unseen",
+    "vision.track_memory_seconds": "simulated seconds an out-of-view track is remembered",
+    "vision.noise_std": "camera pixel noise standard deviation (0-255 intensity levels)",
+    "vision.lighting_variation": "relative per-frame brightness variation",
+    "vision.frame_dropout": "probability 0-0.9 that a capture fails",
+    "vision.rate_*": "visual analyses per simulated second in each situation",
+    "localization.smoothing_alpha": "weight 0-1 of a new visual fix vs the prediction",
+    "localization.dead_reckoning_seconds": "seconds after which pose confidence reaches 0",
+    "visual_navigation.prior_weight": "information-gain units per unit of spawn probability",
+    "visual_navigation.unknown_cell_cost": "extra A* cost for entering an unexplored cell",
+    "visual_navigation.empty_confirmations": "analyses showing an empty spawn point before "
+                                             "it is recorded as absent",
 }
 
 
@@ -368,6 +504,10 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
     logging_section = _section(data, "logging", required=True)
     navigation = _section(data, "navigation", required=False)
     agent = _section(data, "agent", required=False)
+    vision_section = _section(data, "vision", required=False)
+    localization_section = _section(data, "localization", required=False)
+    visual_nav_section = _section(data, "visual_navigation", required=False)
+    visual_debug_section = _section(data, "visual_debug", required=False)
 
     db_values = _parse_fields("database", database, (("path", _REQUIRED, lambda n, v: v),))
     db_path = db_values["path"]
@@ -386,6 +526,23 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
     nav = NavigationSettings(**_parse_fields("navigation", navigation, _NAVIGATION_FIELDS))
     agent_settings = AgentSettings(**_parse_fields("agent", agent, _AGENT_FIELDS))
 
+    vision = VisionSettings(**_parse_fields("vision", vision_section, _VISION_FIELDS))
+    localization = LocalizationSettings(
+        **_parse_fields("localization", localization_section, _LOCALIZATION_FIELDS))
+    visual_navigation = VisualNavigationSettings(
+        **_parse_fields("visual_navigation", visual_nav_section, _VISUAL_NAVIGATION_FIELDS))
+    visual_debug = VisualDebugSettings(
+        **_parse_fields("visual_debug", visual_debug_section, _VISUAL_DEBUG_FIELDS))
+    if (vision.default_width, vision.default_height) not in SUPPORTED_FRAME_SIZES:
+        sizes = ", ".join(f"{w}x{h}" for w, h in SUPPORTED_FRAME_SIZES)
+        raise ValidationError(
+            f"'vision' frame size {vision.default_width}x{vision.default_height} is not "
+            f"supported; use one of {sizes}.")
+    if vision.default_width % vision.view_width_cells:
+        raise ValidationError(
+            "'vision.default_width' must be a multiple of 'vision.view_width_cells' "
+            "(integer pixels per cell).")
+
     if agent_settings.arrival_tolerance > sim.interaction_radius:
         raise ValidationError(
             "'agent.arrival_tolerance' must not exceed 'simulation.interaction_radius' "
@@ -400,6 +557,10 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
         base_dir=base_dir,
         navigation=nav,
         agent=agent_settings,
+        vision=vision,
+        localization=localization,
+        visual_navigation=visual_navigation,
+        visual_debug=visual_debug,
     )
 
 

@@ -115,10 +115,9 @@ class BenchmarkTests(unittest.TestCase):
     def test_invalid_arguments(self) -> None:
         for kwargs in ({"strategies": ("random",)}, {"strategies": ()}, {"episodes": 0},
                        {"max_ticks": 0}):
-            with self.subTest(kwargs=kwargs):
-                with self.assertRaises(ValidationError):
-                    run_benchmark(self.source, self.settings, map_id=DEMO_MAP_ID,
-                                  **kwargs)  # type: ignore[arg-type]
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValidationError):
+                run_benchmark(self.source, self.settings, map_id=DEMO_MAP_ID,
+                              **kwargs)  # type: ignore[arg-type]
 
 
 class MetricsTests(unittest.TestCase):

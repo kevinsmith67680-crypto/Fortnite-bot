@@ -1,6 +1,8 @@
 # Python bytecode and caches
 __pycache__/
 *.py[cod]
+.mypy_cache/
+.ruff_cache/
 
 # Packaging / editable-install metadata
 build/

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from chest_hunter.chest_repository import ChestRepository
@@ -26,7 +26,7 @@ class ManualClock:
     """Deterministic clock so durations and rates can be asserted exactly."""
 
     def __init__(self) -> None:
-        self.now = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        self.now = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
 
     def __call__(self) -> datetime:
         return self.now
@@ -81,9 +81,8 @@ class LifecycleTests(SessionTestCase):
 
     def test_start_session_rejects_invalid_map(self) -> None:
         for bad in ("", "  ", "bad map id"):
-            with self.subTest(bad=bad):
-                with self.assertRaises(ValidationError):
-                    self.sessions.start_session(bad)
+            with self.subTest(bad=bad), self.assertRaises(ValidationError):
+                self.sessions.start_session(bad)
         self.assertEqual(self.sessions.list_sessions(), [])
 
     def test_complete_session(self) -> None:
@@ -187,12 +186,11 @@ class ObservationTests(SessionTestCase):
     def test_reject_negative_or_invalid_interaction_time(self) -> None:
         session_id = self.start()
         for value in (-0.5, float("nan"), float("inf"), "2"):
-            with self.subTest(value=value):
-                with self.assertRaises(ValidationError):
-                    self.sessions.record_observation(
-                        session_id, self.chest_ids[0], chest_present=True,
-                        interaction_seconds=value,  # type: ignore[arg-type]
-                    )
+            with self.subTest(value=value), self.assertRaises(ValidationError):
+                self.sessions.record_observation(
+                    session_id, self.chest_ids[0], chest_present=True,
+                    interaction_seconds=value,  # type: ignore[arg-type]
+                )
         self.assertEqual(self.count_observations(), 0)
 
     def test_reject_non_boolean_flags(self) -> None:

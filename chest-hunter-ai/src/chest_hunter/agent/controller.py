@@ -24,13 +24,13 @@ metrics and reported instead.
 from __future__ import annotations
 
 import logging
-from collections import Counter, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
+from chest_hunter.agent.fsm import MAX_TRANSITIONS_PER_TICK, StateMachine, Transition
 from chest_hunter.agent.objectives import ObjectiveTracker
 from chest_hunter.agent.recorder import ObservationRecorder, SimulationClock
-from chest_hunter.agent.states import AgentState, is_valid_transition
+from chest_hunter.agent.states import TIMED_STATES, TRANSITIONS, AgentState
 from chest_hunter.analytics.metrics import EpisodeMetrics
 from chest_hunter.config import Settings
 from chest_hunter.navigation.astar import FailureReason, PathFinder
@@ -40,16 +40,9 @@ from chest_hunter.simulation.environment import Environment, InteractionResult
 
 logger = logging.getLogger(__name__)
 
-MAX_TRANSITIONS_PER_TICK = 16
 MAX_TIGHTEN_ATTEMPTS = 3
 
-
-@dataclass(frozen=True, slots=True)
-class Transition:
-    tick: int
-    source: AgentState
-    target: AgentState
-    reason: str | None
+__all__ = ["MAX_TRANSITIONS_PER_TICK", "AgentController", "ObservationEvent", "Transition"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,8 +54,12 @@ class ObservationEvent:
     interaction_seconds: float
 
 
-class AgentController:
-    """Drives one :class:`Environment` episode without human input."""
+class AgentController(StateMachine[AgentState]):
+    """Drives one :class:`Environment` episode without human input (oracle policy).
+
+    The oracle knows true spawn-point positions and the true obstacle grid,
+    but still learns whether a chest spawned only when it arrives.
+    """
 
     def __init__(
         self,
@@ -76,6 +73,15 @@ class AgentController:
         clock: SimulationClock | None = None,
         finalizer: Callable[[AgentController], None] | None = None,
     ) -> None:
+        super().__init__(
+            initial=AgentState.INITIALIZING,
+            completed=AgentState.COMPLETED,
+            failed=AgentState.FAILED,
+            transitions=TRANSITIONS,
+            timed=TIMED_STATES,
+            tick_source=lambda: env.tick,
+            recovering=AgentState.RECOVERING,
+        )
         self.env = env
         self.planner = planner
         self.pathfinder = pathfinder
@@ -85,23 +91,17 @@ class AgentController:
         self.clock = clock if clock is not None else SimulationClock(env)
         self._finalizer = finalizer
 
-        self.state = AgentState.INITIALIZING
         self.target: Candidate | None = None
         self.last_selection: TargetSelection | None = None
         self.tracker = ObjectiveTracker([])
         self.movement = MovementController(
             dt=env.dt, stuck_timeout=settings.navigation.stuck_timeout_seconds
         )
-        self.recovery_reason: str | None = None
-        self.outcome: str | None = None
-        self.end_reason: str | None = None
-        self.history: deque[Transition] = deque(maxlen=1000)
-        self.transition_counts: Counter[AgentState] = Counter()
         self.observations: list[ObservationEvent] = []
         self.recovery_budget = 10
         self.routes_planned = 0
 
-        self._handlers: dict[AgentState, Callable[[], AgentState | None]] = {
+        self._handlers = {
             AgentState.SELECTING_TARGET: self._select_target,
             AgentState.PLANNING_ROUTE: self._plan_route,
             AgentState.NAVIGATING: self._navigate,
@@ -133,37 +133,6 @@ class AgentController:
         max_attempts = self.settings.agent.max_recovery_attempts
         self.recovery_budget = max(10, (max_attempts + 1) * max(1, len(self.tracker)))
         self._transition(AgentState.SELECTING_TARGET, f"{len(self.tracker)} candidate(s)")
-
-    def tick(self) -> AgentState:
-        """Process one simulation step and return the resulting state."""
-        consumed = False
-        for _ in range(MAX_TRANSITIONS_PER_TICK):
-            state = self.state
-            if state.is_terminal or state is AgentState.INITIALIZING:
-                return state
-            if state.consumes_time and consumed:
-                return state
-            next_state = self._handlers[state]()
-            if state.consumes_time:
-                consumed = True
-            if next_state is None:
-                return self.state
-            self._transition(next_state, self._reason_for(next_state))
-            if self.state.is_terminal:
-                return self.state
-        self.outcome = "failed"
-        self.end_reason = "state machine did not settle within one tick"
-        self._transition(AgentState.FAILED, self.end_reason)
-        return self.state
-
-    def stop(self, outcome: str, reason: str) -> None:
-        """End the episode from outside (tick limit, user cancel)."""
-        if self.state.is_terminal:
-            return
-        self.outcome = outcome
-        self.end_reason = reason
-        ends_normally = outcome in ("completed", "tick_limit")
-        self._transition(AgentState.COMPLETED if ends_normally else AgentState.FAILED, reason)
 
     @property
     def path(self) -> list[tuple[float, float]]:
@@ -368,34 +337,6 @@ class AgentController:
             self.recorder.record(chest_id, present=present, opened=opened,
                                  interaction_seconds=seconds,
                                  observed_at=self.clock.at(self.env.time))
-
-    def _complete(self, reason: str) -> AgentState:
-        self.outcome = "completed"
-        self.end_reason = reason
-        return AgentState.COMPLETED
-
-    def _fail(self, reason: str) -> AgentState:
-        self.outcome = "failed"
-        self.end_reason = reason
-        return AgentState.FAILED
-
-    def _reason_for(self, state: AgentState) -> str | None:
-        if state is AgentState.RECOVERING:
-            return self.recovery_reason
-        if state.is_terminal:
-            return self.end_reason
-        return None
-
-    def _transition(self, target: AgentState, reason: str | None = None) -> None:
-        if not is_valid_transition(self.state, target):
-            raise RuntimeError(f"Invalid agent transition {self.state} -> {target}")
-        self.history.append(Transition(self.env.tick, self.state, target, reason))
-        self.transition_counts[target] += 1
-        logger.debug("tick %d: %s -> %s%s", self.env.tick, self.state, target,
-                     f" ({reason})" if reason else "")
-        self.state = target
-        if target.is_terminal:
-            self._on_terminal()
 
     def _on_terminal(self) -> None:
         self.env.agent.stop()

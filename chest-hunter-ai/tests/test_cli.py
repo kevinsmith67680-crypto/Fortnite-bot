@@ -474,5 +474,39 @@ class SimulationCommandTests(CliTestCase):
         self.fails("benchmark", "--episodes", "0", code=EXIT_USAGE)
 
 
+
+class VisualCommandTests(CliTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.ok("init-db")
+        out = self.ok("seed-demo", "--scenario", "visual_arena")
+        self.assertIn("visual_arena_01: 20 inserted", out)
+
+    def test_visual_agent_headless(self) -> None:
+        out = self.ok("simulate", "--map", "visual_arena_01", "--agent", "visual", "--seed", "42",
+                      "--headless")
+        self.assertIn("visual agent, strategy visual-frontier", out)
+        self.assertIn("Visual perception (evaluated against ground truth", out)
+        self.assertRegex(out, r"Detection precision:\s+1\.000")
+        self.assertRegex(out, r"Opened per simulator:\s+15 \(agent recorded 15\)")
+        self.assertRegex(out, r"Outcome:\s+completed")
+        self.assertRegex(self.ok("session-stats", "--session", "1"), r"Strategy:\s+visual-frontier")
+
+    def test_invalid_agent_and_modes(self) -> None:
+        self.fails("simulate", "--agent", "psychic", code=EXIT_USAGE)
+        self.fails("benchmark-vision", "--modes", "oracle,xray", code=EXIT_USAGE)
+        self.fails("benchmark-vision", "--episodes", "0", code=EXIT_USAGE)
+
+    def test_benchmark_vision_command(self) -> None:
+        out_dir = self.tmp / "bench"
+        out = self.ok("benchmark-vision", "--map", "visual_arena_01", "--episodes", "1",
+                      "--modes", "oracle,chest-vision", "--max-ticks", "900",
+                      "--detector-frames", "4", "--output-dir", str(out_dir), "--quiet")
+        self.assertIn("chest_vision vs oracle", out)
+        self.assertIn("SIMULATED time", out)
+        for name in ("navigation_benchmark.csv", "vision_benchmark.csv", "summary.json"):
+            self.assertTrue((out_dir / name).is_file())
+
+
 if __name__ == "__main__":
     unittest.main()

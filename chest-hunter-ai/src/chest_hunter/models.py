@@ -12,7 +12,7 @@ import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -46,7 +46,7 @@ Clock = Callable[[], datetime]
 
 def utc_now() -> datetime:
     """Return the current time as a timezone-aware UTC datetime."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def format_timestamp(moment: datetime) -> str:
@@ -56,7 +56,7 @@ def format_timestamp(moment: datetime) -> str:
     """
     if moment.tzinfo is None or moment.utcoffset() is None:
         raise ValidationError("Timestamps must be timezone-aware (UTC expected).")
-    return moment.astimezone(timezone.utc).isoformat(timespec="microseconds")
+    return moment.astimezone(UTC).isoformat(timespec="microseconds")
 
 
 def parse_timestamp(value: str) -> datetime:
@@ -67,7 +67,7 @@ def parse_timestamp(value: str) -> datetime:
         raise ValidationError(f"Invalid ISO 8601 timestamp: {value!r}") from exc
     if moment.tzinfo is None:
         raise ValidationError(f"Timestamp lacks a UTC offset: {value!r}")
-    return moment.astimezone(timezone.utc)
+    return moment.astimezone(UTC)
 
 
 def timestamp_now(clock: Clock = utc_now) -> str:

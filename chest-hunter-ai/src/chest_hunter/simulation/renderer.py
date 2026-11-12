@@ -19,8 +19,13 @@ import tkinter as tk
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+
+from chest_hunter.agent.controller import AgentController
+
 if TYPE_CHECKING:  # pragma: no cover
     from chest_hunter.agent.runner import SimulationRunner
+    from chest_hunter.config import VisualDebugSettings
 
 COLOURS = {
     "background": "#2b2b2b",
@@ -37,7 +42,10 @@ COLOURS = {
     "obstacle": "#64748b",          # slate grey
     "path": "#22d3ee",              # cyan
     "target": "#fb923c",            # orange
+    "estimate": "#67e8f9",          # estimated (perceived) agent position
+    "track": "#fde68a",             # tracked chest label
 }
+DEBUG_EVERY_FRAMES = 3   # refresh the camera/occupancy debug images at ~5 Hz
 
 SPEEDS: tuple[int, ...] = (1, 2, 5, 10)
 
@@ -60,6 +68,7 @@ class SimulationApp:
         speed: int = 1,
         autostart: bool = True,
         on_finish: Callable[[SimulationRunner], None] | None = None,
+        debug: VisualDebugSettings | None = None,
     ) -> None:
         self.root = root
         self.factory = runner_factory
@@ -86,7 +95,14 @@ class SimulationApp:
         self.speed_var = tk.StringVar(value=f"{speed}x")
         self.show_paths_var = tk.BooleanVar(value=True)
         self.info_vars: dict[str, tk.StringVar] = {}
+        self.debug_settings = debug
+        self.debug_vars: dict[str, tk.BooleanVar] = {}
+        self._camera_photo: tk.PhotoImage | None = None
+        self._occupancy_photo: tk.PhotoImage | None = None
+        self._debug_items: list[int] = []
         self._build_layout(strategies)
+        if debug is not None:
+            self._build_debug_panel(debug)
         self._bind_keys()
         self.reset()
         if autostart:
@@ -171,6 +187,128 @@ class SimulationApp:
         self.root.bind("<Key-q>", lambda _e: self.close())
         self.root.bind("<Escape>", lambda _e: self.close())
 
+    # -- visual debugging (Phase 3) ------------------------------------------------
+
+    def _build_debug_panel(self, debug: VisualDebugSettings) -> None:
+        """Third column: camera view with detections, occupancy minimap, toggles.
+
+        Overlays are drawn on *copies* for display only. Nothing drawn here is
+        ever fed back to perception.
+        """
+        panel = tk.Frame(self.root, bg=COLOURS["panel"])
+        panel.grid(row=0, column=2, padx=(0, 10), pady=8, sticky="n")
+        opts: dict[str, Any] = {"bg": COLOURS["panel"], "fg": COLOURS["text"], "anchor": "w"}
+        tk.Label(panel, text="Visual debugging", font=("TkDefaultFont", 11, "bold"),
+                 **opts).grid(row=0, column=0, sticky="w")
+        toggles = [("enabled", "Enable visual debugging", debug.enabled),
+                   ("detections", "Show chest detections", debug.show_detections),
+                   ("tracks", "Show object tracks", debug.show_object_tracks),
+                   ("occupancy", "Show occupancy map", debug.show_occupancy_grid),
+                   ("localization", "Show localisation estimate", debug.show_localization),
+                   ("camera", "Show camera view", debug.show_camera_view)]
+        for i, (key, text, value) in enumerate(toggles, start=1):
+            var = tk.BooleanVar(value=value)
+            self.debug_vars[key] = var
+            tk.Checkbutton(panel, text=text, variable=var, bg=COLOURS["panel"],
+                           fg=COLOURS["text"], selectcolor=COLOURS["panel"],
+                           activebackground=COLOURS["panel"]).grid(row=i, column=0, sticky="w")
+        self.camera_label = tk.Label(panel, bg=COLOURS["background"], text="camera view",
+                                     fg=COLOURS["muted_text"])
+        self.camera_label.grid(row=len(toggles) + 1, column=0, pady=(6, 2), sticky="w")
+        self.occupancy_label = tk.Label(panel, bg=COLOURS["background"], text="occupancy",
+                                        fg=COLOURS["muted_text"])
+        self.occupancy_label.grid(row=len(toggles) + 2, column=0, pady=2, sticky="w")
+        self.debug_info = tk.StringVar(value="-")
+        tk.Label(panel, textvariable=self.debug_info, justify="left", **opts).grid(
+            row=len(toggles) + 3, column=0, sticky="w")
+
+    def _debug_on(self, key: str) -> bool:
+        if not self.debug_vars or not self.debug_vars["enabled"].get():
+            return False
+        return self.debug_vars[key].get()
+
+    @staticmethod
+    def _photo(rgb: np.ndarray) -> tk.PhotoImage:
+        height, width = rgb.shape[:2]
+        data = b"P6 %d %d 255\n" % (width, height) + rgb.tobytes()
+        return tk.PhotoImage(data=data, format="PPM")
+
+    def _render_debug(self) -> None:
+        runner = self.runner
+        if runner is None or not self.debug_vars or not runner.is_visual \
+                or runner.controller is None:
+            return
+        import cv2
+
+        controller = runner.visual_controller
+        result = controller.last_result
+        canvas = self.canvas
+        for item in self._debug_items:
+            canvas.delete(item)
+        self._debug_items = []
+        world = controller.world
+        if self._debug_on("localization") and world.pose.position is not None:
+            ex, ey = self._xy(*world.pose.position)
+            r = self._agent_radius + 3
+            self._debug_items.append(canvas.create_oval(ex - r, ey - r, ex + r, ey + r,
+                                                        outline=COLOURS["estimate"], width=2))
+        if self._debug_on("tracks"):
+            for track in world.tracker.tracks:
+                tx, ty = self._xy(*track.estimated_position)
+                colour = COLOURS["chest_opened"] if track.category == "chest_opened" \
+                    else COLOURS["track"]
+                self._debug_items.append(canvas.create_text(
+                    tx + 7, ty - 7, text=f"T{track.track_id}", fill=colour, anchor="sw",
+                    font=("TkDefaultFont", 8)))
+        if self.frames_rendered % DEBUG_EVERY_FRAMES:
+            return
+        if self._debug_on("camera") and result is not None:
+            frame = result.observation.frame.copy()   # display copy only
+            if self._debug_on("detections"):
+                for det in result.detections:
+                    x, y, w, h = det.bbox
+                    bgr = (94, 197, 34) if det.category == "chest_opened" else (0, 215, 255)
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), bgr, 1)
+                    cv2.putText(frame, f"{det.confidence:.2f}", (x, max(8, y - 2)),
+                                cv2.FONT_HERSHEY_PLAIN, 0.7, bgr, 1)
+            if self._debug_on("tracks"):
+                cam = result.observation.camera
+                for track in world.tracker.tracks:
+                    u, v = cam.world_to_pixel(*track.estimated_position)
+                    if 0 <= u < frame.shape[1] and 0 <= v < frame.shape[0]:
+                        cv2.putText(frame, f"T{track.track_id}", (int(u) + 8, int(v) + 4),
+                                    cv2.FONT_HERSHEY_PLAIN, 0.8, (138, 230, 253), 1)
+            small = cv2.resize(frame, (320, 180), interpolation=cv2.INTER_AREA)
+            self._camera_photo = self._photo(cv2.cvtColor(small, cv2.COLOR_BGR2RGB))
+            self.camera_label.configure(image=self._camera_photo, text="")
+        if self._debug_on("occupancy"):
+            occ = world.occupancy.cells[::-1]
+            rgb = np.empty(occ.shape + (3,), np.uint8)
+            rgb[occ == -1] = (12, 12, 12)
+            rgb[occ == 0] = (55, 55, 55)
+            rgb[occ == 1] = (100, 116, 139)
+            for track in world.tracker.tracks:
+                tx, ty = int(track.estimated_position[0]), int(track.estimated_position[1])
+                if 0 <= ty < occ.shape[0] and 0 <= tx < occ.shape[1]:
+                    rgb[occ.shape[0] - 1 - ty, tx] = (245, 197, 24)
+            if world.pose.position is not None:
+                px, py = int(world.pose.position[0]), int(world.pose.position[1])
+                if 0 <= py < occ.shape[0] and 0 <= px < occ.shape[1]:
+                    rgb[occ.shape[0] - 1 - py, px] = (103, 232, 249)
+            scale = max(1, 200 // max(occ.shape))
+            big = np.repeat(np.repeat(rgb, scale, axis=0), scale, axis=1)
+            self._occupancy_photo = self._photo(np.ascontiguousarray(big))
+            self.occupancy_label.configure(image=self._occupancy_photo, text="")
+        env_time = max(runner.env.time, 1e-9)
+        confidence = world.pose.confidence()
+        self.debug_info.set(
+            f"Visual analyses: {controller.analyses} ({controller.analyses / env_time:.1f}/sim s)\n"
+            f"Perception: {1000 * controller.pipeline.mean_seconds:.1f} ms/frame\n"
+            f"Pose confidence: {confidence:.2f}\n"
+            f"Explored: {100 * world.occupancy.known_fraction:.0f}%   "
+            f"Tracks: {len(world.tracker.tracks)}\n"
+            f"Objective: {world.objective or '-'}")
+
     # -- controls -------------------------------------------------------------------
 
     @property
@@ -234,9 +372,11 @@ class SimulationApp:
 
     def _frame(self) -> None:
         self._after_id = None
-        self.advance_frame()
-        self.render()
-        self._schedule()
+        try:
+            self.advance_frame()
+            self.render()
+        finally:   # an exception is still reported by Tk, but never stops the loop
+            self._schedule()
 
     def advance_frame(self) -> None:
         """Advance the simulation by one frame's worth of fixed ticks."""
@@ -299,12 +439,18 @@ class SimulationApp:
         chest = runner.env.chests[chest_id]
         controller = runner.controller
         status: str | None = None
-        if controller is not None:
+        if controller is not None and runner.is_visual:
+            prior = runner.visual_controller.world.priors.get(chest_id)
+            status = None if prior is None else prior.status.value
+            visited = status in ("empty", "opened", "failed")
+        elif isinstance(controller, AgentController):
             try:
                 status = controller.tracker.status(chest_id).value
             except KeyError:  # not a candidate in this session
                 status = None
-        visited = status == "visited"
+            visited = status == "visited"
+        else:
+            visited = False
         unreachable = status in ("unreachable", "abandoned")
         if chest.opened:
             return COLOURS["chest_opened"], COLOURS["chest_opened"]
@@ -350,7 +496,13 @@ class SimulationApp:
             canvas.itemconfigure(self._path_item, state="hidden")
 
         target_id = agent.current_target
-        if target_id is not None and target_id in env.chests:
+        goal = getattr(controller, "goal", None) if runner.is_visual else None
+        if goal is not None and goal.kind == "chest":   # visual agent: its estimated target
+            tx, ty = self._xy(*goal.position)
+            ring = runner.settings.simulation.interaction_radius * self.cell_size
+            canvas.coords(self._target_item, tx - ring, ty - ring, tx + ring, ty + ring)
+            canvas.itemconfigure(self._target_item, state="normal")
+        elif target_id is not None and target_id in env.chests:
             chest = env.chests[target_id]
             tx, ty = self._xy(chest.position_x, chest.position_y)
             ring = runner.settings.simulation.interaction_radius * self.cell_size
@@ -362,6 +514,8 @@ class SimulationApp:
         canvas.tag_raise(self._heading_item)
 
         self._update_info()
+        if self.debug_settings is not None:
+            self._render_debug()
         self.frames_rendered += 1
 
     def _update_info(self) -> None:
@@ -377,7 +531,11 @@ class SimulationApp:
             sim_state = "ready (press Start)"
         target = env.agent.current_target
         target_text = "-"
-        if target is not None and target in env.chests:
+        goal = getattr(runner.controller, "goal", None) if runner.is_visual else None
+        if goal is not None:
+            target_text = (f"chest track T{goal.track_id}" if goal.kind == "chest"
+                           else f"{goal.kind} {goal.cell}")
+        elif target is not None and target in env.chests:
             target_text = f"#{target} {env.chests[target].location_name}"[:26]
         minutes = env.time / 60.0
         rate = f"{m.chests_opened / minutes:.2f}" if minutes > 0 else "-"
@@ -412,11 +570,12 @@ def run_gui(
     render_rate: int,
     speed: int = 1,
     on_finish: Callable[[SimulationRunner], None] | None = None,
+    debug: VisualDebugSettings | None = None,
 ) -> SimulationApp:
     """Open the window and block in Tk's main loop until it is closed."""
     root = tk.Tk()
     app = SimulationApp(root, runner_factory, strategies=strategies, strategy=strategy,
                         cell_size=cell_size, tick_rate=tick_rate, render_rate=render_rate,
-                        speed=speed, autostart=True, on_finish=on_finish)
+                        speed=speed, autostart=True, on_finish=on_finish, debug=debug)
     root.mainloop()
     return app

@@ -34,6 +34,20 @@ class Obstacle:
                 and self.position_y <= y < self.position_y + self.height)
 
 
+@dataclass(frozen=True, slots=True)
+class Decoration:
+    """A walkable, render-only prop (e.g. a hay bale).
+
+    Decorations are deliberately gold-coloured so that colour-only chest
+    detection produces false positives; a good detector must reject them.
+    """
+
+    position_x: float
+    position_y: float
+    radius: float = 0.35
+    kind: str = "hay_bale"
+
+
 @dataclass(slots=True)
 class Chest:
     """One spawn location in the current episode.

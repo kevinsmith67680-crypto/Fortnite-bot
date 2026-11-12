@@ -72,8 +72,15 @@ def astar(
     *,
     allow_diagonal: bool = True,
     prevent_corner_cutting: bool = True,
+    penalty_cells: bytearray | None = None,
+    penalty: float = 0.0,
 ) -> PathResult:
-    """Find a shortest path from ``start`` to ``goal`` (cell coordinates)."""
+    """Find a shortest path from ``start`` to ``goal`` (cell coordinates).
+
+    ``penalty_cells`` (row-major, non-zero = penalised) adds ``penalty`` to the
+    cost of entering such a cell, e.g. to prefer explored space over unknown
+    space. Penalties are non-negative, so the heuristic stays admissible.
+    """
     if not grid.in_bounds(*start):
         return PathResult.failure(FailureReason.START_OUT_OF_BOUNDS)
     if not grid.in_bounds(*goal):
@@ -102,6 +109,7 @@ def astar(
     sequence = 0
     expanded = 0
     diag_bonus = SQRT2 - 2.0
+    penalised = penalty_cells if penalty_cells is not None and penalty > 0 else None
 
     while open_heap:
         _, _, _, node = heapq.heappop(open_heap)
@@ -130,6 +138,8 @@ def astar(
             ):
                 continue
             tentative = g_node + cost
+            if penalised is not None and penalised[neighbour]:
+                tentative += penalty
             if tentative < g_score[neighbour] - 1e-12:
                 g_score[neighbour] = tentative
                 parent[neighbour] = node
@@ -221,10 +231,14 @@ class PathFinder(_GridBoundCache):
     """
 
     def __init__(self, *, allow_diagonal: bool = True, prevent_corner_cutting: bool = True,
-                 cache_paths: bool = True, cache_size: int = 2048) -> None:
+                 cache_paths: bool = True, cache_size: int = 2048,
+                 penalty_cells: bytearray | None = None, penalty: float = 0.0) -> None:
+        """``penalty_cells`` must change only together with the grid's ``version``."""
         super().__init__()
         self.allow_diagonal = allow_diagonal
         self.prevent_corner_cutting = prevent_corner_cutting
+        self.penalty_cells = penalty_cells
+        self.penalty = penalty
         self.cache_paths = cache_paths
         self.cache_size = cache_size
         self._cache: OrderedDict[tuple[Cell, Cell], PathResult] = OrderedDict()
@@ -244,7 +258,8 @@ class PathFinder(_GridBoundCache):
                 self._cache.move_to_end(key)
                 return cached
         result = astar(grid, start, goal, allow_diagonal=self.allow_diagonal,
-                       prevent_corner_cutting=self.prevent_corner_cutting)
+                       prevent_corner_cutting=self.prevent_corner_cutting,
+                       penalty_cells=self.penalty_cells, penalty=self.penalty)
         self.searches += 1
         if self.cache_paths:
             self._cache[key] = result

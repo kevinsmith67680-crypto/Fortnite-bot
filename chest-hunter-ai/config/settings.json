@@ -22,7 +22,8 @@
     "chest_interaction_seconds": 2.0,
     "interaction_failure_probability": 0.0,
     "reward_probability": 0.0,
-    "obstacle_density": 0.12
+    "obstacle_density": 0.12,
+    "decoration_density": 0.004
   },
   "navigation": {
     "allow_diagonal": true,
@@ -37,6 +38,51 @@
     "max_recovery_attempts": 3,
     "arrival_tolerance": 0.5,
     "observation_batch_size": 10
+  },
+  "vision": {
+    "enabled": true,
+    "default_width": 640,
+    "default_height": 360,
+    "view_width_cells": 40,
+    "detector": "hybrid",
+    "confidence_threshold": 0.85,
+    "max_tracks": 100,
+    "track_expiration_seconds": 3.0,
+    "track_memory_seconds": 600.0,
+    "use_regions_of_interest": true,
+    "noise_std": 6.0,
+    "lighting_variation": 0.08,
+    "frame_dropout": 0.0,
+    "rate_travel": 2.0,
+    "rate_explore": 5.0,
+    "rate_tracking": 10.0,
+    "rate_verify": 10.0,
+    "rate_idle": 1.0,
+    "template_dir": "assets/templates"
+  },
+  "localization": {
+    "smoothing_alpha": 0.4,
+    "max_missing_observations": 5,
+    "min_confidence": 0.5,
+    "dead_reckoning_seconds": 2.0
+  },
+  "visual_navigation": {
+    "exploration_strategy": "frontier",
+    "replan_on_obstacle_discovery": true,
+    "maximum_recovery_attempts": 3,
+    "use_spawn_priors": true,
+    "prior_weight": 300.0,
+    "stop_when_spawn_points_resolved": true,
+    "unknown_cell_cost": 0.5,
+    "empty_confirmations": 2
+  },
+  "visual_debug": {
+    "enabled": true,
+    "show_detections": true,
+    "show_object_tracks": true,
+    "show_occupancy_grid": false,
+    "show_localization": true,
+    "show_camera_view": true
   },
   "logging": {
     "level": "INFO"

@@ -62,3 +62,84 @@ TRANSITIONS: Final[dict[AgentState, frozenset[AgentState]]] = {
 
 def is_valid_transition(source: AgentState, target: AgentState) -> bool:
     return target in TRANSITIONS[source]
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: visual agent (separate enum so the oracle table is unchanged)
+# ---------------------------------------------------------------------------
+
+
+class VisualAgentState(StrEnum):
+    """States of the vision-based policy.
+
+    ==================  =========================================  ==========================
+    State               Entry / work                               Exits (failure handling)
+    ==================  =========================================  ==========================
+    INITIALIZING        session opened, priors loaded              OBSERVING
+    OBSERVING (timed)   hold still, request a frame                LOCALIZING
+    LOCALIZING          need a confident pose fix                  EXPLORING / TARGET_DETECTED;
+                                                                   OBSERVING (retry);
+                                                                   RECOVERING (pose lost)
+    EXPLORING           pick a frontier / inspection goal          PLANNING_ROUTE;
+                                                                   TARGET_DETECTED;
+                                                                   COMPLETED (nothing left)
+    TARGET_DETECTED     pick the best visible unopened chest       PLANNING_ROUTE; EXPLORING
+    PLANNING_ROUTE      A* on the estimated occupancy grid         NAVIGATING; ALIGNING (already
+                                                                   there); EXPLORING /
+                                                                   TARGET_DETECTED (no path)
+    NAVIGATING (timed)  follow waypoints on the estimated pose     ALIGNING / EXPLORING
+                                                                   (arrived); PLANNING_ROUTE
+                                                                   (wall found); OBSERVING (low
+                                                                   confidence); RECOVERING
+    ALIGNING (timed)    stop, confirm target + interaction prompt  INTERACTING; PLANNING_ROUTE
+                                                                   (move closer); RECOVERING
+    INTERACTING (timed) hold interact for the interaction time     VERIFYING_OPEN; RECOVERING
+    VERIFYING_OPEN (t)  look for the opened-chest appearance       EXPLORING (success);
+                                                                   RECOVERING (still closed)
+    RECOVERING          bounded retry / replan / abandon           OBSERVING, PLANNING_ROUTE,
+                                                                   ALIGNING, EXPLORING; FAILED
+    COMPLETED/FAILED    terminal                                   -
+    ==================  =========================================  ==========================
+    """
+
+    INITIALIZING = "INITIALIZING"
+    OBSERVING = "OBSERVING"
+    LOCALIZING = "LOCALIZING"
+    EXPLORING = "EXPLORING"
+    TARGET_DETECTED = "TARGET_DETECTED"
+    PLANNING_ROUTE = "PLANNING_ROUTE"
+    NAVIGATING = "NAVIGATING"
+    ALIGNING = "ALIGNING"
+    INTERACTING = "INTERACTING"
+    VERIFYING_OPEN = "VERIFYING_OPEN"
+    RECOVERING = "RECOVERING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+V = VisualAgentState
+_V_END: Final = frozenset({V.COMPLETED, V.FAILED})
+
+VISUAL_TIMED_STATES: Final = frozenset({V.OBSERVING, V.NAVIGATING, V.ALIGNING, V.INTERACTING,
+                                        V.VERIFYING_OPEN})
+
+VISUAL_TRANSITIONS: Final[dict[VisualAgentState, frozenset[VisualAgentState]]] = {
+    V.INITIALIZING: frozenset({V.OBSERVING}) | _V_END,
+    V.OBSERVING: frozenset({V.LOCALIZING, V.RECOVERING}) | _V_END,
+    V.LOCALIZING: frozenset({V.EXPLORING, V.TARGET_DETECTED, V.OBSERVING,
+                             V.RECOVERING}) | _V_END,
+    V.EXPLORING: frozenset({V.TARGET_DETECTED, V.PLANNING_ROUTE, V.OBSERVING}) | _V_END,
+    V.TARGET_DETECTED: frozenset({V.PLANNING_ROUTE, V.EXPLORING}) | _V_END,
+    V.PLANNING_ROUTE: frozenset({V.NAVIGATING, V.ALIGNING, V.EXPLORING, V.TARGET_DETECTED,
+                                 V.RECOVERING}) | _V_END,
+    V.NAVIGATING: frozenset({V.ALIGNING, V.EXPLORING, V.TARGET_DETECTED, V.PLANNING_ROUTE,
+                             V.OBSERVING, V.RECOVERING}) | _V_END,
+    V.ALIGNING: frozenset({V.INTERACTING, V.PLANNING_ROUTE, V.EXPLORING, V.TARGET_DETECTED,
+                           V.RECOVERING}) | _V_END,
+    V.INTERACTING: frozenset({V.VERIFYING_OPEN, V.RECOVERING}) | _V_END,
+    V.VERIFYING_OPEN: frozenset({V.EXPLORING, V.RECOVERING}) | _V_END,
+    V.RECOVERING: frozenset({V.OBSERVING, V.PLANNING_ROUTE, V.ALIGNING,
+                             V.EXPLORING}) | _V_END,
+    V.COMPLETED: frozenset(),
+    V.FAILED: frozenset(),
+}

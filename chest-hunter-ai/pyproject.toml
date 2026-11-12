@@ -5,11 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chest-hunter-ai"
 version = "0.1.0"
-description = "Phase 1 data foundation for a lightweight autonomous chest-hunting research agent (2D simulator)."
+description = "Lightweight autonomous chest-hunting research agent in a 2D simulator: SQLite data, navigation and classical computer vision."
 readme = "README.md"
 requires-python = ">=3.11"
-# Phase 1 deliberately uses the Python standard library only.
-dependencies = []
+# Phases 1-2 use only the standard library. Phase 3 visual perception needs
+# NumPy and OpenCV (the headless build: no GUI libraries are pulled in).
+dependencies = [
+    "numpy>=1.26",
+    "opencv-python-headless>=4.8",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",

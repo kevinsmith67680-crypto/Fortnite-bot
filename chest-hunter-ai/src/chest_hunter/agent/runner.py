@@ -15,9 +15,10 @@ import logging
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from chest_hunter.agent.controller import AgentController
+from chest_hunter.agent.fsm import StateMachine
 from chest_hunter.agent.recorder import ObservationRecorder, SimulationClock
 from chest_hunter.agent.states import AgentState
 from chest_hunter.analytics.metrics import EpisodeMetrics
@@ -29,10 +30,21 @@ from chest_hunter.models import STRATEGY_NAMES, SessionStatistics
 from chest_hunter.navigation.astar import DistanceOracle, PathFinder
 from chest_hunter.navigation.route_planner import Candidate, RoutePlanner
 from chest_hunter.run_repository import RunRepository
+from chest_hunter.scenarios import scenario_obstacles
 from chest_hunter.session_repository import SessionRepository
 from chest_hunter.simulation.environment import Environment, World, build_world
 
+if TYPE_CHECKING:
+    from chest_hunter.agent.visual_controller import VisualAgentController
+
 logger = logging.getLogger(__name__)
+
+AGENT_KINDS: tuple[str, ...] = ("oracle", "visual", "chest_vision")
+"""``oracle``: Phase 2 agent with true spawn points and obstacles.
+``visual``: Phase 3 agent; chests, obstacles and pose all come from camera frames.
+``chest_vision``: visual chests and pose, but the true obstacle map (benchmark mode B)."""
+
+_TEMPLATE_CACHE: dict[tuple[str, float, float], Any] = {}
 
 
 def load_world(db: DatabaseManager, settings: Settings, *, map_id: str, map_seed: int) -> World:
@@ -43,7 +55,8 @@ def load_world(db: DatabaseManager, settings: Settings, *, map_id: str, map_seed
             f"Map '{map_id}' has no enabled chest locations. Run "
             "'python -m chest_hunter seed-demo' or add chests first."
         )
-    world = build_world(locations, settings.simulation, map_id=map_id, map_seed=map_seed)
+    world = build_world(locations, settings.simulation, map_id=map_id, map_seed=map_seed,
+                        extra_obstacles=scenario_obstacles(map_id))
     if not world.chests:
         raise ChestHunterError(
             f"None of the chest locations on map '{map_id}' fit inside the "
@@ -84,16 +97,30 @@ class SimulationRunner:
         world: World | None = None,
         oracle: DistanceOracle | None = None,
         clock_base: datetime | None = None,
+        agent: str = "oracle",
+        evaluate: bool = False,
     ) -> None:
         sim, nav = settings.simulation, settings.navigation
         self.db = db
         self.settings = settings
         self.map_id = map_id or sim.default_map
+        self.agent_kind = agent.replace("-", "_").lower()
+        if self.agent_kind not in AGENT_KINDS:
+            raise ValidationError(
+                f"agent must be one of {', '.join(AGENT_KINDS)}; got {agent!r}.")
+        if self.agent_kind != "oracle" and not settings.vision.enabled:
+            raise ValidationError(
+                f"The {self.agent_kind} agent needs vision.enabled = true in the configuration.")
         self.strategy = (strategy or nav.default_strategy).lower()
         if self.strategy not in STRATEGY_NAMES:
             raise ValidationError(
                 f"strategy must be one of {', '.join(STRATEGY_NAMES)}; got {strategy!r}."
             )
+        self.route_strategy = self.strategy   # used by the oracle planner
+        if self.agent_kind != "oracle":   # label stored with the run
+            self.strategy = ("visual" if self.agent_kind == "visual" else "chest-vision") + \
+                "-" + settings.visual_navigation.exploration_strategy
+        self.evaluate = evaluate
         self.seed = sim.default_seed if seed is None else seed
         if self.seed < 0:
             raise ValidationError("seed must not be negative.")
@@ -113,13 +140,15 @@ class SimulationRunner:
         self.pathfinder = PathFinder(allow_diagonal=nav.allow_diagonal,
                                      prevent_corner_cutting=nav.prevent_corner_cutting,
                                      cache_paths=nav.cache_paths)
-        self.planner = RoutePlanner(self.oracle, strategy=self.strategy,
+        self.planner = RoutePlanner(self.oracle, strategy=self.route_strategy,
                                     speed=sim.player_speed,
                                     acceleration=sim.player_acceleration,
                                     lookahead_depth=nav.lookahead_depth)
         self.metrics = EpisodeMetrics(strategy=self.strategy, seed=self.seed, episode=episode)
         self.clock = SimulationClock(self.env, base=clock_base)
-        self.controller: AgentController | None = None
+        self.controller: AgentController | VisualAgentController | None = None
+        self.interface: Any = None
+        self.vision_evaluator: Any = None
         self.recorder: ObservationRecorder | None = None
         self.session_id: int | None = None
         self.finished = False
@@ -133,8 +162,23 @@ class SimulationRunner:
         return self.controller is not None
 
     @property
-    def state(self) -> AgentState:
+    def state(self) -> Any:
+        """Current FSM state (AgentState or VisualAgentState)."""
         return self.controller.state if self.controller else AgentState.INITIALIZING
+
+    @property
+    def is_visual(self) -> bool:
+        return self.agent_kind != "oracle"
+
+    @property
+    def visual_controller(self) -> VisualAgentController:
+        """The running visual controller (raises for oracle or unstarted runners)."""
+        from chest_hunter.agent.visual_controller import VisualAgentController
+
+        controller = self.controller
+        if not isinstance(controller, VisualAgentController):
+            raise RuntimeError("This runner is not running a visual agent.")
+        return controller
 
     def start(self) -> int:
         """INITIALIZING: open the session, record the run, load candidates."""
@@ -165,6 +209,15 @@ class SimulationRunner:
             self.db, sessions, session.id,
             batch_size=self.settings.agent.observation_batch_size,
         )
+        self.metrics.chests_spawned = sum(
+            1 for c in candidates if self.env.chests[c.chest_id].present)  # evaluation only
+        if self.is_visual:
+            visual = self._build_visual_controller(unvisited)
+            self.controller = visual
+            logger.info("Session %d: %s agent, seed %d, episode %d, %d spawn prior(s)",
+                        session.id, self.agent_kind, self.seed, self.episode, len(candidates))
+            visual.initialize()
+            return session.id
         self.controller = AgentController(
             self.env, planner=self.planner, pathfinder=self.pathfinder,
             settings=self.settings, metrics=self.metrics, recorder=self.recorder,
@@ -185,8 +238,10 @@ class SimulationRunner:
             if self.finished:
                 break
             controller.tick()
-            if controller.state.is_terminal:
+            if controller.is_terminal():
                 break
+            if self.interface is not None:
+                self.interface.end_tick()
             self.env.advance()
             if self.env.tick >= self.max_ticks:
                 controller.stop("tick_limit", f"reached max_ticks={self.max_ticks}")
@@ -231,18 +286,106 @@ class SimulationRunner:
             "simulation": asdict(self.settings.simulation),
             "navigation": asdict(self.settings.navigation),
             "agent": asdict(self.settings.agent),
+            "agent_kind": self.agent_kind,
+            **({"vision": asdict(self.settings.vision),
+                "localization": asdict(self.settings.localization),
+                "visual_navigation": asdict(self.settings.visual_navigation)}
+               if self.is_visual else {}),
         }
 
-    def _finalize(self, controller: AgentController) -> None:
+    def _build_visual_controller(self, unvisited: list[Any]) -> VisualAgentController:
+        """Wire the Phase 3 stack. Only the interface touches the environment."""
+        from chest_hunter.agent.visual_controller import VisualAgentController
+        from chest_hunter.localization.pose_estimator import PoseEstimator
+        from chest_hunter.localization.world_state import SpawnPrior, WorldModel
+        from chest_hunter.navigation.local_controller import EstimatedBody, LocalController
+        from chest_hunter.navigation.movement import MovementController
+        from chest_hunter.navigation.visual_planner import VisualPlanner
+        from chest_hunter.simulation.camera import SensorModel
+        from chest_hunter.simulation.interface import VisualSimulatorInterface
+        from chest_hunter.vision.perception_pipeline import PerceptionPipeline
+        from chest_hunter.vision.templates import TemplateLibrary
+        from chest_hunter.vision.visual_tracker import VisualTracker
+
+        settings = self.settings
+        sim, vis, loc, vnav = (settings.simulation, settings.vision, settings.localization,
+                               settings.visual_navigation)
+        self.interface = VisualSimulatorInterface(
+            self.env, width=vis.default_width, height=vis.default_height,
+            view_width_cells=vis.view_width_cells,
+            sensor=SensorModel(vis.noise_std, vis.lighting_variation, vis.frame_dropout),
+            seed=self.seed * 1000 + self.episode)
+        key = (str(settings.template_dir()), vis.noise_std, vis.lighting_variation)
+        library = _TEMPLATE_CACHE.get(key)
+        if library is None:
+            library = TemplateLibrary.load(settings.template_dir(), noise_std=vis.noise_std,
+                                           lighting_variation=vis.lighting_variation)
+            _TEMPLATE_CACHE[key] = library
+        pipeline = PerceptionPipeline(library, detector=vis.detector,
+                                      confidence_threshold=vis.confidence_threshold,
+                                      update_occupancy=self.agent_kind == "visual")
+        transform = self.world.transform
+        priors = []
+        for loc_row in unvisited:
+            if loc_row.id is None or loc_row.id in self.world.excluded_location_ids:
+                continue
+            gx, gy = transform.to_grid(loc_row.x, loc_row.y)
+            priors.append(SpawnPrior(loc_row.id, loc_row.location_name, gx, gy,
+                                     loc_row.spawn_probability))
+        pose = PoseEstimator(smoothing_alpha=loc.smoothing_alpha,
+                             max_missing_observations=loc.max_missing_observations,
+                             dead_reckoning_seconds=loc.dead_reckoning_seconds)
+        tracker = VisualTracker(expiration_seconds=vis.track_expiration_seconds,
+                                memory_seconds=vis.track_memory_seconds,
+                                max_tracks=vis.max_tracks)
+        oracle_grid = self.env.grid if self.agent_kind == "chest_vision" else None
+        world = WorldModel(self.world.width, self.world.height, priors, pose=pose,
+                           tracker=tracker, min_confidence=loc.min_confidence,
+                           empty_confirmations=vnav.empty_confirmations,
+                           oracle_grid=oracle_grid)
+        ppc = vis.default_width / vis.view_width_cells
+        planner = VisualPlanner(world, speed=sim.player_speed,
+                                acceleration=sim.player_acceleration,
+                                view_width=vis.view_width_cells,
+                                view_height=vis.default_height / ppc,
+                                open_seconds=sim.chest_interaction_seconds,
+                                prior_weight=vnav.prior_weight,
+                                use_priors=vnav.use_spawn_priors,
+                                unknown_cost=vnav.unknown_cell_cost,
+                                allow_diagonal=settings.navigation.allow_diagonal,
+                                prevent_corner_cutting=settings.navigation.prevent_corner_cutting)
+        body = EstimatedBody(pose, self.interface, max_speed=sim.player_speed,
+                             acceleration=sim.player_acceleration, radius=sim.player_radius)
+        local = LocalController(body, MovementController(
+            dt=self.env.dt, stuck_timeout=settings.navigation.stuck_timeout_seconds),
+            min_confidence=loc.min_confidence)
+        controller = VisualAgentController(
+            self.interface, pipeline=pipeline, world=world, planner=planner, local=local,
+            settings=settings, metrics=self.metrics, recorder=self.recorder, clock=self.clock,
+            finalizer=self._finalize)
+        if self.evaluate:
+            from chest_hunter.analytics.vision_metrics import VisionEvaluator
+
+            self.vision_evaluator = VisionEvaluator(self.interface.evaluation_environment,
+                                                    controller)
+            controller.perception_listeners.append(self.vision_evaluator.observe)
+        return controller
+
+    def _finalize(self, controller: StateMachine[Any]) -> None:
         """Called once when the FSM reaches COMPLETED or FAILED."""
         m = self.metrics
         m.ticks = self.env.tick
         m.simulated_seconds = self.env.time
         m.travel_distance = self.env.agent.distance_travelled
-        m.astar_searches = self.pathfinder.searches
-        m.astar_cache_hits = self.pathfinder.cache_hits
-        m.outcome = controller.outcome or ("completed" if controller.state is AgentState.COMPLETED
-                                           else "failed")
+        pathfinder = controller.planner.pathfinder if self.is_visual else self.pathfinder  # type: ignore[attr-defined]
+        m.astar_searches = pathfinder.searches
+        m.astar_cache_hits = pathfinder.cache_hits
+        m.outcome = controller.outcome or (
+            "failed" if str(controller.state.value) == "FAILED" else "completed")
+        if self.is_visual:
+            m.rewards = len(self.env.rewards.awarded)  # ground truth for reporting
+            if self.vision_evaluator is not None:
+                self.vision_evaluator.finish()
         if self.recorder is not None:
             m.observations_recorded = self.recorder.recorded
             m.db_flushes = self.recorder.flushes

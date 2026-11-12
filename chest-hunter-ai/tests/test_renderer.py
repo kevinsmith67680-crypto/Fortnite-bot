@@ -116,5 +116,45 @@ class RendererTests(unittest.TestCase):
         self.assertFalse(app.running)
 
 
+
+class VisualDebugRendererTests(unittest.TestCase):
+    def test_visual_agent_with_debug_overlays(self) -> None:
+        root = make_root()
+        if root is None:
+            self.skipTest("Tkinter or a display is not available")
+        from chest_hunter.scenarios import VISUAL_ARENA_ID, seed_scenario
+        from chest_hunter.simulation.renderer import SimulationApp
+
+        db = DatabaseManager(":memory:")
+        self.addCleanup(db.close)
+        db.initialize()
+        seed_scenario(db)
+        settings = load_config()
+        world = load_world(db, settings, map_id=VISUAL_ARENA_ID, map_seed=42)
+        finished: list[SimulationRunner] = []
+
+        def factory(strategy: str) -> SimulationRunner:
+            return SimulationRunner(db, settings, map_id=VISUAL_ARENA_ID, seed=42, world=world,
+                                    agent="visual", evaluate=True, max_ticks=1200)
+
+        app = SimulationApp(root, factory, strategies=STRATEGY_NAMES, strategy="weighted",
+                            cell_size=4, tick_rate=30, render_rate=15, speed=10,
+                            autostart=True, on_finish=finished.append,
+                            debug=settings.visual_debug)
+        app.debug_vars["occupancy"].set(True)
+        for _ in range(200):
+            app.advance_frame()
+            app.render()
+            if finished:
+                break
+        self.assertIsNotNone(app._camera_photo)
+        self.assertIsNotNone(app._occupancy_photo)
+        self.assertIn("Visual analyses", app.debug_info.get())
+        self.assertTrue(app._debug_items)              # estimate ring / track labels drawn
+        self.assertTrue(finished)
+        with contextlib.suppress(tk.TclError):
+            app.close()
+
+
 if __name__ == "__main__":
     unittest.main()
