@@ -1,0 +1,24 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+
+# Packaging / editable-install metadata
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local SQLite databases (keep the directory via data/.gitkeep)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,13 @@
+{
+  "database": {
+    "path": "data/chest_locations.db"
+  },
+  "simulation": {
+    "default_map": "research_arena_01",
+    "default_spawn_probability": 0.8,
+    "default_open_seconds": 2.0
+  },
+  "logging": {
+    "level": "INFO"
+  }
+}

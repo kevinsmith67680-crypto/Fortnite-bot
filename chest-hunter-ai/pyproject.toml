@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chest-hunter-ai"
+version = "0.1.0"
+description = "Phase 1 data foundation for a lightweight autonomous chest-hunting research agent (2D simulator)."
+readme = "README.md"
+requires-python = ">=3.11"
+# Phase 1 deliberately uses the Python standard library only.
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.scripts]
+chest-hunter = "chest_hunter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+chest_hunter = ["py.typed"]
