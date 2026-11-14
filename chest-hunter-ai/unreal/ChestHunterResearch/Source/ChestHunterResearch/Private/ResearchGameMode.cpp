@@ -120,7 +120,13 @@ bool AResearchGameMode::ResetEpisode(const FResearchEpisodeConfig& InConfig, FSt
 		const FResearchSpawnPoint& S = Layout.Spawns[I];
 		const bool bPresent = ResearchProtocol::UnitRoll(Config.Seed, Config.Episode, I, 0) < S.Probability;
 		Chests[I]->SetActorLocation(ResearchUnits::ToCm(S.PositionM));
-		Chests[I]->Initialise(I, S.LocationName, S.YawDeg, bPresent);
+		Chests[I]->Initialise(I, S.LocationName, S.YawDeg, bPresent, Layout.ChestValue, Layout.ChestHueShiftDeg);
+	}
+
+	// Procedural lighting variation: scale the sun (base intensity 6, see EnsureLighting).
+	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+	{
+		It->GetLightComponent()->SetIntensity(6.f * Layout.Lighting);
 	}
 
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);

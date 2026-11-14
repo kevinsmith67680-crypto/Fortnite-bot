@@ -96,3 +96,21 @@ def arena_3d_chests() -> tuple[DemoChest, ...]:
 def seed_arena_3d(db: DatabaseManager, *, clock: Clock = utc_now) -> SeedResult:
     """Insert the 3D arena's spawn points (idempotent)."""
     return seed_demo_chests(db, ARENA_3D_ID, clock=clock, chests=arena_3d_chests())
+
+
+def procedural_chests(map_id: str) -> tuple[DemoChest, ...]:
+    """Spawn points of a procedural 3D map (``proc_train_NNN`` / ``proc_test_NNN``).
+
+    The database receives the generator's *uninformative prior* (``DATABASE_PRIOR``), not the
+    hidden true spawn probabilities: learning those from observations is the point of the
+    Phase 5 spawn estimator."""
+    from chest_hunter.simulation3d.procedural import build_procedural_arena, database_prior
+
+    return tuple(DemoChest(s.region, s.name, s.x, s.y, s.z, database_prior(s), 2.0)
+                 for s in build_procedural_arena(map_id).spawns)
+
+
+def seed_procedural_map(db: DatabaseManager, map_id: str, *,
+                        clock: Clock = utc_now) -> SeedResult:
+    """Insert a procedural map's spawn points (idempotent)."""
+    return seed_demo_chests(db, map_id, clock=clock, chests=procedural_chests(map_id))

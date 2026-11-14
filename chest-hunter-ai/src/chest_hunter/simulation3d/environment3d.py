@@ -23,10 +23,11 @@ from __future__ import annotations
 
 import math
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from typing import Any
 
+import cv2
 import numpy as np
 
 from chest_hunter.simulation3d.arena import (
@@ -71,16 +72,41 @@ def unit_roll(seed: int, episode: int, index: int, salt: int = 0) -> float:
     return (h >> 11) / float(1 << 53)
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=24)
 def cached_arena(map_id: str) -> tuple[Arena3D, World3D, NavGrid3D]:
-    """Static arena data is built once per process (navigation graph: ~0.4 s)."""
-    from chest_hunter.simulation3d.arena import ARENA_3D_ID
+    """Static arena data is built once per process (navigation graph: ~0.4 s).
 
+    ``research_arena_3d`` is the hand-made arena; ``proc_train_NNN`` / ``proc_test_NNN`` are
+    procedural variations (:mod:`chest_hunter.simulation3d.procedural`)."""
+    from chest_hunter.simulation3d.arena import ARENA_3D_ID
+    from chest_hunter.simulation3d.procedural import build_procedural, is_procedural
+
+    if is_procedural(map_id):
+        return build_procedural(map_id)
     if map_id != ARENA_3D_ID:
-        raise ValueError(f"unknown 3D map {map_id!r}; available: {ARENA_3D_ID}")
+        raise ValueError(f"unknown 3D map {map_id!r}; available: {ARENA_3D_ID}, "
+                         "proc_train_NNN, proc_test_NNN")
     arena = build_research_arena_3d()
     world = World3D(arena.boxes, bounds=arena.bounds)
     return arena, world, NavGrid3D(world)
+
+
+def _chest_tint(value: float, hue_shift_deg: float) -> Any:
+    """Colour transform for chest faces (procedural appearance), or ``None`` for identity."""
+    if value == 1.0 and hue_shift_deg == 0.0:
+        return None
+    cache: dict[tuple[float, float, float], tuple[float, float, float]] = {}
+
+    def tint(bgr: tuple[float, float, float]) -> tuple[float, float, float]:
+        if bgr not in cache:
+            px = np.array([[bgr]], dtype=np.uint8)
+            hsv = cv2.cvtColor(px, cv2.COLOR_BGR2HSV).astype(np.float64)
+            hsv[0, 0, 0] = (hsv[0, 0, 0] + hue_shift_deg / 2.0) % 180.0   # OpenCV hue: 0-179
+            hsv[0, 0, 2] = min(255.0, hsv[0, 0, 2] * value)
+            out = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)[0, 0]
+            cache[bgr] = (float(out[0]), float(out[1]), float(out[2]))
+        return cache[bgr]
+    return tint
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +160,10 @@ class Environment3D:
                                    lighting_variation=s.lighting_variation,
                                    seed=seed * 7919 + episode)
         self._rng = random.Random(f"env3d:{seed}:{episode}")
+        appearance = self.arena.appearance
+        self.base_lighting = float(appearance.get("lighting", 1.0))
+        self._chest_tint = _chest_tint(float(appearance.get("chest_value", 1.0)),
+                                       float(appearance.get("chest_hue_shift", 0.0)))
         self.reset()
 
     # -- episode lifecycle --------------------------------------------------------------------
@@ -310,9 +340,13 @@ class Environment3D:
         for c in self.chests:
             for b in c.boxes:
                 faces += box_faces(b, owner=c.spawn_index + 1)
+        if self._chest_tint is not None:
+            faces = [replace(f, colour=self._chest_tint(f.colour)) for f in faces]
         faces += self._character_faces()
         bills = self._billboards()
         lighting = 1.0 + self._rng.uniform(-1.0, 1.0) * self.settings.lighting_variation
+        if self.base_lighting != 1.0:
+            lighting *= self.base_lighting
         frame, ids = self.renderer.render(pose, faces, bills, labels=labels, lighting=lighting)
         self.frame_id += 1
         if labels and ids is not None:

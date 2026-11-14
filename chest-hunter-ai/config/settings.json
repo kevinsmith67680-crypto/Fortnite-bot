@@ -86,5 +86,21 @@
   },
   "logging": {
     "level": "INFO"
+  },
+  "learning": {
+    "dataset_dir": "training/datasets",
+    "model_dir": "training/checkpoints/bc_synthetic_v1",
+    "experience_db": "training/experience.db",
+    "policy": "deterministic",
+    "quantized_model": false,
+    "onnx_threads": 1,
+    "inference_timeout_ms": 20.0,
+    "hybrid_confidence": 0.6,
+    "learned_observation_rate": 8.0,
+    "adaptive_planning": false,
+    "smart_recovery": false,
+    "spawn_prior_strength": 4.0,
+    "exploration_weight": 0.15,
+    "cluster_weight": 0.25
   }
 }

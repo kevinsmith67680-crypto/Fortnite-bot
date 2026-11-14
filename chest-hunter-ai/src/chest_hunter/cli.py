@@ -485,6 +485,9 @@ def build_parser() -> argparse.ArgumentParser:
     view.add_argument("--render-debug", dest="render_debug", action="store_true",
                       help="open the Tkinter debug dashboard (camera feed with overlays, map)")
     sub.set_defaults(render_debug=False)
+    from chest_hunter.cli_learning import add_simulate_options, register
+
+    add_simulate_options(sub)
 
     sub = add("benchmark-3d", "Oracle vs hybrid visual vs visual-navigation on paired 3D episodes "
                               "(reference arena).", _cmd_benchmark_3d)
@@ -509,6 +512,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="default: unreal/ChestHunterResearch/Content/ResearchData/"
                           "research_arena_3d.json")
 
+    register(add)                                        # Phase 5 learning commands
     return parser
 
 
@@ -929,15 +933,25 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
 
         dashboard = Dashboard3D()
         on_decision = dashboard.update
+    from chest_hunter.cli_learning import simulate_extras
+
+    extras = simulate_extras(ctx, args, args.map or c3.default_map) if mode != "oracle" else {}
     runner = Runner3D.from_settings(
         ctx.db, settings, mode=mode, seed=seed, episode=args.episode, backend=backend,
         host=args.host, port=args.port, width=args.observation_width,
         height=args.observation_height, max_ticks=args.max_ticks, detector=args.detector,
         graphics_quality=args.graphics_quality, map_id=args.map,
         evaluate=args.evaluate or mode == "oracle" and backend == "reference",
-        on_decision=on_decision)
+        on_decision=on_decision, **extras)
     where = ("the built-in Python reference arena (NOT Unreal Engine)" if backend == "reference"
              else f"the Unreal research server at {runner.host}:{runner.port}")
+    if runner.policy != "deterministic" or runner.planner is not None:
+        lp = runner.learned_policy
+        synthetic = ", trained on synthetic demonstrations" \
+            if lp is not None and lp.synthetic_training_data else ""
+        print(f"Policy: {runner.policy}"
+              + (f" (model {lp.version}, {lp.backend}{synthetic})" if lp is not None else "")
+              + ("; adaptive planning" if runner.planner is not None else ""))
     print(f"3D episode on {runner.map_id} using {where}: {mode} agent, seed {seed}, episode "
           f"{args.episode}, {runner.width}x{runner.height} observations, max {runner.max_ticks} "
           f"ticks{' (debug dashboard)' if dashboard else ''} ...")
@@ -946,6 +960,8 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
     finally:
         if dashboard is not None:
             dashboard.close()
+    if runner.planner is not None:
+        runner.planner.flush(result.session_id)
     m = result.metrics
     rows = [
         ("Outcome", f"{result.outcome} ({result.end_reason})"),
@@ -965,6 +981,14 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
         ("Bridge round trip", f"{result.bridge_round_trip_ms:.2f} ms mean"),
         ("CPU / wall time", f"{result.cpu_seconds:.1f} s / {result.wall_seconds:.1f} s"),
     ]
+    if runner.selector is not None:
+        st = runner.selector.stats.to_dict()
+        rows.append(("Learned decisions", f"{st['learned_decisions']} of {st['decisions']} "
+                                          f"({100 * st['learned_share']:.1f} %), inference "
+                                          f"{st['latency_mean_ms']} ms mean, fallbacks "
+                                          f"{st['fallbacks'] or 'none'}"))
+    if m.credited_by_notification or m.recovery_log.attempts:
+        rows.append(("Recovery classes", str(m.recovery_log.to_dict())))
     print(format_key_values(rows))
     if result.truth:
         t = result.truth
@@ -1118,7 +1142,9 @@ def _load_settings(args: argparse.Namespace) -> Settings:
 
 
 #: Commands that never read or write the database (no existing database is required).
-_COMMANDS_WITHOUT_DATABASE = frozenset({"init-db", "export-arena-3d"})
+_COMMANDS_WITHOUT_DATABASE = frozenset({"init-db", "export-arena-3d", "record-demo",
+                                        "train-policy", "export-policy", "evaluate-policy",
+                                        "benchmark-policies", "benchmark-generalization"})
 
 
 def _require_database(db: DatabaseManager) -> None:

@@ -66,6 +66,10 @@ class Arena3D:
     start_yaw_deg: float
     bounds: tuple[float, float, float, float] = (0.0, 0.0, 100.0, 100.0)
     regions: dict[str, tuple[float, float, float, float]] = field(default_factory=dict)
+    #: Rendering variation (procedural maps): ``lighting`` (global brightness factor),
+    #: ``chest_value`` (chest brightness factor), ``chest_hue_shift`` (degrees). Empty for
+    #: the hand-made arena, whose rendering is therefore unchanged.
+    appearance: dict[str, float] = field(default_factory=dict)
 
 
 # -- building blocks ---------------------------------------------------------------------
@@ -426,4 +430,6 @@ def arena_to_json(arena: Arena3D) -> str:
         "spawn_points": [dict(asdict(s), location_name=s.location_name, tags=list(s.tags))
                          for s in arena.spawns],
     }
+    if arena.appearance:
+        data["appearance"] = dict(arena.appearance)
     return json.dumps(data, indent=1)

@@ -26,7 +26,9 @@ public:
 	static constexpr float BodyHeightM = 0.5f;
 	static constexpr float LidHeightM = 0.15f;
 
-	void Initialise(int32 InSpawnIndex, const FString& InName, float InYawDeg, bool bInPresent);
+	/** ``ValueScale``/``HueShiftDeg``: procedural chest appearance (1 and 0 = standard). */
+	void Initialise(int32 InSpawnIndex, const FString& InName, float InYawDeg, bool bInPresent,
+	                float ValueScale = 1.f, float HueShiftDeg = 0.f);
 	void SetOpened(bool bInOpened);
 	/** Interaction cues; Fraction in [0, 1] (<= 0 hides the bar). */
 	void ShowPrompt(bool bVisible);

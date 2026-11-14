@@ -28,6 +28,7 @@ from typing import Any, Protocol
 import numpy as np
 
 from chest_hunter.agent.fsm import StateMachine
+from chest_hunter.agent.recovery_3d import RecoveryLog, classify
 from chest_hunter.localization.world_model_3d import (
     PriorStatus3D,
     SpawnPrior3D,
@@ -83,7 +84,8 @@ TRANSITIONS_3D: dict[Agent3DState, frozenset[Agent3DState]] = {
                              S.PLANNING_ROUTE, S.RECOVERING}) | _END,
     S.APPROACHING: frozenset({S.ALIGNING, S.PLANNING_ROUTE, S.RECOVERING, S.EXPLORING}) | _END,
     S.ALIGNING: frozenset({S.INTERACTING, S.APPROACHING, S.RECOVERING, S.EXPLORING}) | _END,
-    S.INTERACTING: frozenset({S.VERIFYING_OPEN, S.RECOVERING}) | _END,
+    # EXPLORING: the goal vanished mid-hold (credited elsewhere, e.g. late verification).
+    S.INTERACTING: frozenset({S.VERIFYING_OPEN, S.RECOVERING, S.EXPLORING}) | _END,
     S.VERIFYING_OPEN: frozenset({S.EXPLORING, S.RECOVERING}) | _END,
     S.RECOVERING: frozenset({S.PLANNING_ROUTE, S.ALIGNING, S.APPROACHING, S.EXPLORING,
                              S.OBSERVING}) | _END,
@@ -113,6 +115,11 @@ class Agent3DConfig:
     inspect_range_m: float = 6.0
     vote_range_m: float = 9.0
     cruise_pitch_deg: float = -12.0
+    #: Phase 5: classified, bounded recovery strategies (off = Phase 4 behaviour).
+    smart_recovery: bool = False
+    max_lookbacks: int = 2
+    max_rescans: int = 1
+    uncertain_sigma_m: float = 1.0
 
 
 @dataclass(slots=True)
@@ -145,6 +152,9 @@ class Metrics3D:
     locations_recorded: int = 0
     travel_distance: float = 0.0
     recovery_reasons: dict[str, int] = field(default_factory=dict)
+    interaction_attempts: int = 0
+    credited_by_notification: int = 0
+    recovery_log: RecoveryLog = field(default_factory=RecoveryLog)
 
     @property
     def perception_ms_mean(self) -> float:
@@ -216,6 +226,12 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._plan_failures: dict[int, int] = {}
         self._trail: deque[tuple[float, tuple[float, float, float]]] = deque(maxlen=90)
         self._approach_path: PathFollower | None = None
+        #: Phase 5 adaptive planner (exploration.adaptive_planner); None = Phase 4 rules.
+        self.planner: Any = None
+        self._lookbacks: dict[object, int] = {}
+        self._last_notification_reward = False
+        self._rescans: dict[object, int] = {}
+        self._uncertain_checks: dict[object, int] = {}
         self._handlers = {
             S.OBSERVING: self._observe, S.SCANNING: self._scanning, S.EXPLORING: self._explore,
             S.TARGET_DETECTED: self._target_detected, S.PLANNING_ROUTE: self._plan_route,
@@ -268,6 +284,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         for event in tel.events:
             if event.get("type") == "chest_opened_notification":
                 self._verify["reward"] += 1
+                self._last_notification_reward = bool(event.get("reward"))
                 if event.get("reward"):
                     self.metrics.rewards += 1
         if result.observation is not None:
@@ -448,10 +465,20 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         prior = self.world.priors[location_id]
         prior.status = PriorStatus3D.OPENED
         self.metrics.chests_opened += 1
+        if self.goal is not None:
+            self.metrics.recovery_log.resolve(self._target_key(self.goal))
+        if self.planner is not None:
+            self.planner.opened(location_id)
         self._record(location_id, present=True, opened=True, seconds=seconds, reward=reward)
         if self.goal is not None and self.goal.location_id == location_id \
                 and self.state not in (S.VERIFYING_OPEN,):
             self.goal = None
+
+    def credit_opening(self, location_id: int, seconds: float, reward: bool | None) -> None:
+        """Record a verified opening decided outside the state machine (Phase 5 learned
+        control: the agent's own opening notification next to a spawn point)."""
+        if location_id in self.world.priors:
+            self._credit_open(location_id, seconds, reward)
 
     # -- state handlers -------------------------------------------------------------------------
 
@@ -497,6 +524,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         pos = self.position
         speed = float(self.rules.get("max_speed", 5.0))
         candidates = []
+        pool = [p for p in self.world.unresolved() if p.status is PriorStatus3D.UNKNOWN
+                and p.location_id not in self._unreachable_keys] if self.planner else []
         for p in self.world.unresolved():
             if p.status is not PriorStatus3D.UNKNOWN or p.location_id in self._unreachable_keys:
                 continue
@@ -505,7 +534,11 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 self.metrics.abandoned_targets += 1
                 continue
             straight = math.dist(pos, p.xyz)
-            candidates.append((p.probability / (straight * 1.25 / speed + 1.0), p))
+            if self.planner is not None:
+                key = self.planner.preselect_score(p, pos, straight, speed, pool)
+            else:
+                key = p.probability / (straight * 1.25 / speed + 1.0)
+            candidates.append((key, p))
         if not candidates:
             if self.world.all_resolved:
                 return self._complete("all spawn points resolved")
@@ -528,7 +561,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                     continue                              # unknown to the local map: try later
                 self._mark_unreachable(p)
                 continue
-            score = p.probability / (length / speed + 1.0)
+            if self.planner is not None:
+                score = self.planner.inspection_score(p, pos, length, speed, pool)
+            else:
+                score = p.probability / (length / speed + 1.0)
             if best is None or score > best[0]:
                 best = (score, p)
         if best is None:
@@ -575,7 +611,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         if not targets:
             return S.EXPLORING
         pos = self.position
-        track = min(targets, key=lambda t: (math.dist(pos, t.xyz), t.track_id))
+        if self.planner is not None:
+            track = self.planner.choose_track(targets, pos, float(self.rules.get("max_speed", 5.0)))
+        else:
+            track = min(targets, key=lambda t: (math.dist(pos, t.xyz), t.track_id))
         self.goal = Goal3D("chest", track.xyz, track.location_id, track.track_id)
         self.metrics.targets_selected += 1
         self._approach_side = 0.0
@@ -598,6 +637,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             return self._wait_to_land(S.PLANNING_ROUTE)
         if plan is None:
             self.metrics.navigation_failures += 1
+            if self.planner is not None:
+                self.planner.route_failed_immediately(goal, self.position, self.now,
+                                                      "target_unreachable")
             prior = self.world.priors.get(goal.location_id) if goal.location_id else None
             if prior is not None:
                 # The agent's own map (local mode) is incomplete: a failed plan is weak
@@ -607,6 +649,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 definitive = isinstance(self.navigator, NavMeshNavigator) \
                     or self.navigator.last_status == "other_floor" or n >= 3
                 if definitive:
+                    self.metrics.recovery_log.record(self._target_key(goal),
+                                                     "target_unreachable")
                     self._mark_unreachable(prior)
                 else:
                     prior.inspections += 1
@@ -618,6 +662,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._off_mesh_waits = 0
         self.follower = PathFollower(plan.waypoints, arrive_radius=0.7)
         self.follower.start(self.now)
+        if self.planner is not None:
+            self.planner.route_started(goal, self.position, plan.length,
+                                       float(self.rules.get("max_speed", 5.0)), self.now)
         return self._go(S.NAVIGATING)
 
     def _navigate(self) -> Agent3DState | None:
@@ -629,6 +676,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             track = self.world.tracker.get(goal.track_id or -1)
             if track is None:
                 self.metrics.targets_lost += 1
+                self._route_end(False, "target_lost")
+                if self._smart_target_lost(goal):
+                    return self._go(S.SCANNING)
                 return S.EXPLORING
             if math.dist(track.xyz, goal.position) > 1.5:
                 goal.position = track.xyz
@@ -636,6 +686,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             goal.position = track.xyz
             if math.dist(pos[:2], goal.position[:2]) <= self.cfg.approach_switch_m \
                     and abs(goal.position[2] - pos[2]) <= 0.6:
+                self._route_end(True)
                 return self._go(S.APPROACHING)
         else:
             prior = self.world.priors.get(goal.location_id) if goal.location_id else None
@@ -646,6 +697,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             near = math.dist(pos[:2], prior.xyz[:2]) <= self.cfg.inspect_range_m \
                 and abs(prior.z - pos[2]) <= 0.6
             if near or follower.done:
+                self._route_end(True)
                 prior.inspections += 1
                 self._scan = [self._view_yaw(prior.xyz)] * 2
                 cam = self.obs.camera_pose() if self.obs is not None else None
@@ -655,11 +707,13 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 return self._go(S.SCANNING)
         if follower.stuck(self.now):
             self.recovery_reason = "stuck"
+            self._route_end(False, "path_blocked")
             self.metrics.navigation_failures += 1
             self.navigator.note_obstacle(pos, self._cam_yaw)
             return S.RECOVERING
         bearing, speed = follower.steer(pos, self.now)
         if follower.done and goal.kind == "chest":
+            self._route_end(True)
             return self._go(S.APPROACHING)
         self._move(bearing, speed)
         if goal.kind == "chest" and self._near_goal(12.0):
@@ -675,14 +729,25 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         track = self.world.tracker.get(goal.track_id or -1)
         if track is None:
             self.metrics.targets_lost += 1
+            if self.cfg.smart_recovery:
+                self.recovery_reason = "target_lost"
+                return S.RECOVERING
             return S.EXPLORING
         goal.position = track.xyz
         pos = self.position
         tx, ty, _ = goal.position
         dist = math.hypot(tx - pos[0], ty - pos[1])
         self._aim_at(goal.position)
+        if self.cfg.smart_recovery and track.sigma > self.cfg.uncertain_sigma_m and dist < 6.0:
+            key = self._target_key(goal)
+            if self._uncertain_checks.get(key, 0) < 2 \
+                    and self.metrics.recovery_log.can_use("localisation_uncertainty"):
+                self._uncertain_checks[key] = self._uncertain_checks.get(key, 0) + 1
+                self.recovery_reason = "localisation_uncertainty"
+                return S.RECOVERING
         if dist <= self._approach_stand + self.cfg.arrive_margin_m:
             self.metrics.targets_reached += 1
+            self.metrics.recovery_log.resolve(("reach", self._target_key(goal)))
             return self._go(S.ALIGNING)
         if dist < self._approach_progress[0] - 0.15:
             self._approach_progress = (dist, self.now)
@@ -734,6 +799,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         if error < 10.0 and self.cues.prompt and self._phase_analyses >= 1:
             self._hold_started = self.now
             self._verify = {"opened": 0, "closed": 0, "reward": 0}
+            self.metrics.interaction_attempts += 1
             return self._go(S.INTERACTING)
         if self.now - self._phase_start > 1.6:
             pos = self.position
@@ -782,7 +848,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         v = self._verify
         if v["opened"] >= 2 or (v["opened"] >= 1 and v["reward"] >= 1):
             if goal.location_id is not None:
-                reward = self.metrics.rewards > 0 and v["reward"] > 0
+                reward = v["reward"] > 0 and self._last_notification_reward
                 self._credit_open(goal.location_id, seconds, reward=reward)
             self.goal = None
             return S.EXPLORING
@@ -795,8 +861,88 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self.recovery_reason = "interaction_failed"
             return S.RECOVERING
         if elapsed > 2.0:
+            if self.cfg.smart_recovery and v["reward"] >= 1 and goal.location_id is not None:
+                return self._look_back_or_credit(goal, seconds)
             self.recovery_reason = "verification_inconclusive"
             return S.RECOVERING
+        return None
+
+    # -- Phase 5 helpers -------------------------------------------------------------------
+
+    @staticmethod
+    def _target_key(goal: Goal3D) -> object:
+        return (goal.kind, goal.location_id, goal.track_id)
+
+    def _route_end(self, success: bool, kind: str | None = None) -> None:
+        if self.planner is not None:
+            self.planner.route_finished(self.now, success=success, failure_kind=kind)
+
+    def _smart_target_lost(self, goal: Goal3D) -> bool:
+        """Search near the last reliable estimate of a lost chest (bounded)."""
+        if not self.cfg.smart_recovery:
+            return False
+        key = self._target_key(goal)
+        if self._rescans.get(key, 0) >= self.cfg.max_rescans \
+                or not self.metrics.recovery_log.can_use("target_lost"):
+            return False
+        self._rescans[key] = self._rescans.get(key, 0) + 1
+        self.metrics.recovery_log.record(key, "target_lost")
+        self.metrics.recovery_log.use("target_lost")
+        centre = self._view_yaw(goal.position)
+        self._scan = [centre, (centre + 40.0) % 360.0, (centre - 40.0) % 360.0]
+        self._scan_pitch = None
+        self.goal = None
+        return True
+
+    def _look_back_or_credit(self, goal: Goal3D, seconds: float) -> Agent3DState | None:
+        """The agent's own opening notification arrived but the opened chest was not seen
+        clearly: back off a little, look again (bounded), then credit the opening on the
+        notification (counted separately as ``credited_by_notification``)."""
+        key = self._target_key(goal)
+        n = self._lookbacks.get(key, 0)
+        if n < self.cfg.max_lookbacks and self.metrics.recovery_log.can_use("interaction_failure"):
+            self._lookbacks[key] = n + 1
+            self.metrics.recovery_log.record(key, "interaction_failure")
+            self.metrics.recovery_log.use("interaction_failure")
+            pos = self.position
+            self._maneuver_bearing = bearing_deg(pos[0] - goal.position[0],
+                                                 pos[1] - goal.position[1])
+            self._maneuver_until = self.now + 0.4
+            self._phase_start = self.now
+            self._verify["opened"] = self._verify["closed"] = 0
+            return None
+        assert goal.location_id is not None
+        self.metrics.credited_by_notification += 1
+        self._credit_open(goal.location_id, seconds, reward=self._last_notification_reward)
+        self.goal = None
+        return S.EXPLORING
+
+    def _smart_recover(self, goal: Goal3D, reason: str, cls: str) -> Agent3DState | None:
+        log = self.metrics.recovery_log
+        if not log.can_use(cls):
+            return None
+        if cls == "target_lost":
+            log.use(cls)
+            centre = self._view_yaw(goal.position)
+            self._scan = [centre, (centre + 40.0) % 360.0, (centre - 40.0) % 360.0]
+            self._after_observe = S.SCANNING
+            self.goal = None
+            return self._go(S.OBSERVING)
+        if cls == "localisation_uncertainty":
+            log.use(cls)
+            self._scan = [self._view_yaw(goal.position)] * 2
+            self._after_observe = S.SCANNING
+            return self._go(S.OBSERVING)
+        if reason == "interaction_failed":
+            # Recheck distance and alignment before trying again.
+            log.use(cls)
+            dist = math.dist(self.position[:2], goal.position[:2])
+            if dist > self.cfg.stand_distance_m + 0.2:
+                self._approach_stand = max(0.8, self.cfg.stand_distance_m - 0.2)
+                self._approach_progress = (math.inf, self.now)
+                key: object = (goal.kind, goal.location_id, goal.track_id)
+                self._attempts[key] = self._attempts.get(key, 0) + 1
+                return self._go(S.APPROACHING)
         return None
 
     def _recover(self) -> Agent3DState:
@@ -808,8 +954,19 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         if self._total_recoveries > self.recovery_budget:
             return self._fail(f"recovery budget of {self.recovery_budget} exhausted ({reason})")
         goal = self.goal
+        cls = classify(reason)
+        if goal is not None:
+            self.metrics.recovery_log.record(("reach", self._target_key(goal))
+                                             if cls == "path_blocked" else self._target_key(goal),
+                                             cls)
+        if self.planner is not None:
+            self.planner.recovery()
         if goal is None:
             return S.EXPLORING
+        if self.cfg.smart_recovery:
+            smart = self._smart_recover(goal, reason, cls)
+            if smart is not None:
+                return smart
         key: object = (goal.kind, goal.location_id, goal.track_id)
         self._attempts[key] = self._attempts.get(key, 0) + 1
         interaction = reason in ("interaction_failed", "interaction_interrupted",

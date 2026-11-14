@@ -216,7 +216,12 @@ bool UResearchBridgeSubsystem::Hello(const TSharedPtr<FJsonObject>& Args, int64 
 	Out->SetStringField(TEXT("engine"), FString::Printf(TEXT("unreal-%d.%d"), ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION));
 	Out->SetStringField(TEXT("protocol"), ProtocolName);
 	Out->SetNumberField(TEXT("version"), Version);
-	Out->SetArrayField(TEXT("maps"), { MakeShared<FJsonValueString>(TEXT("research_arena_3d")) });
+	TArray<TSharedPtr<FJsonValue>> Maps;
+	for (const FString& Map : UResearchArenaBuilder::AvailableMaps())
+	{
+		Maps.Add(MakeShared<FJsonValueString>(Map));
+	}
+	Out->SetArrayField(TEXT("maps"), Maps);
 	TArray<TSharedPtr<FJsonValue>> Sizes;
 	for (const auto& S : SupportedSizes)
 	{

@@ -1,0 +1,16 @@
+{
+ "epochs": 30,
+ "batch_size": 32,
+ "learning_rate": 0.001,
+ "weight_decay": 0.0001,
+ "patience": 5,
+ "min_delta": 0.0001,
+ "seed": 0,
+ "split_by": "episode",
+ "split_seed": 0,
+ "fractions": [0.7, 0.15, 0.15],
+ "brightness_jitter": 0.1,
+ "max_train_samples": null,
+ "weights": {"movement": 1.0, "camera": 1.0, "interaction": 1.0, "jump": 0.2, "phase": 0.3,
+             "huber_delta": 0.25, "interact_pos_weight": 1.0}
+}

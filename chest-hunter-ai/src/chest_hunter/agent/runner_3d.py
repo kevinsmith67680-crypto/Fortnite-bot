@@ -38,6 +38,7 @@ from chest_hunter.chest_repository import ChestRepository
 from chest_hunter.config import Settings
 from chest_hunter.database import DatabaseManager
 from chest_hunter.exceptions import ValidationError
+from chest_hunter.learning.demonstration_recorder import phase_of
 from chest_hunter.localization.world_model_3d import SpawnPrior3D
 from chest_hunter.models import utc_now
 from chest_hunter.run_repository import RunRepository
@@ -100,7 +101,9 @@ class Runner3D:
                  graphics_quality: str = "low", max_ticks: int = 30 * 60 * 10,
                  detector: str = "hybrid", evaluate: bool = False,
                  config: Agent3DConfig | None = None, env_overrides: dict[str, Any] | None = None,
-                 on_decision: Any = None) -> None:
+                 on_decision: Any = None, demo_recorder: Any = None, demo_episode_id: int = 0,
+                 policy: str = "deterministic", learned_policy: Any = None,
+                 planner: Any = None, policy_options: dict[str, Any] | None = None) -> None:
         mode = mode.replace("-", "_")
         if mode not in MODES_3D:
             raise ValidationError(f"mode must be one of {', '.join(MODES_3D)}; got {mode!r}")
@@ -116,7 +119,23 @@ class Runner3D:
         self.config = config or Agent3DConfig()
         self.env_overrides = dict(env_overrides or {})
         self.on_decision = on_decision
-        self.controller: VisualAgent3D | OracleAgent3D | None = None
+        #: Phase 5: optional DemonstrationRecorder (records every step of this episode).
+        self.demo_recorder = demo_recorder
+        self.demo_episode_id = demo_episode_id
+        #: Phase 5 control policy for the visual agent: deterministic | learned | hybrid.
+        if policy not in ("deterministic", "learned", "hybrid"):
+            raise ValidationError("policy must be deterministic, learned or hybrid")
+        if policy != "deterministic" and learned_policy is None:
+            raise ValidationError(f"policy '{policy}' needs a trained model (--model)")
+        if policy != "deterministic" and mode == "oracle":
+            raise ValidationError("the oracle baseline only runs the deterministic policy")
+        self.policy = policy
+        self.learned_policy = learned_policy
+        self.policy_options = dict(policy_options or {})
+        #: Phase 5 adaptive target planner (exploration.adaptive_planner.AdaptivePlanner).
+        self.planner = planner
+        self.selector: Any = None
+        self.controller: Any = None
         self.evaluator: Evaluator3D | None = None
         self.server: Any = None
         self.client: BridgeClient | None = None
@@ -141,6 +160,12 @@ class Runner3D:
     # -- setup ---------------------------------------------------------------------------------
 
     def _priors(self) -> list[SpawnPrior3D]:
+        from chest_hunter.simulation3d.procedural import is_procedural
+
+        if is_procedural(self.map_id):
+            from chest_hunter.scenarios import seed_procedural_map
+
+            seed_procedural_map(self.db, self.map_id)       # idempotent; uninformative prior
         chests = ChestRepository(self.db).get_chests_by_map(self.map_id)
         priors = [SpawnPrior3D(c.id, c.location_name, c.x, c.y, c.z, c.spawn_probability)
                   for c in chests if c.enabled and c.id is not None]
@@ -187,7 +212,10 @@ class Runner3D:
                             "graphics_quality": self.graphics_quality,
                             "detector": self.detector_method,
                             "max_ticks": self.max_ticks, "time_basis": "simulated",
-                            "decision_ticks": self.config.decision_ticks})
+                            "decision_ticks": self.config.decision_ticks,
+                            "layout_hash": _layout_hash(self.map_id), "policy": self.policy,
+                            "model_version": getattr(self.learned_policy, "version", None),
+                            "adaptive_planning": self.planner is not None})
         recorder = ObservationRecorder(self.db, sessions, session.id,
                                        batch_size=self.settings.agent.observation_batch_size)
 
@@ -208,7 +236,7 @@ class Runner3D:
                                              graphics_quality=self.graphics_quality,
                                              max_ticks=self.max_ticks, navigation=navigation)
             agent_port = AgentPort(client)
-            controller: VisualAgent3D | OracleAgent3D
+            controller: Any
             if self.mode == "oracle":
                 names = {p.name: p.location_id for p in priors}
                 state0 = client.oracle_state()
@@ -218,31 +246,60 @@ class Runner3D:
                                            decision_ticks=self.config.decision_ticks)
             else:
                 detector = ChestDetector3D(_templates(self.settings), method=self.detector_method)
-                controller = VisualAgent3D(agent_port, priors, rules=client.rules,
-                                           detector=detector, navigation=navigation,
-                                           config=self.config, recorder=record)
+                visual = VisualAgent3D(agent_port, priors, rules=client.rules,
+                                       detector=detector, navigation=navigation,
+                                       config=self.config, recorder=record)
+                if self.planner is not None:
+                    self.planner.attach(visual, map_id=self.map_id)
+                controller = visual
+                if self.policy != "deterministic" or self.learned_policy is not None:
+                    from chest_hunter.learning.policy_selector import PolicySelector
+
+                    controller = PolicySelector(visual, self.learned_policy, mode=self.policy,
+                                                **self.policy_options)
+                    self.selector = controller
                 if self.evaluate:
                     from chest_hunter.vision.perspective import CameraIntrinsics
                     intr = CameraIntrinsics(self.width, self.height, self.fov)
                     self.evaluator = Evaluator3D(intr.fx, intr.fy)
             self.controller = controller
             controller.initialize(telemetry)
+            if self.demo_recorder is not None:
+                self.demo_recorder.start(
+                    episode_id=self.demo_episode_id, map_id=self.map_id, seed=self.seed,
+                    episode=self.episode, source=_demo_source(self.policy), telemetry=telemetry,
+                    settings={"width": self.width, "height": self.height, "fov_deg": self.fov,
+                              "graphics_quality": self.graphics_quality,
+                              "max_ticks": self.max_ticks, "navigation": navigation,
+                              "decision_ticks": self.config.decision_ticks,
+                              "controller": f"{self.mode}/{self.policy}",
+                              "layout_hash": _layout_hash(self.map_id)})
+            agent = getattr(controller, "agent", controller)
             ticks = 0
+            last_obs = None                      # the frame the controller acts on, if fresh
             while not controller.is_terminal():
                 controller.tick()
                 if controller.is_terminal():
                     break
                 observe = controller.wants_observation()
-                result = client.step(controller.action.to_dict(),
-                                     ticks=self.config.decision_ticks, observe=observe)
+                action = controller.action.to_dict()
+                action_time = clock.time
+                phase = phase_of(getattr(agent, "state", None))
+                result = client.step(action, ticks=self.config.decision_ticks, observe=observe)
                 ticks = result.telemetry.tick
                 clock.time = result.telemetry.sim_time
                 controller.on_step(result)
+                if self.demo_recorder is not None:
+                    self.demo_recorder.record_step(
+                        action=action, ticks=self.config.decision_ticks, action_time=action_time,
+                        telemetry_after=result.telemetry, observation=last_obs,
+                        observed=observe, phase=phase)
+                last_obs = result.observation
                 if self.evaluator is not None and result.observation is not None \
-                        and isinstance(controller, VisualAgent3D):
+                        and isinstance(agent, VisualAgent3D):
                     labels = client.evaluation_labels(result.observation.frame_id)
-                    self.evaluator.observe(labels, controller.last_detections,
-                                           controller.last_estimates,
+                    self.evaluator.observe(labels, agent.last_detections,
+                                           agent.last_estimates,
                                            result.observation.odometry.position)
                 if self.on_decision is not None:
                     self.on_decision(self, result)
@@ -250,6 +307,9 @@ class Runner3D:
                     controller.stop("tick_limit", f"reached max_ticks={self.max_ticks}")
             outcome = controller.outcome or "completed"
             reason = controller.end_reason
+            if self.demo_recorder is not None and self.demo_recorder.active:
+                self.demo_recorder.stop(outcome={"outcome": outcome, "reason": reason,
+                                                 "chests_opened": controller.metrics.chests_opened})
             truth: dict[str, Any] = {}
             if self.evaluate or self.mode == "oracle":
                 truth = self._truth(client, priors)
@@ -258,6 +318,8 @@ class Runner3D:
         except BaseException as exc:
             outcome, reason = "failed", f"{type(exc).__name__}: {exc}"
             truth = {}
+            if self.demo_recorder is not None and self.demo_recorder.active:
+                self.demo_recorder.stop(outcome={"outcome": "failed", "reason": reason})
             raise
         finally:
             recorder.flush()
@@ -306,6 +368,23 @@ class Runner3D:
                                      and p.location_id in self.controller.world.seen_locations),
                 "location_ids_opened": sorted(names[c["name"]] for c in present
                                               if c["opened"] and c["name"] in names)}
+
+
+def _layout_hash(map_id: str) -> str | None:
+    """Version of the map layout (statistics from another version are never mixed)."""
+    from chest_hunter.simulation3d.environment3d import cached_arena
+    from chest_hunter.simulation3d.procedural import layout_hash
+
+    try:
+        return layout_hash(cached_arena(map_id)[0])
+    except ValueError:
+        return None
+
+
+def _demo_source(policy: str) -> str:
+    from chest_hunter.learning.demonstration_recorder import SOURCE_SCRIPTED
+
+    return SOURCE_SCRIPTED
 
 
 def peak_rss_mb() -> float:

@@ -139,6 +139,86 @@ def stats_text(controller: Any, result: Any = None) -> str:
     ])
 
 
+def learning_text(runner: Any) -> str:
+    """Phase 5 panel: policy, model, training and run statistics (agent-side data only)."""
+    controller = runner.controller
+    selector = getattr(runner, "selector", None)
+    lines = [f"Policy: {selector.mode if selector is not None else 'deterministic'}"]
+    policy = getattr(runner, "learned_policy", None)
+    if policy is not None:
+        meta = policy.metadata
+        ds = meta.get("dataset", {})
+        history = meta.get("metrics", {})
+        lines += [f"Model: {policy.version} ({policy.backend})",
+                  f"Dataset: {ds.get('samples', '?')} samples, {ds.get('episodes', '?')} episodes"
+                  + (" (synthetic)" if ds.get("synthetic_only") else ""),
+                  f"Loss: train {_last_loss(policy, 'train')}  validation "
+                  f"{history.get('validation', {}).get('loss', '?')}"]
+    m = controller.metrics if controller is not None else None
+    if m is not None:
+        tel = getattr(controller, "telemetry", None)
+        minutes = tel.sim_time / 60.0 if tel is not None and tel.sim_time > 0 else 0.0
+        nav = m.targets_reached / m.targets_selected if m.targets_selected else 0.0
+        lines += [f"Throughput: {m.chests_opened / minutes:.2f} chests/min" if minutes
+                  else "Throughput: -",
+                  f"Navigation success: {100 * min(1.0, nav):.0f} %",
+                  f"Recovery rate: {m.recoveries / minutes:.2f} /min" if minutes
+                  else "Recovery rate: -"]
+    if selector is not None:
+        st = selector.stats.to_dict()
+        lines.append(f"Learned decisions: {100 * st['learned_share']:.0f} %  decision latency "
+                     f"{st['latency_mean_ms'] or 0:.2f} ms")
+    planner = getattr(runner, "planner", None)
+    if planner is not None:
+        sm = planner.summary()
+        lines.append(f"Spawn estimates: {sm['estimates_observed']}/{sm['estimates']} observed")
+    comparison = _comparison_line(runner)
+    if comparison:
+        lines.append(comparison)
+    return "\n".join(lines)
+
+
+def _last_loss(policy: Any, which: str) -> str:
+    import json
+    from pathlib import Path
+
+    path = Path(policy.model_dir) / "history.json"
+    try:
+        history = json.loads(path.read_text(encoding="utf-8"))
+        return f"{history[-1][f'{which}_loss']:.4f}"
+    except (OSError, ValueError, KeyError, IndexError):
+        return "?"
+
+
+def _comparison_line(runner: Any) -> str:
+    import json
+
+    try:
+        path = (runner.settings.base_dir / "benchmark_results" / "phase5" / "policies"
+                / "summary.json")
+        summary = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, AttributeError):
+        return ""
+    parts = []
+    for name, e in summary.get("per_strategy", {}).items():
+        mean = e.get("throughput_per_min", {}).get("mean")
+        if mean is not None:
+            parts.append(f"{name} {mean:.2f}")
+    return "Benchmark /min: " + ", ".join(parts) if parts else ""
+
+
+def draw_spawn_estimates(img: np.ndarray, planner: Any, controller: Any,
+                         bounds: tuple[float, float, float, float] = (0, 0, 100, 100)) -> None:
+    """Overlay estimated spawn probabilities (ring brightness) on the map image."""
+    x0, y0, x1, y1 = bounds
+    scale = MAP_PX / max(x1 - x0, y1 - y0)
+    for p in controller.world.priors.values():
+        prob = planner.probability(p)
+        c = int(60 + 195 * prob)
+        cv2.circle(img, (int((p.y - y0) * scale), int(MAP_PX - 1 - (p.x - x0) * scale)), 8,
+                   (0, c, c), 1)
+
+
 def _photo(tk_module: Any, bgr: np.ndarray) -> Any:
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     h, w = rgb.shape[:2]
@@ -162,16 +242,49 @@ class Dashboard3D:
         self.info = tk.StringVar(value="waiting for the first observation...")
         tk.Label(self.root, textvariable=self.info, justify="left", anchor="nw", bg="#1f1f1f",
                  fg="#e6e6e6", font=("TkFixedFont", 9)).grid(row=1, column=1, sticky="nw", padx=6)
+        self.learning = tk.StringVar(value="")
+        tk.Label(self.root, textvariable=self.learning, justify="left", anchor="nw", bg="#1f1f1f",
+                 fg="#bfe3ff", font=("TkFixedFont", 9)).grid(row=2, column=1, sticky="nw",
+                                                             padx=6)
+        self.policy_choice = tk.StringVar(value="deterministic")
+        bar = tk.Frame(self.root, bg="#1f1f1f")
+        bar.grid(row=2, column=0, sticky="w", padx=6)
+        tk.Label(bar, text="Policy:", bg="#1f1f1f", fg="#e6e6e6").pack(side="left")
+        for mode in ("deterministic", "hybrid", "learned"):
+            tk.Radiobutton(bar, text=mode, value=mode, variable=self.policy_choice,
+                           command=self._switch, bg="#1f1f1f", fg="#e6e6e6",
+                           selectcolor="#333333").pack(side="left")
+        self._runner: Any = None
+        self.switch_error = ""
         self.refresh_seconds = refresh_seconds
         self._last = 0.0
         self._images: list[Any] = []
         self.frames_shown = 0
+
+    def _switch(self) -> None:
+        """Switch the running episode's control policy (needs a loaded model)."""
+        selector = getattr(self._runner, "selector", None)
+        mode = self.policy_choice.get()
+        if selector is None:
+            self.switch_error = "no learned policy loaded (start with --model)"
+            self.policy_choice.set("deterministic")
+            return
+        try:
+            selector.set_mode(mode)
+            self.switch_error = ""
+        except ValueError as exc:
+            self.switch_error = str(exc)
+            self.policy_choice.set(selector.mode)
 
     def update(self, runner: Any, result: Any = None) -> None:
         now = time.perf_counter()
         if now - self._last < self.refresh_seconds:
             return
         self._last = now
+        self._runner = runner
+        selector = getattr(runner, "selector", None)
+        if selector is not None and self.policy_choice.get() != selector.mode:
+            self.policy_choice.set(selector.mode)
         controller = runner.controller
         if controller is None or not hasattr(controller, "world"):
             self.root.update()
@@ -181,9 +294,15 @@ class Dashboard3D:
         if cam is not None:
             images.append(_photo(self.tk, cam))
             self.camera.configure(image=images[-1])
-        images.append(_photo(self.tk, draw_map(controller)))
+        map_img = draw_map(controller)
+        planner = getattr(runner, "planner", None)
+        if planner is not None:
+            draw_spawn_estimates(map_img, planner, controller)
+        images.append(_photo(self.tk, map_img))
         self.map.configure(image=images[-1])
         self.info.set(stats_text(controller, result))
+        self.learning.set(learning_text(runner) + (f"\n{self.switch_error}"
+                                                   if self.switch_error else ""))
         self._images = images
         self.frames_shown += 1
         self.root.update()

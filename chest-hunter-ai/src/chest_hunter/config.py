@@ -208,6 +208,26 @@ class Simulation3DSettings:
 
 
 @dataclass(frozen=True)
+class LearningSettings:
+    """Phase 5: demonstrations, learned policy, adaptive exploration."""
+
+    dataset_dir: str = "training/datasets"
+    model_dir: str = "training/checkpoints/bc_synthetic_v1"
+    experience_db: str = "training/experience.db"
+    policy: str = "deterministic"
+    quantized_model: bool = False
+    onnx_threads: int = 1
+    inference_timeout_ms: float = 20.0
+    hybrid_confidence: float = 0.6
+    learned_observation_rate: float = 8.0
+    adaptive_planning: bool = False
+    smart_recovery: bool = False
+    spawn_prior_strength: float = 4.0
+    exploration_weight: float = 0.15
+    cluster_weight: float = 0.25
+
+
+@dataclass(frozen=True)
 class LoggingSettings:
     level: str
 
@@ -229,10 +249,15 @@ class Settings:
     visual_debug: VisualDebugSettings = field(default_factory=VisualDebugSettings)
     unreal_bridge: UnrealBridgeSettings = field(default_factory=UnrealBridgeSettings)
     simulation_3d: Simulation3DSettings = field(default_factory=Simulation3DSettings)
+    learning: LearningSettings = field(default_factory=LearningSettings)
 
     def template_dir(self) -> Path:
         """Absolute directory of the perception templates."""
         return _resolve_path(self.vision.template_dir, self.base_dir)
+
+    def learning_path(self, value: str) -> Path:
+        """Resolve a ``learning`` path setting against the project directory."""
+        return _resolve_path(value, self.base_dir)
 
     def template_dir_3d(self) -> Path:
         """Absolute directory of the Phase 4 multi-view chest templates."""
@@ -440,6 +465,23 @@ _SIMULATION_3D_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
     ("template_dir", "assets/templates3d", _non_empty_string),
 )
 
+_LEARNING_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("dataset_dir", "training/datasets", _non_empty_string),
+    ("model_dir", "training/checkpoints/bc_synthetic_v1", _non_empty_string),
+    ("experience_db", "training/experience.db", _non_empty_string),
+    ("policy", "deterministic", _choice("deterministic", "learned", "hybrid")),
+    ("quantized_model", False, _boolean),
+    ("onnx_threads", 1, _int_range(1, 16)),
+    ("inference_timeout_ms", 20.0, _float_range(1.0, 1000.0)),
+    ("hybrid_confidence", 0.6, _probability),
+    ("learned_observation_rate", 8.0, _float_range(1.0, 30.0)),
+    ("adaptive_planning", False, _boolean),
+    ("smart_recovery", False, _boolean),
+    ("spawn_prior_strength", 4.0, _float_range(0.1, 1000.0)),
+    ("exploration_weight", 0.15, _float_range(0.0, 10.0)),
+    ("cluster_weight", 0.25, _float_range(0.0, 10.0)),
+)
+
 SUPPORTED_FRAME_SIZES: Final = ((320, 180), (480, 270), (640, 360), (800, 450))
 
 FIELD_UNITS: Final[dict[str, str]] = {
@@ -570,6 +612,7 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
     visual_debug_section = _section(data, "visual_debug", required=False)
     bridge_section = _section(data, "unreal_bridge", required=False)
     sim3d_section = _section(data, "simulation_3d", required=False)
+    learning_section = _section(data, "learning", required=False)
 
     db_values = _parse_fields("database", database, (("path", _REQUIRED, lambda n, v: v),))
     db_path = db_values["path"]
@@ -638,6 +681,8 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
         visual_debug=visual_debug,
         unreal_bridge=unreal_bridge,
         simulation_3d=simulation_3d,
+        learning=LearningSettings(**_parse_fields("learning", learning_section,
+                                                  _LEARNING_FIELDS)),
     )
 
 

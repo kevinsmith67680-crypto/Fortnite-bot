@@ -236,8 +236,55 @@ _SCHEMA_V3: tuple[str, ...] = (
     """,
 )
 
+# Phase 5: learned statistics are stored *next to* the configured data, never over it:
+# chest_locations.spawn_probability stays the configured prior.
+_SCHEMA_V4: tuple[str, ...] = (
+    """
+    CREATE TABLE spawn_estimates (
+        id                 INTEGER PRIMARY KEY,
+        chest_location_id  INTEGER NOT NULL
+                           REFERENCES chest_locations(id) ON DELETE CASCADE,
+        layout_version     TEXT    NOT NULL DEFAULT '',
+        prior_alpha        REAL    NOT NULL CHECK (prior_alpha > 0),
+        prior_beta         REAL    NOT NULL CHECK (prior_beta > 0),
+        present_count      INTEGER NOT NULL CHECK (present_count >= 0),
+        absent_count       INTEGER NOT NULL CHECK (absent_count >= 0),
+        posterior_mean     REAL    NOT NULL CHECK (posterior_mean >= 0 AND posterior_mean <= 1),
+        credible_low       REAL    NOT NULL CHECK (credible_low >= 0 AND credible_low <= 1),
+        credible_high      REAL    NOT NULL CHECK (credible_high >= 0 AND credible_high <= 1),
+        sessions_used      INTEGER NOT NULL CHECK (sessions_used >= 0),
+        updated_at         TEXT    NOT NULL,
+        UNIQUE (chest_location_id, layout_version)
+    )
+    """,
+    """
+    CREATE TABLE route_memory (
+        id                 INTEGER PRIMARY KEY,
+        map_id             TEXT    NOT NULL CHECK (length(trim(map_id)) > 0),
+        layout_version     TEXT    NOT NULL DEFAULT '',
+        session_id         INTEGER REFERENCES simulation_sessions(id) ON DELETE SET NULL,
+        start_region       TEXT    NOT NULL,
+        dest_region        TEXT    NOT NULL,
+        chest_location_id  INTEGER REFERENCES chest_locations(id) ON DELETE SET NULL,
+        estimated_length   REAL    NOT NULL CHECK (estimated_length >= 0),
+        estimated_seconds  REAL    NOT NULL CHECK (estimated_seconds >= 0),
+        actual_seconds     REAL    NOT NULL CHECK (actual_seconds >= 0),
+        success            INTEGER NOT NULL CHECK (success IN (0, 1)),
+        failure_kind       TEXT,
+        recoveries         INTEGER NOT NULL DEFAULT 0 CHECK (recoveries >= 0),
+        chest_opened       INTEGER CHECK (chest_opened IS NULL OR chest_opened IN (0, 1)),
+        invalidated        INTEGER NOT NULL DEFAULT 0 CHECK (invalidated IN (0, 1)),
+        created_at         TEXT    NOT NULL
+    )
+    """,
+    """
+    CREATE INDEX idx_route_memory_lookup
+        ON route_memory (map_id, layout_version, start_region, dest_region)
+    """,
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
-    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3))
+    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3), (4, _SCHEMA_V4))
 """Ordered ``(version, statements)`` pairs. Append new versions; never edit old ones."""
 
 SCHEMA_VERSION: int = MIGRATIONS[-1][0]
@@ -247,6 +294,8 @@ EXPECTED_TABLES: tuple[str, ...] = (
     "simulation_sessions",
     "chest_observations",
     "simulation_runs",
+    "spawn_estimates",
+    "route_memory",
 )
 
 

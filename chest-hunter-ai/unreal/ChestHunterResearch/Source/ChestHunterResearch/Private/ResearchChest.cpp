@@ -66,7 +66,8 @@ void AResearchChest::PlacePart(UStaticMeshComponent* Part, const FVector& Centre
 	Part->SetRelativeScale3D(SizeM);
 }
 
-void AResearchChest::Initialise(int32 InSpawnIndex, const FString& InName, float InYawDeg, bool bInPresent)
+void AResearchChest::Initialise(int32 InSpawnIndex, const FString& InName, float InYawDeg, bool bInPresent,
+                                float ValueScale, float HueShiftDeg)
 {
 	SpawnIndex = InSpawnIndex;
 	SpawnName = InName;
@@ -85,8 +86,18 @@ void AResearchChest::Initialise(int32 InSpawnIndex, const FString& InName, float
 	{
 		for (const TPair<UStaticMeshComponent*, FLinearColor>& P : Parts)
 		{
+			FLinearColor Colour = P.Value;
+			const bool bChestPart = P.Key != PromptSign && P.Key != ProgressFrame
+				&& P.Key != ProgressFill && P.Key != RewardFlash;
+			if (bChestPart && (ValueScale != 1.f || HueShiftDeg != 0.f))
+			{
+				FLinearColor Hsv = Colour.LinearRGBToHSV();   // R = hue (deg), G = sat, B = value
+				Hsv.R = FMath::Fmod(Hsv.R + HueShiftDeg + 360.f, 360.f);
+				Hsv.B = FMath::Clamp(Hsv.B * ValueScale, 0.f, 1.f);
+				Colour = Hsv.HSVToLinearRGB();
+			}
 			UMaterialInstanceDynamic* Mid = UMaterialInstanceDynamic::Create(Base, this);
-			Mid->SetVectorParameterValue(TEXT("Color"), P.Value);
+			Mid->SetVectorParameterValue(TEXT("Color"), Colour);
 			P.Key->SetMaterial(0, Mid);
 		}
 	}

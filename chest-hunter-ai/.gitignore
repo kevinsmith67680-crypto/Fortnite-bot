@@ -27,3 +27,10 @@ data/*.csv
 .idea/
 .vscode/
 .DS_Store
+
+# Phase 5: recorded demonstrations and experience databases are large and reproducible
+# (python -m chest_hunter record-demo ...); dataset statistics files are committed instead.
+training/datasets/*/
+training/*.db
+training/*.db-journal
+training/checkpoints/*/policy_best.npz

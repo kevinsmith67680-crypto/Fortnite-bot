@@ -33,6 +33,10 @@ struct FResearchArenaLayout
 	float StartYawDeg = 0.f;
 	TArray<FResearchSpawnPoint> Spawns;
 	int32 BoxCount = 0;
+	// Phase 5 procedural variations (optional "appearance" object of the layout file).
+	float Lighting = 1.f;          // global brightness factor (sun intensity)
+	float ChestValue = 1.f;        // chest colour brightness factor
+	float ChestHueShiftDeg = 0.f;  // chest colour hue shift
 };
 
 UCLASS()
@@ -48,4 +52,6 @@ public:
 	static bool BuildStatic(UWorld* World, const TSharedPtr<FJsonObject>& Json, TArray<AActor*>& InOutSpawned,
 	                        FString& OutError);
 	static FString LayoutPath(const FString& MapId);
+	/** Map ids with a layout file in Content/ResearchData (research_arena_3d, proc_*). */
+	static TArray<FString> AvailableMaps();
 };

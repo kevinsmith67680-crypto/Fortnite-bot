@@ -5,6 +5,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
@@ -93,7 +94,29 @@ bool UResearchArenaBuilder::LoadLayout(const FString& MapId, FResearchArenaLayou
 		Out.Spawns.Add(P);
 	}
 	Out.BoxCount = OutJson->GetArrayField(TEXT("boxes")).Num();
+	const TSharedPtr<FJsonObject>* Appearance = nullptr;
+	if (OutJson->TryGetObjectField(TEXT("appearance"), Appearance))
+	{
+		double Value = 1.0;
+		if ((*Appearance)->TryGetNumberField(TEXT("lighting"), Value)) { Out.Lighting = float(Value); }
+		if ((*Appearance)->TryGetNumberField(TEXT("chest_value"), Value)) { Out.ChestValue = float(Value); }
+		if ((*Appearance)->TryGetNumberField(TEXT("chest_hue_shift"), Value)) { Out.ChestHueShiftDeg = float(Value); }
+	}
 	return true;
+}
+
+TArray<FString> UResearchArenaBuilder::AvailableMaps()
+{
+	TArray<FString> Files;
+	IFileManager::Get().FindFiles(Files, *FPaths::Combine(FPaths::ProjectContentDir(), TEXT("ResearchData"), TEXT("*.json")), true, false);
+	TArray<FString> Ids;
+	for (const FString& File : Files)
+	{
+		const FString Id = FPaths::GetBaseFilename(File);
+		if (IsSafeMapId(Id)) { Ids.Add(Id); }
+	}
+	Ids.Sort();
+	return Ids;
 }
 
 bool UResearchArenaBuilder::BuildStatic(UWorld* World, const TSharedPtr<FJsonObject>& Json, TArray<AActor*>& InOutSpawned,
