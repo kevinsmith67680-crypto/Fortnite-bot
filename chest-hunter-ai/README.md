@@ -1139,7 +1139,7 @@ not tested):
 | Target | Result |
 |---|---|
 | ≥ 90 % of visually detected, reachable chests opened | Hybrid: **90.6 %** pooled (1,000 of 1,104; per-episode mean 90.4 %, 26 of 50 episodes ≥ 90 %, minimum 77.8 %). Counting only openings the agent confirmed and recorded: 84.6 % (934). Visual-nav: 72.6 %, **not met** |
-| No infinite navigation loops | Met: all 150 episodes ended on their own (149 by resolving every spawn point, 1 at the tick limit); a recovery budget bounds every episode |
+| No infinite navigation loops | Met: all 150 episodes ended on their own (149 completed: the oracle after opening every present chest, the visual agents after resolving every spawn point; 1 at the tick limit); a recovery budget bounds every episode |
 | No duplicate successful openings | Met: database constraint plus tests; 0 duplicates and 0 over-reported openings in the benchmark |
 | No access to hidden chest state during visual runs | Met: static audit of the agent's modules plus a full episode against a server with every privileged command disabled (`tests/test_agent_3d.py`) |
 | Stable across repeated seeded episodes | Met: identical results for repeated seeds (test), and a re-run of 3 benchmark episodes on the final code matched every non-timing field |
