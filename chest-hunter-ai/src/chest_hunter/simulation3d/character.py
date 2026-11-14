@@ -30,7 +30,7 @@ from chest_hunter.vision.perspective import CameraPose, angle_difference_deg, ca
 class CharacterParams:
     radius: float = 0.35
     height: float = 1.8
-    step_height: float = 0.55          # = the navigation graph's max climb (Unreal: MaxStepHeight 55 cm)
+    step_height: float = 0.55          # = the nav graph's max climb (Unreal: MaxStepHeight 55)
     max_speed: float = 5.0             # m/s (Unreal: MaxWalkSpeed 500 cm/s)
     sprint_speed: float = 7.0
     crouch_speed: float = 2.5
@@ -67,8 +67,8 @@ class Character3D:
 
     def look(self, look_yaw: float, look_pitch: float, dt: float) -> None:
         self.cam_yaw = (self.cam_yaw + look_yaw * self.p.yaw_rate * dt) % 360.0
-        self.cam_pitch = min(self.p.pitch_max, max(self.p.pitch_min,
-                                                     self.cam_pitch + look_pitch * self.p.pitch_rate * dt))
+        pitch = self.cam_pitch + look_pitch * self.p.pitch_rate * dt
+        self.cam_pitch = min(self.p.pitch_max, max(self.p.pitch_min, pitch))
 
     def step(self, world: World3D, dynamic: Sequence[Box], move_forward: float, move_right: float,
              *, jump: bool, sprint: bool, crouch: bool, dt: float) -> None:
@@ -202,7 +202,8 @@ class Character3D:
     def _dynamic_support(self, dynamic: Sequence[Box]) -> float:
         best = -math.inf
         for b in dynamic:
-            if b.z1 <= self.z + self.p.step_height and circle_overlaps_box_xy(self.x, self.y, 0.2, b):
+            if b.z1 <= self.z + self.p.step_height \
+                    and circle_overlaps_box_xy(self.x, self.y, 0.2, b):
                 best = max(best, b.z1)
         return best
 

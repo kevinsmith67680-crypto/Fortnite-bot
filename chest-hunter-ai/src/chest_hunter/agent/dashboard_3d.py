@@ -17,6 +17,7 @@ runner evaluates, nothing more: ground truth is never shown here).
 
 from __future__ import annotations
 
+import contextlib
 import math
 import time
 from typing import Any
@@ -41,7 +42,7 @@ def draw_camera_overlay(controller: Any) -> np.ndarray | None:
     obs = getattr(controller, "obs", None)
     if obs is None:
         return None
-    img = obs.frame.copy()
+    img: np.ndarray = obs.frame.copy()
     for det, est in zip(controller.last_detections, controller.last_estimates, strict=False):
         x, y, w, h = det.bbox
         colour = (60, 200, 60) if det.category == "chest_opened" else (0, 215, 255)
@@ -114,15 +115,16 @@ def stats_text(controller: Any, result: Any = None) -> str:
     tel = controller.telemetry
     sim = tel.sim_time if tel is not None else 0.0
     rate = m.chests_opened / (sim / 60.0) if sim > 0 else 0.0
-    visited = sum(1 for p in controller.world.priors.values() if p.status is not PriorStatus3D.UNKNOWN) \
-        if hasattr(controller, "world") else 0
+    visited = sum(1 for p in controller.world.priors.values()
+                  if p.status is not PriorStatus3D.UNKNOWN) if hasattr(controller, "world") else 0
     follower = getattr(controller, "follower", None)
     progress = "-" if follower is None else f"{follower.index}/{len(follower.waypoints)} waypoints"
     cam = f"yaw {tel.camera.yaw_deg:.0f} pitch {tel.camera.pitch_deg:.0f}" if tel else "-"
     goal = getattr(controller, "goal", None)
+    target = "-" if goal is None else goal.kind + (f" T{goal.track_id}" if goal.track_id else "")
     return "\n".join([
         f"State: {controller.state}",
-        f"Target: {goal.kind + ' T' + str(goal.track_id) if goal and goal.track_id else (goal.kind if goal else '-')}",
+        f"Target: {target}",
         f"Objective: {getattr(getattr(controller, 'world', None), 'objective', '-')}",
         f"Camera: {cam}",
         f"Route: {progress}",
@@ -187,7 +189,5 @@ class Dashboard3D:
         self.root.update()
 
     def close(self) -> None:
-        try:
+        with contextlib.suppress(self.tk.TclError):
             self.root.destroy()
-        except self.tk.TclError:
-            pass

@@ -107,8 +107,10 @@ def _episode(settings_path: str, map_id: str, seed: int, episode: int, modes: Se
                 "distance_err_5_10m": bins.get("5-10m", {}).get("mean_abs_error_m"),
                 "distance_err_10_20m": bins.get("10-20m", {}).get("mean_abs_error_m"),
                 "distance_err_20_40m": bins.get("20-40m", {}).get("mean_abs_error_m"),
-                "pose_error_mean_m": v["pose_error_mean_m"], "pose_error_max_m": v["pose_error_max_m"],
-                "_tp": v["true_positives"], "_fp": v["false_positives"], "_fn": v["false_negatives"],
+                "pose_error_mean_m": v["pose_error_mean_m"],
+                "pose_error_max_m": v["pose_error_max_m"],
+                "_tp": v["true_positives"], "_fp": v["false_positives"],
+                "_fn": v["false_negatives"],
             }
         rows.append(row)
     return rows
@@ -191,8 +193,8 @@ def _summarise(rows: list[dict[str, Any]], vision: list[dict[str, Any]], modes: 
         entry["opened_truth_total"] = sum(r["chests_opened_truth"] or 0 for r in mr)
         entry["available_total"] = sum(r["chests_available"] for r in mr)
         entry["seen_total"] = sum(r["chests_seen"] or 0 for r in mr)
-        entry["over_reported_total"] = sum(max(0, r["chests_opened"] - (r["chests_opened_truth"] or 0))
-                                           for r in mr)
+        entry["over_reported_total"] = sum(
+            max(0, r["chests_opened"] - (r["chests_opened_truth"] or 0)) for r in mr)
         entry["failed_interactions_total"] = sum(r["failed_interactions"] for r in mr)
         vr = [v for v in vision if v["mode"] == mode]
         if vr:
@@ -217,7 +219,8 @@ def _summarise(rows: list[dict[str, Any]], vision: list[dict[str, Any]], modes: 
             diffs = [r["chests_per_minute"] - base[r["episode"]]["chests_per_minute"]
                      for r in rows if r["mode"] == mode and r["episode"] in base]
             if diffs:
-                paired[mode] = {"mean_difference_chests_per_minute": round(statistics.fmean(diffs), 4),
+                paired[mode] = {"mean_difference_chests_per_minute":
+                                    round(statistics.fmean(diffs), 4),
                                 "median_difference_chests_per_minute":
                                     round(statistics.median(diffs), 4),
                                 "better": sum(d > 1e-9 for d in diffs),

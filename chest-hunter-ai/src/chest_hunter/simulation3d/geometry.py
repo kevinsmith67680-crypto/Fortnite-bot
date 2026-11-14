@@ -192,7 +192,8 @@ class World3D:
 
     # -- ray casts ---------------------------------------------------------------------------
 
-    def raycast(self, origin: Sequence[float], direction: Sequence[float], max_distance: float,
+    def raycast(self, origin: Sequence[float] | np.ndarray,
+                direction: Sequence[float] | np.ndarray, max_distance: float,
                 *, blocking_only: bool = True, ignore: Sequence[Box] = ()) -> float | None:
         """Distance to the first box hit along a ray (vectorised slab test), or ``None``."""
         o = np.asarray(origin, dtype=np.float64)

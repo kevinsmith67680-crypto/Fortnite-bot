@@ -174,8 +174,9 @@ class Renderer3D:
         z = cam_v[..., 2]
         zc = np.maximum(z, 0.0)
         tan_h, tan_v = cx / fx * 1.05, cy / fy * 1.05
-        outside = ((cam_v[..., 0] < -tan_h * zc).all(axis=1) | (cam_v[..., 0] > tan_h * zc).all(axis=1)
-                   | (cam_v[..., 1] < -tan_v * zc).all(axis=1) | (cam_v[..., 1] > tan_v * zc).all(axis=1))
+        xs, ys = cam_v[..., 0], cam_v[..., 1]
+        outside = ((xs < -tan_h * zc).all(axis=1) | (xs > tan_h * zc).all(axis=1)
+                   | (ys < -tan_v * zc).all(axis=1) | (ys > tan_v * zc).all(axis=1))
         visible = facing & (z > near).any(axis=1) & ~outside
         idx = np.nonzero(visible)[0]
         if idx.size == 0:

@@ -1,0 +1,467 @@
+{
+  "per_mode": {
+    "oracle": {
+      "chests_per_minute": {
+        "mean": 7.813,
+        "median": 7.7301,
+        "min": 7.0146,
+        "max": 8.5816
+      },
+      "percent_available_opened": {
+        "mean": 100.0,
+        "median": 100.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "percent_seen_opened": {
+        "mean": null,
+        "median": null,
+        "min": null,
+        "max": null
+      },
+      "sim_seconds": {
+        "mean": 180.4573,
+        "median": 176.3,
+        "min": 147.933,
+        "max": 217.467
+      },
+      "travel_distance_m": {
+        "mean": 584.531,
+        "median": 567.645,
+        "min": 481.51,
+        "max": 706.87
+      },
+      "recoveries": {
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "navigation_failures": {
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0,
+        "max": 0
+      },
+      "navigation_success_rate": {
+        "mean": 1.0,
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "perception_ms_mean": {
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "bridge_rtt_ms": {
+        "mean": 0.4124,
+        "median": 0.4095,
+        "min": 0.33,
+        "max": 0.488
+      },
+      "cpu_seconds": {
+        "mean": 2.5253,
+        "median": 2.395,
+        "min": 1.902,
+        "max": 3.668
+      },
+      "wall_seconds": {
+        "mean": 2.7147,
+        "median": 2.6255,
+        "min": 2.013,
+        "max": 3.849
+      },
+      "cpu_utilisation": {
+        "mean": 0.9314,
+        "median": 0.93,
+        "min": 0.866,
+        "max": 0.993
+      },
+      "peak_rss_mb": {
+        "mean": 110.844,
+        "median": 113.3,
+        "min": 79.0,
+        "max": 116.3
+      },
+      "outcomes": {
+        "completed": 50
+      },
+      "opened_total": 1175,
+      "opened_truth_total": 1175,
+      "available_total": 1175,
+      "seen_total": 0,
+      "over_reported_total": 0,
+      "failed_interactions_total": 0
+    },
+    "hybrid": {
+      "chests_per_minute": {
+        "mean": 4.0607,
+        "median": 4.1166,
+        "min": 2.9486,
+        "max": 5.4545
+      },
+      "percent_available_opened": {
+        "mean": 84.9352,
+        "median": 83.33,
+        "min": 73.68,
+        "max": 100.0
+      },
+      "percent_seen_opened": {
+        "mean": 90.4396,
+        "median": 90.24,
+        "min": 77.78,
+        "max": 100.0
+      },
+      "sim_seconds": {
+        "mean": 276.4119,
+        "median": 277.0665,
+        "min": 238.533,
+        "max": 325.533
+      },
+      "travel_distance_m": {
+        "mean": 816.3702,
+        "median": 814.38,
+        "min": 716.43,
+        "max": 938.11
+      },
+      "recoveries": {
+        "mean": 11.22,
+        "median": 12.0,
+        "min": 2,
+        "max": 24
+      },
+      "navigation_failures": {
+        "mean": 0.26,
+        "median": 0.0,
+        "min": 0,
+        "max": 2
+      },
+      "navigation_success_rate": {
+        "mean": 0.9949,
+        "median": 1.0,
+        "min": 0.88,
+        "max": 1.0
+      },
+      "perception_ms_mean": {
+        "mean": 6.4947,
+        "median": 6.458,
+        "min": 5.937,
+        "max": 7.128
+      },
+      "bridge_rtt_ms": {
+        "mean": 7.1897,
+        "median": 7.1605,
+        "min": 6.587,
+        "max": 7.997
+      },
+      "cpu_seconds": {
+        "mean": 52.1054,
+        "median": 50.8115,
+        "min": 43.731,
+        "max": 66.088
+      },
+      "wall_seconds": {
+        "mean": 53.9153,
+        "median": 52.1935,
+        "min": 45.483,
+        "max": 68.603
+      },
+      "cpu_utilisation": {
+        "mean": 0.9664,
+        "median": 0.965,
+        "min": 0.958,
+        "max": 0.983
+      },
+      "peak_rss_mb": {
+        "mean": 112.604,
+        "median": 113.3,
+        "min": 104.9,
+        "max": 116.3
+      },
+      "outcomes": {
+        "completed": 50
+      },
+      "opened_total": 934,
+      "opened_truth_total": 1000,
+      "available_total": 1175,
+      "seen_total": 1104,
+      "over_reported_total": 0,
+      "failed_interactions_total": 0,
+      "vision": {
+        "precision_pooled": 0.983,
+        "recall_pooled": 0.9253,
+        "class_errors_total": 12577,
+        "distance_mean_abs_error_m": {
+          "mean": 0.8319,
+          "median": 0.8128,
+          "min": 0.6221,
+          "max": 1.1351
+        },
+        "distance_median_abs_error_m": {
+          "mean": 0.3528,
+          "median": 0.352,
+          "min": 0.2748,
+          "max": 0.5623
+        },
+        "distance_failure_rate": {
+          "mean": 0.0356,
+          "median": 0.0335,
+          "min": 0.0129,
+          "max": 0.0884
+        },
+        "distance_err_0_5m": {
+          "mean": 0.2329,
+          "median": 0.2277,
+          "min": 0.1497,
+          "max": 0.4138
+        },
+        "distance_err_5_10m": {
+          "mean": 0.3491,
+          "median": 0.315,
+          "min": 0.2606,
+          "max": 0.572
+        },
+        "distance_err_10_20m": {
+          "mean": 0.7168,
+          "median": 0.6871,
+          "min": 0.4892,
+          "max": 1.1306
+        },
+        "distance_err_20_40m": {
+          "mean": 2.0135,
+          "median": 1.9163,
+          "min": 1.2079,
+          "max": 3.2806
+        },
+        "pose_error_mean_m": {
+          "mean": 0.0422,
+          "median": 0.0421,
+          "min": 0.0169,
+          "max": 0.0953
+        },
+        "pose_error_max_m": {
+          "mean": 0.0937,
+          "median": 0.0854,
+          "min": 0.0398,
+          "max": 0.2154
+        }
+      }
+    },
+    "visual_nav": {
+      "chests_per_minute": {
+        "mean": 1.9769,
+        "median": 1.98,
+        "min": 0.8422,
+        "max": 3.1469
+      },
+      "percent_available_opened": {
+        "mean": 45.7394,
+        "median": 48.0,
+        "min": 8.7,
+        "max": 66.67
+      },
+      "percent_seen_opened": {
+        "mean": 71.979,
+        "median": 73.68,
+        "min": 37.5,
+        "max": 92.86
+      },
+      "sim_seconds": {
+        "mean": 302.1881,
+        "median": 307.0335,
+        "min": 84.533,
+        "max": 600.0
+      },
+      "travel_distance_m": {
+        "mean": 668.4568,
+        "median": 705.255,
+        "min": 160.51,
+        "max": 870.07
+      },
+      "recoveries": {
+        "mean": 34.92,
+        "median": 36.5,
+        "min": 13,
+        "max": 54
+      },
+      "navigation_failures": {
+        "mean": 28.36,
+        "median": 28.5,
+        "min": 10,
+        "max": 49
+      },
+      "navigation_success_rate": {
+        "mean": 0.9432,
+        "median": 1.0,
+        "min": 0.0655,
+        "max": 1.0
+      },
+      "perception_ms_mean": {
+        "mean": 6.0496,
+        "median": 6.064,
+        "min": 5.284,
+        "max": 6.795
+      },
+      "bridge_rtt_ms": {
+        "mean": 5.8282,
+        "median": 5.7775,
+        "min": 5.097,
+        "max": 6.877
+      },
+      "cpu_seconds": {
+        "mean": 47.3357,
+        "median": 48.685,
+        "min": 10.639,
+        "max": 104.749
+      },
+      "wall_seconds": {
+        "mean": 49.0725,
+        "median": 50.5595,
+        "min": 11.057,
+        "max": 109.106
+      },
+      "cpu_utilisation": {
+        "mean": 0.9643,
+        "median": 0.964,
+        "min": 0.957,
+        "max": 0.981
+      },
+      "peak_rss_mb": {
+        "mean": 112.976,
+        "median": 114.05,
+        "min": 104.9,
+        "max": 116.4
+      },
+      "outcomes": {
+        "completed": 49,
+        "tick_limit": 1
+      },
+      "opened_total": 492,
+      "opened_truth_total": 537,
+      "available_total": 1175,
+      "seen_total": 740,
+      "over_reported_total": 0,
+      "failed_interactions_total": 0,
+      "vision": {
+        "precision_pooled": 0.979,
+        "recall_pooled": 0.9315,
+        "class_errors_total": 9024,
+        "distance_mean_abs_error_m": {
+          "mean": 0.7289,
+          "median": 0.7136,
+          "min": 0.3591,
+          "max": 1.2529
+        },
+        "distance_median_abs_error_m": {
+          "mean": 0.379,
+          "median": 0.3568,
+          "min": 0.1594,
+          "max": 0.6168
+        },
+        "distance_failure_rate": {
+          "mean": 0.031,
+          "median": 0.0299,
+          "min": 0.0,
+          "max": 0.1016
+        },
+        "distance_err_0_5m": {
+          "mean": 0.3001,
+          "median": 0.2944,
+          "min": 0.1683,
+          "max": 0.4686
+        },
+        "distance_err_5_10m": {
+          "mean": 0.3303,
+          "median": 0.3115,
+          "min": 0.1876,
+          "max": 0.6713
+        },
+        "distance_err_10_20m": {
+          "mean": 0.8421,
+          "median": 0.7143,
+          "min": 0.3036,
+          "max": 2.9532
+        },
+        "distance_err_20_40m": {
+          "mean": 1.5052,
+          "median": 1.4923,
+          "min": 1.0273,
+          "max": 2.3136
+        },
+        "pose_error_mean_m": {
+          "mean": 0.039,
+          "median": 0.036,
+          "min": 0.0143,
+          "max": 0.0822
+        },
+        "pose_error_max_m": {
+          "mean": 0.0838,
+          "median": 0.083,
+          "min": 0.0262,
+          "max": 0.1808
+        }
+      }
+    }
+  },
+  "paired_vs_oracle": {
+    "hybrid": {
+      "mean_difference_chests_per_minute": -3.7523,
+      "median_difference_chests_per_minute": -3.8846,
+      "better": 0,
+      "worse": 50,
+      "tied": 0
+    },
+    "visual_nav": {
+      "mean_difference_chests_per_minute": -5.8361,
+      "median_difference_chests_per_minute": -5.8034,
+      "better": 0,
+      "worse": 50,
+      "tied": 0
+    }
+  },
+  "map_id": "research_arena_3d",
+  "seed": 42,
+  "episodes_requested": 50,
+  "episodes_completed": 50,
+  "modes": [
+    "oracle",
+    "hybrid",
+    "visual_nav"
+  ],
+  "max_ticks": 18000,
+  "observation": [
+    640,
+    360
+  ],
+  "workers": 3,
+  "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+  "time_basis": "rates use simulated time; cpu/wall seconds are real time",
+  "gpu": "not measured: no GPU on the benchmark machine; the reference renderer is CPU-only software rasterisation",
+  "run": {
+    "wall_seconds": 1802.49,
+    "cpu_seconds_main": 0.06,
+    "cpu_seconds_episodes": 5098.32,
+    "peak_rss_mb_max_worker": 116.4,
+    "machine": "x86_64 4 CPU(s), Python 3.13.18 on linux"
+  },
+  "configuration": {
+    "simulation_3d": {
+      "default_map": "research_arena_3d",
+      "backend": "unreal",
+      "observation_width": 640,
+      "observation_height": 360,
+      "fov_deg": 90.0,
+      "graphics_quality": "low",
+      "max_ticks": 18000,
+      "decision_ticks": 2,
+      "detector": "hybrid",
+      "odometry_drift": 0.005,
+      "noise_std": 5.0,
+      "reward_probability": 0.3,
+      "interaction_failure_probability": 0.0,
+      "template_dir": "assets/templates3d"
+    }
+  }
+}

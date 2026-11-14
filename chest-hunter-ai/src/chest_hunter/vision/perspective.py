@@ -120,7 +120,8 @@ def forward_vector(yaw_deg: float, pitch_deg: float = 0.0) -> np.ndarray:
 
 def world_to_camera(points: np.ndarray, pose: CameraPose) -> np.ndarray:
     """(..., 3) world points -> (..., 3) camera coordinates (right, up, forward)."""
-    return (np.asarray(points, dtype=np.float64) - pose.position) @ pose.rotation().T
+    cam: np.ndarray = (np.asarray(points, dtype=np.float64) - pose.position) @ pose.rotation().T
+    return cam
 
 
 def project_camera(cam: np.ndarray, intr: CameraIntrinsics) -> tuple[np.ndarray, np.ndarray]:
@@ -167,7 +168,8 @@ def pixel_rays(u: np.ndarray, v: np.ndarray, pose: CameraPose,
     x = (np.asarray(u, dtype=np.float64) - intr.cx) / intr.fx
     y = -(np.asarray(v, dtype=np.float64) - intr.cy) / intr.fy
     d = f + x[..., None] * r + y[..., None] * up
-    return d / np.linalg.norm(d, axis=-1, keepdims=True)
+    rays: np.ndarray = d / np.linalg.norm(d, axis=-1, keepdims=True)
+    return rays
 
 
 def intersect_horizontal_plane(origin: np.ndarray, direction: np.ndarray,

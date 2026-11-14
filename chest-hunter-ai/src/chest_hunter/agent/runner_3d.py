@@ -145,16 +145,17 @@ class Runner3D:
         priors = [SpawnPrior3D(c.id, c.location_name, c.x, c.y, c.z, c.spawn_probability)
                   for c in chests if c.enabled and c.id is not None]
         if not priors:
-            raise ValidationError(f"Map '{self.map_id}' has no enabled chest locations. Run "
-                                  "'python -m chest_hunter seed-demo --scenario research_arena_3d'.")
+            raise ValidationError(
+                f"Map '{self.map_id}' has no enabled chest locations. Run "
+                "'python -m chest_hunter seed-demo --scenario research_arena_3d'.")
         return priors
 
     def _start_server(self) -> int:
         from chest_hunter.simulation3d.environment3d import EnvSettings
         from chest_hunter.unreal_bridge.mock_server import MockUnrealServer
 
-        base = EnvSettings(**{**{f: getattr(EnvSettings(), f) for f in EnvSettings.__dataclass_fields__},
-                              **self.env_overrides})
+        defaults = {f: getattr(EnvSettings(), f) for f in EnvSettings.__dataclass_fields__}
+        base = EnvSettings(**{**defaults, **self.env_overrides})
         self.server = MockUnrealServer(port=0, oracle=self.mode == "oracle",
                                        evaluation=self.evaluate, base_settings=base).start()
         return int(self.server.port)
@@ -183,7 +184,8 @@ class Runner3D:
                         episode=self.episode, parameters={
                             "environment": "3d", "backend": self.backend, "mode": self.mode,
                             "observation": [self.width, self.height], "fov_deg": self.fov,
-                            "graphics_quality": self.graphics_quality, "detector": self.detector_method,
+                            "graphics_quality": self.graphics_quality,
+                            "detector": self.detector_method,
                             "max_ticks": self.max_ticks, "time_basis": "simulated",
                             "decision_ticks": self.config.decision_ticks})
         recorder = ObservationRecorder(self.db, sessions, session.id,
@@ -198,10 +200,12 @@ class Runner3D:
 
         outcome, reason = "failed", None
         try:
-            navigation = {"oracle": "navmesh", "hybrid": "navmesh", "visual_nav": "local"}[self.mode]
+            navigation = {"oracle": "navmesh", "hybrid": "navmesh",
+                          "visual_nav": "local"}[self.mode]
             telemetry = client.reset_episode(self.map_id, seed=self.seed, episode=self.episode,
                                              width=self.width, height=self.height,
-                                             fov_deg=self.fov, graphics_quality=self.graphics_quality,
+                                             fov_deg=self.fov,
+                                             graphics_quality=self.graphics_quality,
                                              max_ticks=self.max_ticks, navigation=navigation)
             agent_port = AgentPort(client)
             controller: VisualAgent3D | OracleAgent3D
@@ -251,8 +255,8 @@ class Runner3D:
                 truth = self._truth(client, priors)
             summary = client.stop_episode(f"{self.mode} agent finished")
             truth["server_summary"] = summary.get("summary", {})
-        except BaseException:
-            outcome, reason = "failed", f"{sys.exc_info()[0].__name__}: {sys.exc_info()[1]}"
+        except BaseException as exc:
+            outcome, reason = "failed", f"{type(exc).__name__}: {exc}"
             truth = {}
             raise
         finally:

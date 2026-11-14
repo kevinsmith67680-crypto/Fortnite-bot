@@ -317,7 +317,8 @@ _ARGUMENTS: Final[dict[str, dict[str, tuple[bool, _Check]]]] = {
 }
 
 
-def request_header(command: str, request_id: int, args: dict[str, Any] | None = None) -> dict[str, Any]:
+def request_header(command: str, request_id: int,
+                   args: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"command": command, "request_id": request_id, "args": dict(args or {})}
 
 

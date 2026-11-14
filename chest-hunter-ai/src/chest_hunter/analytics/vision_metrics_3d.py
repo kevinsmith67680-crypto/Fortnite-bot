@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import math
 import statistics
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -44,7 +45,8 @@ class Evaluator3D:
     pose_errors: list[float] = field(default_factory=list)
 
     def observe(self, labels: dict[str, Any], detections: list[Detection3D],
-                estimates: list[RangeEstimate], odometry: tuple[float, float, float]) -> None:
+                estimates: Sequence[RangeEstimate | None],
+                odometry: tuple[float, float, float]) -> None:
         self.frames += 1
         truth = []
         for lab in labels["chests"]:
@@ -84,9 +86,10 @@ class Evaluator3D:
         bins = {}
         for lo, hi in RANGE_BINS:
             sub = [e for d, e in self.distance_errors if lo <= d < hi]
-            bins[f"{lo:g}-{hi:g}m"] = {"n": len(sub),
-                                      "mean_abs_error_m": _r(statistics.fmean(sub)) if sub else None,
-                                      "median_abs_error_m": _r(statistics.median(sub)) if sub else None}
+            bins[f"{lo:g}-{hi:g}m"] = {
+                "n": len(sub),
+                "mean_abs_error_m": _r(statistics.fmean(sub)) if sub else None,
+                "median_abs_error_m": _r(statistics.median(sub)) if sub else None}
         matched = self.tp
         return {
             "frames": self.frames,
@@ -98,7 +101,8 @@ class Evaluator3D:
             "distance_median_abs_error_m": _r(statistics.median(errs)) if errs else None,
             "distance_by_range": bins,
             "distance_failure_rate": _r(self.estimate_failures / matched) if matched else None,
-            "pose_error_mean_m": _r(statistics.fmean(self.pose_errors)) if self.pose_errors else None,
+            "pose_error_mean_m":
+                _r(statistics.fmean(self.pose_errors)) if self.pose_errors else None,
             "pose_error_max_m": _r(max(self.pose_errors)) if self.pose_errors else None,
         }
 

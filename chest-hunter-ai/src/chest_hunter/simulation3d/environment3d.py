@@ -95,7 +95,7 @@ class EnvSettings:
     interaction_seconds: float = 2.0
     interaction_failure_probability: float = 0.0
     reward_probability: float = 0.3
-    odometry_drift: float = 0.005       # per-tick sigma = drift * distance moved that tick (~0.1 m per 300 m)
+    odometry_drift: float = 0.005       # per-tick sigma = drift * distance moved that tick
     noise_std: float = 5.0
     lighting_variation: float = 0.08
     graphics_quality: str = "low"
@@ -168,7 +168,8 @@ class Environment3D:
                   tolerance: float) -> Any:
         return self.nav.find_path(start, goal, goal_tolerance=tolerance, blocked=self.nav_blocked)
 
-    def nav_raycast(self, origin: tuple[float, float, float], bearing: float, reach: float) -> float:
+    def nav_raycast(self, origin: tuple[float, float, float], bearing: float,
+                    reach: float) -> float:
         return self.nav.raycast(origin, bearing, reach, blocked=self.nav_blocked)
 
     @property
@@ -201,7 +202,8 @@ class Environment3D:
                     crouch=bool(action.get("crouch", False)), dt=self.dt)
             moved = math.hypot(ch.x - before[0], ch.y - before[1])
             if moved > 0 and self.settings.odometry_drift > 0:
-                self._odo_drift += self._odo_rng.normal(0.0, self.settings.odometry_drift * moved, 2)
+                sigma = self.settings.odometry_drift * moved
+                self._odo_drift += self._odo_rng.normal(0.0, sigma, 2)
             self._interaction(bool(action.get("interact", False)))
             self.tick += 1
             dynamic = self._dynamic_boxes()
@@ -346,10 +348,11 @@ class Environment3D:
         out = []
         target = self.interactable_chest()
         if target is not None:
-            out.append(Billboard("prompt", (target.x, target.y, target.z + CHEST_HEIGHT + 0.55), 0.32))
+            top = target.z + CHEST_HEIGHT
+            out.append(Billboard("prompt", (target.x, target.y, top + 0.55), 0.32))
             if self.hold_target == target.spawn_index and self.hold_ticks:
                 frac = self.hold_ticks * self.dt / self.settings.interaction_seconds
-                out.append(Billboard("progress", (target.x, target.y, target.z + CHEST_HEIGHT + 0.2),
+                out.append(Billboard("progress", (target.x, target.y, top + 0.2),
                                      0.8, frac))
         for idx, until in list(self.reward_flash.items()):
             if self.tick > until:

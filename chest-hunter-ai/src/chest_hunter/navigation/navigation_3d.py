@@ -35,7 +35,8 @@ Point3 = tuple[float, float, float]
 
 
 class NavPort(Protocol):
-    def nav_query(self, start: Point3, goal: Point3, *, goal_tolerance: float = 0.5) -> NavResult: ...
+    def nav_query(self, start: Point3, goal: Point3, *,
+                  goal_tolerance: float = 0.5) -> NavResult: ...
 
     def nav_raycast(self, origin: Point3, bearings_deg: list[float], *,
                     max_distance: float = 8.0) -> list[float]: ...
@@ -152,7 +153,8 @@ class LocalNavigator:
                 if 0 <= i < self.nx and 0 <= j < self.ny and g[i, j] != 1:
                     g[i, j] = 0
             if reach < self.PROBE_RANGE - 0.01:
-                i, j = self._cell(position[0] + dx * (reach + 0.3), position[1] + dy * (reach + 0.3))
+                ahead = reach + 0.3
+                i, j = self._cell(position[0] + dx * ahead, position[1] + dy * ahead)
                 if 0 <= i < self.nx and 0 <= j < self.ny:
                     g[i, j] = 1
 
@@ -184,11 +186,12 @@ class LocalNavigator:
         s = self._cell(start[0], start[1])
         gc = self._cell(goal[0], goal[1])
         if grid.is_blocked(*gc):
-            gc = self._free_near(grid, gc, tolerance)
-            if gc is None:
+            free = self._free_near(grid, gc, tolerance)
+            if free is None:
                 self.failures += 1
                 self.last_status = "goal_off_navmesh"
                 return None
+            gc = free
         if grid.is_blocked(*s):
             grid.set_blocked(s[0], s[1], False)
         result = self._finder.find_path(grid, s, gc)
@@ -196,12 +199,14 @@ class LocalNavigator:
             self.failures += 1
             self.last_status = "unreachable"
             return None
-        pts = [(self.bounds[0] + (i + 0.5) * self.RES, self.bounds[1] + (j + 0.5) * self.RES, start[2])
+        x0, y0 = self.bounds[0], self.bounds[1]
+        pts = [(x0 + (i + 0.5) * self.RES, y0 + (j + 0.5) * self.RES, start[2])
                for i, j in result.path]
         pts = _decimate(pts)
         return Plan(tuple(pts), result.cost * self.RES)
 
-    def _free_near(self, grid: GridMap, cell: tuple[int, int], tolerance: float) -> tuple[int, int] | None:
+    def _free_near(self, grid: GridMap, cell: tuple[int, int],
+                   tolerance: float) -> tuple[int, int] | None:
         reach = max(1, int(tolerance / self.RES))
         best = None
         for di in range(-reach, reach + 1):

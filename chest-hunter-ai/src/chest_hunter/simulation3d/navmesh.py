@@ -34,7 +34,7 @@ Node = tuple[int, int, int]           # (i, j, layer)
 
 @dataclass(frozen=True, slots=True)
 class NavPath:
-    status: str                                   # ok, unreachable, start_off_navmesh, goal_off_navmesh
+    status: str               # ok, unreachable, start_off_navmesh, goal_off_navmesh
     waypoints: tuple[tuple[float, float, float], ...] = ()
     length: float = 0.0
     expanded: int = 0
@@ -219,8 +219,9 @@ class NavGrid3D:
         like actors that carve Unreal's dynamic NavMesh."""
         out: set[tuple[int, int]] = set()
         for b in boxes:
-            i0, i1 = self._index_range(b.x0 - self.radius, b.x1 + self.radius, self.origin[0], self.nx)
-            j0, j1 = self._index_range(b.y0 - self.radius, b.y1 + self.radius, self.origin[1], self.ny)
+            rad = self.radius
+            i0, i1 = self._index_range(b.x0 - rad, b.x1 + rad, self.origin[0], self.nx)
+            j0, j1 = self._index_range(b.y0 - rad, b.y1 + rad, self.origin[1], self.ny)
             for i in range(i0, i1 + 1):
                 for j in range(j0, j1 + 1):
                     out.add((i, j))

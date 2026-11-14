@@ -10,13 +10,14 @@ Python side of the system.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import socket
 import threading
 import time
 from typing import Any
 
-from chest_hunter.simulation3d.environment3d import EnvSettings, Environment3D
+from chest_hunter.simulation3d.environment3d import Environment3D, EnvSettings
 from chest_hunter.unreal_bridge.protocol import (
     PROTOCOL_NAME,
     PROTOCOL_VERSION,
@@ -75,7 +76,8 @@ class BridgeSession:
 
     def _cmd_hello(self, request: Request) -> tuple[dict[str, Any], bytes]:
         if request.args["protocol"] != PROTOCOL_NAME:
-            raise ProtocolError("version_mismatch", f"unknown protocol {request.args['protocol']!r}")
+            raise ProtocolError("version_mismatch",
+                                f"unknown protocol {request.args['protocol']!r}")
         if request.args["version"] != PROTOCOL_VERSION:
             raise ProtocolError("version_mismatch",
                                 f"client protocol version {request.args['version']}, server "
@@ -278,10 +280,8 @@ class MockUnrealServer:
         self._stopping.set()
         with self._lock:
             if self._active is not None:
-                try:
+                with contextlib.suppress(OSError):
                     self._active.shutdown(socket.SHUT_RDWR)
-                except OSError:
-                    pass
         if self._listener is not None:
             self._listener.close()
         if self._thread is not None:
@@ -353,7 +353,5 @@ class MockUnrealServer:
         finally:
             with self._lock:
                 self._active = None
-            try:
+            with contextlib.suppress(OSError):
                 conn.close()
-            except OSError:
-                pass

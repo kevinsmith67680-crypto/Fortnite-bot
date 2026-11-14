@@ -20,7 +20,7 @@ import math
 from collections import deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 import numpy as np
 
@@ -29,7 +29,7 @@ from chest_hunter.vision.depth_estimation import RangeEstimate
 from chest_hunter.vision.perspective import triangulate_rays
 
 
-class TrackState3D(str, Enum):
+class TrackState3D(StrEnum):
     TENTATIVE = "tentative"
     CONFIRMED = "confirmed"
     LOST = "lost"
@@ -115,10 +115,10 @@ class Tracker3D:
         created = []
         for mi, (det, est) in enumerate(measurements):
             if mi not in used_m:
-                t = self._create(det, est, timestamp)
-                if t is not None:
-                    created.append(t)
-                    used_t.add(t.track_id)
+                new = self._create(det, est, timestamp)
+                if new is not None:
+                    created.append(new)
+                    used_t.add(new.track_id)
         for t in self.tracks:
             if t.track_id in used_t:
                 continue

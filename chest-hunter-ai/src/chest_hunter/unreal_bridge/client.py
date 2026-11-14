@@ -16,6 +16,7 @@ Reliability rules:
 
 from __future__ import annotations
 
+import contextlib
 import ipaddress
 import logging
 import socket
@@ -23,7 +24,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from chest_hunter.exceptions import ChestHunterError
+from chest_hunter.exceptions import ChestHunterError, ValidationError
 from chest_hunter.unreal_bridge.observation_adapter import (
     Observation3D,
     Telemetry,
@@ -65,16 +66,18 @@ class StaleFrameError(BridgeError):
 
 
 def require_loopback(host: str) -> None:
-    """Refuse any host that does not resolve exclusively to loopback addresses."""
+    """Refuse any host that does not resolve exclusively to loopback addresses.
+
+    Raises :class:`ValidationError` (a ``ValueError`` and a ``ChestHunterError``)."""
     try:
         infos = socket.getaddrinfo(host, None)
     except socket.gaierror as exc:
-        raise ValueError(f"cannot resolve {host!r}: {exc}") from exc
-    addresses = {info[4][0] for info in infos}
+        raise ValidationError(f"cannot resolve {host!r}: {exc}") from exc
+    addresses = {str(info[4][0]) for info in infos}
     if not addresses or not all(ipaddress.ip_address(a.split("%")[0]).is_loopback
                                 for a in addresses):
-        raise ValueError(f"the research bridge only connects to this machine (loopback); "
-                         f"{host!r} resolves to {sorted(addresses)}")
+        raise ValidationError(f"the research bridge only connects to this machine (loopback); "
+                              f"{host!r} resolves to {sorted(addresses)}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,34 +124,45 @@ class BridgeClient:
     # -- connection ----------------------------------------------------------------------
 
     def connect(self) -> dict[str, Any]:
+        """Connect and negotiate the protocol (HELLO), retrying with exponential backoff.
+
+        A ``busy`` answer is retried too: right after a dropped connection the server may
+        not have noticed yet that the previous connection (ours) is gone.
+        """
         last: Exception | None = None
         for attempt in range(self.connect_attempts):
             try:
                 sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                sock.settimeout(self.timeout)
-                self._sock = sock
-                break
             except OSError as exc:
                 last = exc
                 time.sleep(self.retry_delay * (2 ** attempt))
-        else:
-            raise BridgeConnectionError(
-                "connect_failed", f"no research server on {self.host}:{self.port} after "
-                                  f"{self.connect_attempts} attempt(s) ({last}). Start the Unreal "
-                                  "research project (see docs/phase4_3d_architecture.md) or use "
-                                  "--backend reference for the built-in Python reference arena")
-        reply = self._request("HELLO", {"protocol": PROTOCOL_NAME, "version": PROTOCOL_VERSION,
-                                        "client": "chest_hunter"})
-        self.server_info = reply.header
-        return self.server_info
+                continue
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.settimeout(self.timeout)
+            self._sock = sock
+            try:
+                reply = self._request("HELLO", {"protocol": PROTOCOL_NAME,
+                                                "version": PROTOCOL_VERSION,
+                                                "client": "chest_hunter"})
+            except BridgeError as exc:
+                self.close()
+                if exc.code not in ("busy", "disconnected"):
+                    raise
+                last = exc
+                time.sleep(self.retry_delay * (2 ** attempt))
+                continue
+            self.server_info = reply.header
+            return self.server_info
+        raise BridgeConnectionError(
+            "connect_failed", f"no research server on {self.host}:{self.port} after "
+                              f"{self.connect_attempts} attempt(s) ({last}). Start the Unreal "
+                              "research project (see docs/phase4_3d_architecture.md) or use "
+                              "--backend reference for the built-in Python reference arena")
 
     def close(self) -> None:
         if self._sock is not None:
-            try:
+            with contextlib.suppress(OSError):
                 self._sock.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
             self._sock.close()
             self._sock = None
 
@@ -210,8 +224,14 @@ class BridgeClient:
         return reply
 
     def _reconnect(self) -> None:
+        """Reconnect after a dropped connection (at least 5 attempts with backoff)."""
         self.close()
-        self.connect()
+        attempts = self.connect_attempts
+        self.connect_attempts = max(attempts, 5)
+        try:
+            self.connect()
+        finally:
+            self.connect_attempts = attempts
 
     # -- episode API -------------------------------------------------------------------------
 

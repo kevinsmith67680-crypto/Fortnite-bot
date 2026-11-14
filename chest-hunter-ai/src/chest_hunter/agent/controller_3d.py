@@ -453,7 +453,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 and self.state not in (S.VERIFYING_OPEN,):
             self.goal = None
 
-    # -- state handlers -----------------------------------------------------------------------------
+    # -- state handlers -------------------------------------------------------------------------
 
     def _observe(self) -> Agent3DState | None:
         if self._maneuver_until > self.now:
@@ -650,8 +650,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 self._scan = [self._view_yaw(prior.xyz)] * 2
                 cam = self.obs.camera_pose() if self.obs is not None else None
                 if cam is not None:
-                    self._scan_pitch = math.degrees(math.atan2(
-                        prior.z + 0.3 - cam.z, max(0.5, math.dist(cam.position[:2], prior.xyz[:2]))))
+                    horizontal = max(0.5, math.dist(cam.position[:2], prior.xyz[:2]))
+                    self._scan_pitch = math.degrees(math.atan2(prior.z + 0.3 - cam.z, horizontal))
                 return self._go(S.SCANNING)
         if follower.stuck(self.now):
             self.recovery_reason = "stuck"
@@ -699,7 +699,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         ux, uy = (pos[0] - tx) / max(dist, 1e-6), (pos[1] - ty) / max(dist, 1e-6)
         if self._approach_side:                       # retry from another side (occluders)
             rad = math.radians(self._approach_side)
-            ux, uy = ux * math.cos(rad) - uy * math.sin(rad), ux * math.sin(rad) + uy * math.cos(rad)
+            cr, sr = math.cos(rad), math.sin(rad)
+            ux, uy = ux * cr - uy * sr, ux * sr + uy * cr
         sx, sy = tx + ux * self._approach_stand, ty + uy * self._approach_stand
         stand = (sx, sy, pos[2])
         if self._approach_goal is None or math.dist(self._approach_goal[:2], stand[:2]) > 0.7:
@@ -846,7 +847,7 @@ def _hsv(frame: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(cv2.GaussianBlur(frame, (3, 3), 0), cv2.COLOR_BGR2HSV)
 
 
-# -- oracle baseline --------------------------------------------------------------------------------
+# -- oracle baseline ----------------------------------------------------------------------------
 
 
 class OracleAgent3D:
@@ -952,18 +953,20 @@ class OracleAgent3D:
                                       pitch_rate=float(self.rules.get("pitch_rate_deg", 60)))
                 self.action.look_yaw, self.action.look_pitch = ly, lp
         if self.state == "OPENING":
-            ly, lp = look_towards(cam_yaw, self.telemetry.camera.pitch_deg if self.telemetry else 0.0,
-                                  aim_yaw, -25.0, step_seconds=self.step_seconds,
+            pitch = self.telemetry.camera.pitch_deg if self.telemetry else 0.0
+            ly, lp = look_towards(cam_yaw, pitch, aim_yaw, -25.0, step_seconds=self.step_seconds,
                                   yaw_rate=float(self.rules.get("yaw_rate_deg", 120)),
                                   pitch_rate=float(self.rules.get("pitch_rate_deg", 60)))
             self.action.look_yaw, self.action.look_pitch = ly, lp
-            current = next(c for c in state["chests"] if c["spawn_index"] == self.target["spawn_index"])
+            current = next(c for c in state["chests"]
+                           if c["spawn_index"] == self.target["spawn_index"])
             if current["opened"]:
                 loc = self.location_of(self.target["spawn_index"])
                 self.metrics.chests_opened += 1
                 if loc is not None and self.recorder is not None:
-                    self.recorder(loc, present=True, opened=True, seconds=self.now - self._hold_start,
-                                  reward=None, sim_time=self.now)
+                    self.recorder(loc, present=True, opened=True,
+                                  seconds=self.now - self._hold_start, reward=None,
+                                  sim_time=self.now)
                     self.metrics.locations_recorded += 1
                 self.state = "PLANNING"
                 self.target = None

@@ -1,0 +1,5407 @@
+{
+ "format": "chest-hunter-arena/1",
+ "map_id": "research_arena_3d",
+ "units": "metres",
+ "axes": "X north, Y east, Z up (Unreal axes); yaw degrees from +X towards +Y",
+ "bounds": [
+  0.0,
+  0.0,
+  100.0,
+  100.0
+ ],
+ "start": {
+  "position": [
+   30.0,
+   50.0,
+   0.02
+  ],
+  "yaw_deg": 0.0
+ },
+ "chest": {
+  "width": 0.9,
+  "depth": 0.6,
+  "body_height": 0.5,
+  "lid_height": 0.15
+ },
+ "colours_bgr": {
+  "sky": [
+   235,
+   206,
+   150
+  ],
+  "grass": [
+   70,
+   150,
+   80
+  ],
+  "concrete": [
+   150,
+   150,
+   152
+  ],
+  "asphalt": [
+   95,
+   95,
+   100
+  ],
+  "warehouse_wall": [
+   140,
+   120,
+   104
+  ],
+  "house_wall": [
+   196,
+   196,
+   204
+  ],
+  "outpost_wall": [
+   112,
+   116,
+   122
+  ],
+  "interior_floor": [
+   150,
+   138,
+   128
+  ],
+  "ceiling": [
+   205,
+   205,
+   210
+  ],
+  "stairs": [
+   160,
+   160,
+   166
+  ],
+  "railing": [
+   62,
+   62,
+   66
+  ],
+  "crate": [
+   72,
+   104,
+   82
+  ],
+  "container_red": [
+   48,
+   48,
+   176
+  ],
+  "container_blue": [
+   164,
+   92,
+   46
+  ],
+  "container_teal": [
+   128,
+   134,
+   44
+  ],
+  "container_sealed": [
+   90,
+   90,
+   150
+  ],
+  "water": [
+   170,
+   112,
+   40
+  ],
+  "pier": [
+   110,
+   120,
+   128
+  ],
+  "trunk": [
+   62,
+   70,
+   78
+  ],
+  "canopy": [
+   44,
+   112,
+   52
+  ],
+  "rock": [
+   126,
+   126,
+   132
+  ],
+  "sandbag": [
+   132,
+   158,
+   170
+  ],
+  "tent": [
+   70,
+   112,
+   100
+  ],
+  "fence": [
+   120,
+   124,
+   128
+  ],
+  "post": [
+   80,
+   80,
+   84
+  ],
+  "decoy_gold": [
+   24,
+   197,
+   245
+  ],
+  "decoy_hay": [
+   70,
+   175,
+   215
+  ],
+  "chest_body": [
+   24,
+   197,
+   245
+  ],
+  "chest_lid": [
+   20,
+   72,
+   120
+  ],
+  "chest_latch": [
+   40,
+   40,
+   44
+  ],
+  "chest_inside": [
+   160,
+   210,
+   230
+  ],
+  "chest_open_body": [
+   30,
+   150,
+   200
+  ],
+  "agent_body": [
+   246,
+   130,
+   59
+  ],
+  "agent_head": [
+   150,
+   180,
+   220
+  ],
+  "agent_visor": [
+   255,
+   255,
+   255
+  ],
+  "prompt": [
+   255,
+   255,
+   255
+  ],
+  "prompt_text": [
+   20,
+   20,
+   20
+  ],
+  "progress_fill": [
+   94,
+   197,
+   34
+  ],
+  "progress_frame": [
+   255,
+   255,
+   255
+  ],
+  "reward": [
+   238,
+   211,
+   34
+  ]
+ },
+ "regions": {
+  "Central Warehouse": [
+   36.0,
+   34.0,
+   66.0,
+   66.0
+  ],
+  "Eastern Settlement": [
+   26.0,
+   70.0,
+   76.0,
+   98.0
+  ],
+  "Northern Forest": [
+   75.0,
+   2.0,
+   98.0,
+   98.0
+  ],
+  "Western Outpost": [
+   28.0,
+   2.0,
+   62.0,
+   30.0
+  ],
+  "Southern Docks": [
+   0.0,
+   2.0,
+   25.0,
+   98.0
+  ]
+ },
+ "boxes": [
+  {
+   "min": [
+    0.0,
+    0.0,
+    -0.2
+   ],
+   "max": [
+    100.0,
+    100.0,
+    0.0
+   ],
+   "kind": "ground",
+   "colour": "grass",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    0.0,
+    0.0,
+    -0.2
+   ],
+   "max": [
+    6.0,
+    100.0,
+    0.03
+   ],
+   "kind": "water",
+   "colour": "water",
+   "blocks": false,
+   "walkable": false,
+   "name": "sea"
+  },
+  {
+   "min": [
+    0.0,
+    -0.4,
+    0.0
+   ],
+   "max": [
+    100.0,
+    0.0,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": "perimeter S"
+  },
+  {
+   "min": [
+    0.0,
+    100.0,
+    0.0
+   ],
+   "max": [
+    100.0,
+    100.4,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": "perimeter N"
+  },
+  {
+   "min": [
+    -0.4,
+    0.0,
+    0.0
+   ],
+   "max": [
+    0.0,
+    100.0,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    100.0,
+    0.0,
+    0.0
+   ],
+   "max": [
+    100.4,
+    100.0,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    26.0,
+    46.0,
+    0.0
+   ],
+   "max": [
+    36.0,
+    54.0,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "concrete",
+   "blocks": false,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    60.0,
+    46.0,
+    0.0
+   ],
+   "max": [
+    70.0,
+    54.0,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "concrete",
+   "blocks": false,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    40.0,
+    38.0,
+    0.0
+   ],
+   "max": [
+    40.3,
+    48.5,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    40.0,
+    48.5,
+    2.4
+   ],
+   "max": [
+    40.3,
+    51.5,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    40.0,
+    51.5,
+    0.0
+   ],
+   "max": [
+    40.3,
+    62.0,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    38.0,
+    0.0
+   ],
+   "max": [
+    60.0,
+    44.25,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    44.25,
+    2.4
+   ],
+   "max": [
+    60.0,
+    45.75,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    45.75,
+    0.0
+   ],
+   "max": [
+    60.0,
+    62.0,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    40.3,
+    38.0,
+    0.0
+   ],
+   "max": [
+    59.7,
+    38.3,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    40.3,
+    61.7,
+    0.0
+   ],
+   "max": [
+    47.25,
+    62.0,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.25,
+    61.7,
+    2.4
+   ],
+   "max": [
+    48.75,
+    62.0,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    48.75,
+    61.7,
+    0.0
+   ],
+   "max": [
+    59.7,
+    62.0,
+    7.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    40.3,
+    38.3,
+    0.0
+   ],
+   "max": [
+    59.7,
+    61.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "warehouse floor"
+  },
+  {
+   "min": [
+    47.1,
+    38.5,
+    0.0
+   ],
+   "max": [
+    47.45,
+    40.0,
+    0.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    47.45,
+    38.5,
+    0.0
+   ],
+   "max": [
+    47.800000000000004,
+    40.0,
+    0.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    47.800000000000004,
+    38.5,
+    0.0
+   ],
+   "max": [
+    48.15,
+    40.0,
+    0.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    48.15,
+    38.5,
+    0.0
+   ],
+   "max": [
+    48.5,
+    40.0,
+    1.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    48.5,
+    38.5,
+    0.0
+   ],
+   "max": [
+    48.85,
+    40.0,
+    1.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    48.85,
+    38.5,
+    0.0
+   ],
+   "max": [
+    49.2,
+    40.0,
+    1.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    49.2,
+    38.5,
+    0.0
+   ],
+   "max": [
+    49.550000000000004,
+    40.0,
+    1.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    49.550000000000004,
+    38.5,
+    0.0
+   ],
+   "max": [
+    49.9,
+    40.0,
+    2.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    49.9,
+    38.5,
+    0.0
+   ],
+   "max": [
+    50.25,
+    40.0,
+    2.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    50.25,
+    38.5,
+    0.0
+   ],
+   "max": [
+    50.6,
+    40.0,
+    2.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    50.6,
+    38.5,
+    0.0
+   ],
+   "max": [
+    50.95,
+    40.0,
+    2.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    50.95,
+    38.5,
+    0.0
+   ],
+   "max": [
+    51.3,
+    40.0,
+    3.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    51.3,
+    38.5,
+    0.0
+   ],
+   "max": [
+    51.65,
+    40.0,
+    3.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    51.65,
+    38.5,
+    0.0
+   ],
+   "max": [
+    52.0,
+    40.0,
+    3.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    52.0,
+    38.3,
+    3.3
+   ],
+   "max": [
+    59.7,
+    61.7,
+    3.5
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": true,
+   "walkable": true,
+   "name": "mezzanine"
+  },
+  {
+   "min": [
+    52.0,
+    40.0,
+    3.5
+   ],
+   "max": [
+    52.1,
+    61.7,
+    4.5
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    54.75,
+    43.75,
+    0.02
+   ],
+   "max": [
+    55.25,
+    44.25,
+    3.3
+   ],
+   "kind": "pillar",
+   "colour": "concrete",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    54.75,
+    49.75,
+    0.02
+   ],
+   "max": [
+    55.25,
+    50.25,
+    3.3
+   ],
+   "kind": "pillar",
+   "colour": "concrete",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    54.75,
+    55.75,
+    0.02
+   ],
+   "max": [
+    55.25,
+    56.25,
+    3.3
+   ],
+   "kind": "pillar",
+   "colour": "concrete",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    46.0,
+    57.0,
+    0.02
+   ],
+   "max": [
+    47.2,
+    60.6,
+    1.2
+   ],
+   "kind": "crate",
+   "colour": "crate",
+   "blocks": true,
+   "walkable": false,
+   "name": "crate stack"
+  },
+  {
+   "min": [
+    44.6,
+    57.4,
+    0.02
+   ],
+   "max": [
+    45.8,
+    58.6,
+    1.2
+   ],
+   "kind": "crate",
+   "colour": "crate",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    57.0,
+    44.8,
+    3.5
+   ],
+   "max": [
+    58.2,
+    46.0,
+    4.7
+   ],
+   "kind": "crate",
+   "colour": "crate",
+   "blocks": true,
+   "walkable": false,
+   "name": "mezzanine crate"
+  },
+  {
+   "min": [
+    43.2,
+    52.2,
+    0.02
+   ],
+   "max": [
+    44.0,
+    52.7,
+    0.4
+   ],
+   "kind": "decoy",
+   "colour": "decoy_gold",
+   "blocks": true,
+   "walkable": false,
+   "name": "gold sacks"
+  },
+  {
+   "min": [
+    55.0,
+    75.0,
+    0.0
+   ],
+   "max": [
+    55.3,
+    83.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    62.7,
+    75.0,
+    0.0
+   ],
+   "max": [
+    63.0,
+    83.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    55.3,
+    75.0,
+    0.0
+   ],
+   "max": [
+    58.25,
+    75.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    58.25,
+    75.0,
+    2.4
+   ],
+   "max": [
+    59.75,
+    75.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.75,
+    75.0,
+    0.0
+   ],
+   "max": [
+    62.7,
+    75.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    55.3,
+    82.7,
+    0.0
+   ],
+   "max": [
+    62.7,
+    83.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    55.3,
+    75.3,
+    0.0
+   ],
+   "max": [
+    62.7,
+    82.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "house 1 floor"
+  },
+  {
+   "min": [
+    66.0,
+    78.0,
+    0.0
+   ],
+   "max": [
+    66.3,
+    81.25,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    66.0,
+    81.25,
+    2.4
+   ],
+   "max": [
+    66.3,
+    82.75,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    66.0,
+    82.75,
+    0.0
+   ],
+   "max": [
+    66.3,
+    86.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    73.7,
+    78.0,
+    0.0
+   ],
+   "max": [
+    74.0,
+    86.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    66.3,
+    78.0,
+    0.0
+   ],
+   "max": [
+    73.7,
+    78.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    66.3,
+    85.7,
+    0.0
+   ],
+   "max": [
+    73.7,
+    86.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    66.3,
+    78.3,
+    0.0
+   ],
+   "max": [
+    73.7,
+    85.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "house 2 floor"
+  },
+  {
+   "min": [
+    44.0,
+    86.0,
+    0.0
+   ],
+   "max": [
+    44.3,
+    94.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    51.7,
+    86.0,
+    0.0
+   ],
+   "max": [
+    52.0,
+    94.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    44.3,
+    86.0,
+    0.0
+   ],
+   "max": [
+    47.35,
+    86.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.35,
+    86.0,
+    2.4
+   ],
+   "max": [
+    48.65,
+    86.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    48.65,
+    86.0,
+    0.0
+   ],
+   "max": [
+    51.7,
+    86.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    44.3,
+    93.7,
+    0.0
+   ],
+   "max": [
+    51.7,
+    94.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    44.3,
+    86.3,
+    0.0
+   ],
+   "max": [
+    51.7,
+    93.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "narrow door house floor"
+  },
+  {
+   "min": [
+    30.0,
+    80.0,
+    0.0
+   ],
+   "max": [
+    30.3,
+    84.75,
+    6.8
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    30.0,
+    84.75,
+    2.4
+   ],
+   "max": [
+    30.3,
+    86.25,
+    6.8
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    30.0,
+    86.25,
+    0.0
+   ],
+   "max": [
+    30.3,
+    90.0,
+    6.8
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    39.7,
+    80.0,
+    0.0
+   ],
+   "max": [
+    40.0,
+    90.0,
+    6.8
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    30.3,
+    80.0,
+    0.0
+   ],
+   "max": [
+    39.7,
+    80.3,
+    6.8
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    30.3,
+    89.7,
+    0.0
+   ],
+   "max": [
+    39.7,
+    90.0,
+    6.8
+   ],
+   "kind": "wall",
+   "colour": "house_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    30.3,
+    80.3,
+    0.0
+   ],
+   "max": [
+    39.7,
+    89.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "two-storey house floor"
+  },
+  {
+   "min": [
+    31.4,
+    80.4,
+    0.0
+   ],
+   "max": [
+    31.75,
+    81.9,
+    0.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    31.75,
+    80.4,
+    0.0
+   ],
+   "max": [
+    32.1,
+    81.9,
+    0.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    32.1,
+    80.4,
+    0.0
+   ],
+   "max": [
+    32.449999999999996,
+    81.9,
+    0.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    32.449999999999996,
+    80.4,
+    0.0
+   ],
+   "max": [
+    32.8,
+    81.9,
+    1.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    32.8,
+    80.4,
+    0.0
+   ],
+   "max": [
+    33.15,
+    81.9,
+    1.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    33.15,
+    80.4,
+    0.0
+   ],
+   "max": [
+    33.5,
+    81.9,
+    1.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    33.5,
+    80.4,
+    0.0
+   ],
+   "max": [
+    33.85,
+    81.9,
+    1.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    33.85,
+    80.4,
+    0.0
+   ],
+   "max": [
+    34.199999999999996,
+    81.9,
+    2.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    34.199999999999996,
+    80.4,
+    0.0
+   ],
+   "max": [
+    34.55,
+    81.9,
+    2.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    34.55,
+    80.4,
+    0.0
+   ],
+   "max": [
+    34.9,
+    81.9,
+    2.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    34.9,
+    80.4,
+    0.0
+   ],
+   "max": [
+    35.25,
+    81.9,
+    2.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    35.25,
+    80.4,
+    0.0
+   ],
+   "max": [
+    35.599999999999994,
+    81.9,
+    3.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    35.599999999999994,
+    80.4,
+    0.0
+   ],
+   "max": [
+    35.949999999999996,
+    81.9,
+    3.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    35.949999999999996,
+    80.4,
+    0.0
+   ],
+   "max": [
+    36.3,
+    81.9,
+    3.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    30.3,
+    82.6,
+    3.3
+   ],
+   "max": [
+    39.7,
+    89.7,
+    3.5
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": true,
+   "walkable": true,
+   "name": "upper floor"
+  },
+  {
+   "min": [
+    36.3,
+    80.3,
+    3.3
+   ],
+   "max": [
+    39.7,
+    82.6,
+    3.5
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    30.3,
+    82.6,
+    3.5
+   ],
+   "max": [
+    36.3,
+    82.69999999999999,
+    4.5
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    64.0,
+    90.8,
+    0.0
+   ],
+   "max": [
+    74.0,
+    91.0,
+    1.0
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": "settlement fence"
+  },
+  {
+   "min": [
+    56.5,
+    70.6,
+    0.0
+   ],
+   "max": [
+    57.9,
+    71.6,
+    1.0
+   ],
+   "kind": "decoy",
+   "colour": "decoy_hay",
+   "blocks": true,
+   "walkable": false,
+   "name": "hay bale"
+  },
+  {
+   "min": [
+    58.4,
+    70.6,
+    0.0
+   ],
+   "max": [
+    59.8,
+    71.6,
+    1.0
+   ],
+   "kind": "decoy",
+   "colour": "decoy_hay",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    27.1,
+    64.1,
+    0.0
+   ],
+   "max": [
+    28.5,
+    65.1,
+    1.0
+   ],
+   "kind": "decoy",
+   "colour": "decoy_hay",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.0,
+    74.0,
+    0.0
+   ],
+   "max": [
+    88.3,
+    80.0,
+    3.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    93.7,
+    74.0,
+    0.0
+   ],
+   "max": [
+    94.0,
+    80.0,
+    3.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.3,
+    74.0,
+    0.0
+   ],
+   "max": [
+    90.25,
+    74.3,
+    3.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    90.25,
+    74.0,
+    2.4
+   ],
+   "max": [
+    91.75,
+    74.3,
+    3.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    91.75,
+    74.0,
+    0.0
+   ],
+   "max": [
+    93.7,
+    74.3,
+    3.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.3,
+    79.7,
+    0.0
+   ],
+   "max": [
+    93.7,
+    80.0,
+    3.0
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.3,
+    74.3,
+    0.0
+   ],
+   "max": [
+    93.7,
+    79.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "ranger hut floor"
+  },
+  {
+   "min": [
+    78.0,
+    18.5,
+    0.0
+   ],
+   "max": [
+    81.0,
+    20.0,
+    2.0
+   ],
+   "kind": "rock",
+   "colour": "rock",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    79.5,
+    20.0,
+    0.0
+   ],
+   "max": [
+    81.5,
+    21.0,
+    1.4
+   ],
+   "kind": "rock",
+   "colour": "rock",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    91.0,
+    51.6,
+    0.0
+   ],
+   "max": [
+    94.0,
+    52.1,
+    0.5
+   ],
+   "kind": "log",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": "fallen log"
+  },
+  {
+   "min": [
+    76.3,
+    64.8,
+    0.0
+   ],
+   "max": [
+    77.1,
+    66.4,
+    1.0
+   ],
+   "kind": "bush",
+   "colour": "canopy",
+   "blocks": true,
+   "walkable": false,
+   "name": "bushes"
+  },
+  {
+   "min": [
+    88.0,
+    60.0,
+    2.8
+   ],
+   "max": [
+    91.0,
+    63.0,
+    3.0
+   ],
+   "kind": "platform",
+   "colour": "pier",
+   "blocks": true,
+   "walkable": true,
+   "name": "water tower deck"
+  },
+  {
+   "min": [
+    88.0,
+    60.0,
+    0.0
+   ],
+   "max": [
+    88.3,
+    60.3,
+    2.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    90.7,
+    60.0,
+    0.0
+   ],
+   "max": [
+    91.0,
+    60.3,
+    2.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.0,
+    62.7,
+    0.0
+   ],
+   "max": [
+    88.3,
+    63.0,
+    2.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    90.7,
+    62.7,
+    0.0
+   ],
+   "max": [
+    91.0,
+    63.0,
+    2.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.3,
+    60.3,
+    4.4
+   ],
+   "max": [
+    90.7,
+    62.7,
+    6.4
+   ],
+   "kind": "tank",
+   "colour": "container_teal",
+   "blocks": true,
+   "walkable": false,
+   "name": "water tank"
+  },
+  {
+   "min": [
+    88.3,
+    60.3,
+    3.0
+   ],
+   "max": [
+    88.5,
+    60.5,
+    4.4
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    90.5,
+    60.3,
+    3.0
+   ],
+   "max": [
+    90.7,
+    60.5,
+    4.4
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.3,
+    62.5,
+    3.0
+   ],
+   "max": [
+    88.5,
+    62.7,
+    4.4
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    90.5,
+    62.5,
+    3.0
+   ],
+   "max": [
+    90.7,
+    62.7,
+    4.4
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    35.0,
+    5.0,
+    0.0
+   ],
+   "max": [
+    35.3,
+    25.0,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    5.0,
+    0.0
+   ],
+   "max": [
+    60.0,
+    10.25,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    10.25,
+    2.4
+   ],
+   "max": [
+    60.0,
+    11.75,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    11.75,
+    0.0
+   ],
+   "max": [
+    60.0,
+    25.0,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    35.3,
+    5.0,
+    0.0
+   ],
+   "max": [
+    59.7,
+    5.3,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    35.3,
+    24.7,
+    0.0
+   ],
+   "max": [
+    45.0,
+    25.0,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    45.0,
+    24.7,
+    2.4
+   ],
+   "max": [
+    47.5,
+    25.0,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.5,
+    24.7,
+    0.0
+   ],
+   "max": [
+    59.7,
+    25.0,
+    2.5
+   ],
+   "kind": "wall",
+   "colour": "outpost_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    40.6,
+    8.3,
+    0.0
+   ],
+   "max": [
+    41.0,
+    9.7,
+    0.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    41.0,
+    8.3,
+    0.0
+   ],
+   "max": [
+    41.4,
+    9.7,
+    0.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    41.4,
+    8.3,
+    0.0
+   ],
+   "max": [
+    41.800000000000004,
+    9.7,
+    0.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    41.800000000000004,
+    8.3,
+    0.0
+   ],
+   "max": [
+    42.2,
+    9.7,
+    1.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    42.2,
+    8.3,
+    0.0
+   ],
+   "max": [
+    42.6,
+    9.7,
+    1.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    42.6,
+    8.3,
+    0.0
+   ],
+   "max": [
+    43.0,
+    9.7,
+    1.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    43.0,
+    8.3,
+    0.0
+   ],
+   "max": [
+    43.4,
+    9.7,
+    1.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    43.4,
+    8.3,
+    0.0
+   ],
+   "max": [
+    43.800000000000004,
+    9.7,
+    2.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    43.800000000000004,
+    8.3,
+    0.0
+   ],
+   "max": [
+    44.2,
+    9.7,
+    2.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    44.2,
+    8.3,
+    0.0
+   ],
+   "max": [
+    44.6,
+    9.7,
+    2.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    44.6,
+    8.3,
+    0.0
+   ],
+   "max": [
+    45.0,
+    9.7,
+    2.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    45.0,
+    8.3,
+    0.0
+   ],
+   "max": [
+    45.400000000000006,
+    9.7,
+    3.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    45.400000000000006,
+    8.3,
+    0.0
+   ],
+   "max": [
+    45.800000000000004,
+    9.7,
+    3.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    45.800000000000004,
+    8.3,
+    0.0
+   ],
+   "max": [
+    46.2,
+    9.7,
+    3.5
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    46.2,
+    8.3,
+    0.0
+   ],
+   "max": [
+    46.6,
+    9.7,
+    3.75
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    46.6,
+    8.3,
+    0.0
+   ],
+   "max": [
+    47.0,
+    9.7,
+    4.0
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    47.0,
+    7.0,
+    3.8
+   ],
+   "max": [
+    51.0,
+    11.0,
+    4.0
+   ],
+   "kind": "platform",
+   "colour": "pier",
+   "blocks": true,
+   "walkable": true,
+   "name": "watchtower"
+  },
+  {
+   "min": [
+    47.0,
+    7.0,
+    0.02
+   ],
+   "max": [
+    47.3,
+    7.3,
+    3.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    50.7,
+    7.0,
+    0.02
+   ],
+   "max": [
+    51.0,
+    7.3,
+    3.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.0,
+    10.7,
+    0.02
+   ],
+   "max": [
+    47.3,
+    11.0,
+    3.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    50.7,
+    10.7,
+    0.02
+   ],
+   "max": [
+    51.0,
+    11.0,
+    3.8
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    50.9,
+    7.0,
+    4.0
+   ],
+   "max": [
+    51.0,
+    11.0,
+    5.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.0,
+    7.0,
+    4.0
+   ],
+   "max": [
+    51.0,
+    7.1,
+    5.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.0,
+    10.9,
+    4.0
+   ],
+   "max": [
+    51.0,
+    11.0,
+    5.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.0,
+    7.0,
+    4.0
+   ],
+   "max": [
+    47.1,
+    8.3,
+    5.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    47.0,
+    9.7,
+    4.0
+   ],
+   "max": [
+    47.1,
+    11.0,
+    5.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    54.0,
+    12.0,
+    0.02
+   ],
+   "max": [
+    54.6,
+    18.0,
+    1.0
+   ],
+   "kind": "sandbag",
+   "colour": "sandbag",
+   "blocks": true,
+   "walkable": false,
+   "name": "sandbags"
+  },
+  {
+   "min": [
+    38.0,
+    17.0,
+    0.02
+   ],
+   "max": [
+    41.0,
+    21.0,
+    2.2
+   ],
+   "kind": "tent",
+   "colour": "tent",
+   "blocks": true,
+   "walkable": false,
+   "name": "tent"
+  },
+  {
+   "min": [
+    49.6,
+    13.0,
+    0.02
+   ],
+   "max": [
+    50.4,
+    13.5,
+    0.4
+   ],
+   "kind": "decoy",
+   "colour": "decoy_gold",
+   "blocks": true,
+   "walkable": false,
+   "name": "gold sacks"
+  },
+  {
+   "min": [
+    6.0,
+    0.0,
+    0.0
+   ],
+   "max": [
+    6.15,
+    45.5,
+    1.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": "quay rail"
+  },
+  {
+   "min": [
+    6.0,
+    48.5,
+    0.0
+   ],
+   "max": [
+    6.15,
+    100.0,
+    1.0
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    6.0,
+    45.5,
+    0.0
+   ],
+   "max": [
+    6.6,
+    48.5,
+    0.25
+   ],
+   "kind": "stairs",
+   "colour": "stairs",
+   "blocks": true,
+   "walkable": true,
+   "name": "pier step"
+  },
+  {
+   "min": [
+    0.6,
+    45.0,
+    0.0
+   ],
+   "max": [
+    6.0,
+    49.0,
+    0.5
+   ],
+   "kind": "pier",
+   "colour": "pier",
+   "blocks": true,
+   "walkable": true,
+   "name": "pier"
+  },
+  {
+   "min": [
+    0.6,
+    45.0,
+    0.5
+   ],
+   "max": [
+    6.0,
+    45.1,
+    1.5
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    0.6,
+    48.9,
+    0.5
+   ],
+   "max": [
+    6.0,
+    49.0,
+    1.5
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    0.6,
+    45.1,
+    0.5
+   ],
+   "max": [
+    0.7,
+    48.9,
+    1.5
+   ],
+   "kind": "railing",
+   "colour": "railing",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    11.0,
+    24.0,
+    0.0
+   ],
+   "max": [
+    13.4,
+    30.0,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    11.0,
+    32.0,
+    0.0
+   ],
+   "max": [
+    13.4,
+    38.0,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_blue",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    15.5,
+    24.0,
+    0.0
+   ],
+   "max": [
+    17.9,
+    30.0,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_teal",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    15.5,
+    32.0,
+    0.0
+   ],
+   "max": [
+    17.9,
+    38.0,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    15.5,
+    62.0,
+    0.0
+   ],
+   "max": [
+    17.9,
+    68.0,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_blue",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    19.0,
+    36.0,
+    0.0
+   ],
+   "max": [
+    25.0,
+    38.4,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_teal",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    11.0,
+    58.0,
+    0.0
+   ],
+   "max": [
+    13.4,
+    64.0,
+    0.12
+   ],
+   "kind": "container",
+   "colour": "container_sealed",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    11.0,
+    58.0,
+    2.5
+   ],
+   "max": [
+    13.4,
+    64.0,
+    2.6
+   ],
+   "kind": "container",
+   "colour": "container_sealed",
+   "blocks": true,
+   "walkable": false,
+   "name": "sealed roof"
+  },
+  {
+   "min": [
+    11.0,
+    58.0,
+    0.12
+   ],
+   "max": [
+    11.1,
+    64.0,
+    2.5
+   ],
+   "kind": "container",
+   "colour": "container_sealed",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    13.3,
+    58.0,
+    0.12
+   ],
+   "max": [
+    13.4,
+    64.0,
+    2.5
+   ],
+   "kind": "container",
+   "colour": "container_sealed",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    11.1,
+    58.0,
+    0.12
+   ],
+   "max": [
+    13.3,
+    58.1,
+    2.5
+   ],
+   "kind": "container",
+   "colour": "container_sealed",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    11.1,
+    63.9,
+    0.12
+   ],
+   "max": [
+    13.3,
+    64.0,
+    2.5
+   ],
+   "kind": "container",
+   "colour": "container_sealed",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    8.0,
+    16.0,
+    0.0
+   ],
+   "max": [
+    8.3,
+    16.3,
+    3.0
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    13.7,
+    16.0,
+    0.0
+   ],
+   "max": [
+    14.0,
+    16.3,
+    3.0
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    8.0,
+    23.7,
+    0.0
+   ],
+   "max": [
+    8.3,
+    24.0,
+    3.0
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    13.7,
+    23.7,
+    0.0
+   ],
+   "max": [
+    14.0,
+    24.0,
+    3.0
+   ],
+   "kind": "post",
+   "colour": "post",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    7.8,
+    15.8,
+    3.0
+   ],
+   "max": [
+    14.2,
+    24.2,
+    3.2
+   ],
+   "kind": "roof",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": "boathouse roof"
+  },
+  {
+   "min": [
+    16.0,
+    76.0,
+    0.0
+   ],
+   "max": [
+    16.5,
+    76.5,
+    8.0
+   ],
+   "kind": "post",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    20.5,
+    76.0,
+    0.0
+   ],
+   "max": [
+    21.0,
+    76.5,
+    8.0
+   ],
+   "kind": "post",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    16.0,
+    79.5,
+    0.0
+   ],
+   "max": [
+    16.5,
+    80.0,
+    8.0
+   ],
+   "kind": "post",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    20.5,
+    79.5,
+    0.0
+   ],
+   "max": [
+    21.0,
+    80.0,
+    8.0
+   ],
+   "kind": "post",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    16.0,
+    76.0,
+    8.0
+   ],
+   "max": [
+    21.0,
+    80.0,
+    8.6
+   ],
+   "kind": "beam",
+   "colour": "container_red",
+   "blocks": true,
+   "walkable": false,
+   "name": "crane beam"
+  },
+  {
+   "min": [
+    20.3,
+    52.6,
+    0.0
+   ],
+   "max": [
+    20.900000000000002,
+    53.2,
+    0.95
+   ],
+   "kind": "decoy",
+   "colour": "decoy_gold",
+   "blocks": true,
+   "walkable": false,
+   "name": "gold barrel"
+  },
+  {
+   "min": [
+    20.3,
+    53.5,
+    0.0
+   ],
+   "max": [
+    20.900000000000002,
+    54.1,
+    0.95
+   ],
+   "kind": "decoy",
+   "colour": "decoy_gold",
+   "blocks": true,
+   "walkable": false,
+   "name": "gold barrel"
+  },
+  {
+   "min": [
+    21.1,
+    53.05,
+    0.0
+   ],
+   "max": [
+    21.700000000000003,
+    53.65,
+    0.95
+   ],
+   "kind": "decoy",
+   "colour": "decoy_gold",
+   "blocks": true,
+   "walkable": false,
+   "name": "gold barrel"
+  },
+  {
+   "min": [
+    78.5382719465016,
+    30.94526186246832,
+    0.0
+   ],
+   "max": [
+    79.0382719465016,
+    31.44526186246832,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    77.4882719465016,
+    29.89526186246832,
+    2.6
+   ],
+   "max": [
+    80.08827194650159,
+    32.49526186246832,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.0288032182662,
+    85.96171001838634,
+    0.0
+   ],
+   "max": [
+    94.5288032182662,
+    86.46171001838634,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    92.97880321826621,
+    84.91171001838634,
+    2.6
+   ],
+   "max": [
+    95.5788032182662,
+    87.51171001838634,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    84.10488583020086,
+    15.498951528501022,
+    0.0
+   ],
+   "max": [
+    84.60488583020086,
+    15.998951528501022,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.05488583020086,
+    14.448951528501022,
+    2.6
+   ],
+   "max": [
+    85.65488583020085,
+    17.04895152850102,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    87.21187163464987,
+    67.51460044962616,
+    0.0
+   ],
+   "max": [
+    87.71187163464987,
+    68.01460044962616,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    86.16187163464987,
+    66.46460044962616,
+    2.6
+   ],
+   "max": [
+    88.76187163464986,
+    69.06460044962616,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    80.07281692186876,
+    77.95388677951561,
+    0.0
+   ],
+   "max": [
+    80.57281692186876,
+    78.45388677951561,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    79.02281692186877,
+    76.90388677951562,
+    2.6
+   ],
+   "max": [
+    81.62281692186876,
+    79.50388677951561,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.87790368311298,
+    20.5498096678534,
+    0.0
+   ],
+   "max": [
+    89.37790368311298,
+    21.0498096678534,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    87.82790368311298,
+    19.4998096678534,
+    2.6
+   ],
+   "max": [
+    90.42790368311297,
+    22.0998096678534,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    78.83814273768834,
+    26.708519371345858,
+    0.0
+   ],
+   "max": [
+    79.33814273768834,
+    27.208519371345858,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    77.78814273768835,
+    25.658519371345857,
+    2.6
+   ],
+   "max": [
+    80.38814273768834,
+    28.25851937134586,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    89.50130544289253,
+    28.500376735546645,
+    0.0
+   ],
+   "max": [
+    90.00130544289253,
+    29.000376735546645,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.45130544289253,
+    27.450376735546644,
+    2.6
+   ],
+   "max": [
+    91.05130544289253,
+    30.050376735546646,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    80.91906242411633,
+    72.87078666912944,
+    0.0
+   ],
+   "max": [
+    81.41906242411633,
+    73.37078666912944,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    79.86906242411634,
+    71.82078666912945,
+    2.6
+   ],
+   "max": [
+    82.46906242411633,
+    74.42078666912944,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    85.39729498403662,
+    26.421105724214673,
+    0.0
+   ],
+   "max": [
+    85.89729498403662,
+    26.921105724214673,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    84.34729498403662,
+    25.371105724214672,
+    2.6
+   ],
+   "max": [
+    86.94729498403662,
+    27.971105724214674,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    93.25232417241826,
+    13.30488713552305,
+    0.0
+   ],
+   "max": [
+    93.75232417241826,
+    13.80488713552305,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    92.20232417241826,
+    12.254887135523049,
+    2.6
+   ],
+   "max": [
+    94.80232417241825,
+    14.85488713552305,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    93.01924180746664,
+    8.780193438595623,
+    0.0
+   ],
+   "max": [
+    93.51924180746664,
+    9.280193438595623,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    91.96924180746664,
+    7.730193438595623,
+    2.6
+   ],
+   "max": [
+    94.56924180746664,
+    10.330193438595623,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    77.84565678024724,
+    49.15202513651264,
+    0.0
+   ],
+   "max": [
+    78.34565678024724,
+    49.65202513651264,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    76.79565678024724,
+    48.102025136512644,
+    2.6
+   ],
+   "max": [
+    79.39565678024724,
+    50.70202513651264,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    80.57556590554131,
+    53.91505582251779,
+    0.0
+   ],
+   "max": [
+    81.07556590554131,
+    54.41505582251779,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    79.52556590554131,
+    52.865055822517796,
+    2.6
+   ],
+   "max": [
+    82.12556590554131,
+    55.46505582251779,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    87.14345033199055,
+    83.7477552532122,
+    0.0
+   ],
+   "max": [
+    87.64345033199055,
+    84.2477552532122,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    86.09345033199055,
+    82.69775525321221,
+    2.6
+   ],
+   "max": [
+    88.69345033199055,
+    85.2977552532122,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    77.58166411756525,
+    93.44772292739589,
+    0.0
+   ],
+   "max": [
+    78.08166411756525,
+    93.94772292739589,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    76.53166411756526,
+    92.39772292739589,
+    2.6
+   ],
+   "max": [
+    79.13166411756525,
+    94.99772292739588,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    80.88899170009034,
+    58.650221324388454,
+    0.0
+   ],
+   "max": [
+    81.38899170009034,
+    59.150221324388454,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    79.83899170009035,
+    57.60022132438846,
+    2.6
+   ],
+   "max": [
+    82.43899170009034,
+    60.20022132438845,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    84.80383082593478,
+    49.498461480608825,
+    0.0
+   ],
+   "max": [
+    85.30383082593478,
+    49.998461480608825,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.75383082593478,
+    48.44846148060883,
+    2.6
+   ],
+   "max": [
+    86.35383082593478,
+    51.04846148060882,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    96.71911830023478,
+    66.2629703491618,
+    0.0
+   ],
+   "max": [
+    97.21911830023478,
+    66.7629703491618,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.66911830023479,
+    65.21297034916181,
+    2.6
+   ],
+   "max": [
+    98.26911830023478,
+    67.8129703491618,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    90.47765091941801,
+    33.721578359061446,
+    0.0
+   ],
+   "max": [
+    90.97765091941801,
+    34.221578359061446,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    89.42765091941801,
+    32.67157835906145,
+    2.6
+   ],
+   "max": [
+    92.02765091941801,
+    35.271578359061444,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    92.9892711049657,
+    43.877140513011156,
+    0.0
+   ],
+   "max": [
+    93.4892711049657,
+    44.377140513011156,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    91.9392711049657,
+    42.82714051301116,
+    2.6
+   ],
+   "max": [
+    94.53927110496569,
+    45.42714051301115,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.49249601898312,
+    7.360155457573537,
+    0.0
+   ],
+   "max": [
+    88.99249601898312,
+    7.860155457573537,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    87.44249601898312,
+    6.310155457573537,
+    2.6
+   ],
+   "max": [
+    90.04249601898312,
+    8.910155457573538,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    92.9470527447047,
+    69.9843295447088,
+    0.0
+   ],
+   "max": [
+    93.4470527447047,
+    70.4843295447088,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    91.89705274470471,
+    68.9343295447088,
+    2.6
+   ],
+   "max": [
+    94.4970527447047,
+    71.5343295447088,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    96.10793092498213,
+    56.45958058958651,
+    0.0
+   ],
+   "max": [
+    96.60793092498213,
+    56.95958058958651,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.05793092498213,
+    55.40958058958651,
+    2.6
+   ],
+   "max": [
+    97.65793092498213,
+    58.009580589586506,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    78.49372529523697,
+    5.130585345182377,
+    0.0
+   ],
+   "max": [
+    78.99372529523697,
+    5.630585345182377,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    77.44372529523697,
+    4.080585345182377,
+    2.6
+   ],
+   "max": [
+    80.04372529523697,
+    6.680585345182377,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.61519897606209,
+    37.09077978822734,
+    0.0
+   ],
+   "max": [
+    96.11519897606209,
+    37.59077978822734,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.56519897606209,
+    36.04077978822734,
+    2.6
+   ],
+   "max": [
+    97.16519897606209,
+    38.640779788227334,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    80.60336329058126,
+    86.18042279101532,
+    0.0
+   ],
+   "max": [
+    81.10336329058126,
+    86.68042279101532,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    79.55336329058126,
+    85.13042279101532,
+    2.6
+   ],
+   "max": [
+    82.15336329058125,
+    87.73042279101531,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    84.44477719865263,
+    5.1765076375977,
+    0.0
+   ],
+   "max": [
+    84.94477719865263,
+    5.6765076375977,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.39477719865263,
+    4.1265076375977,
+    2.6
+   ],
+   "max": [
+    85.99477719865263,
+    6.7265076375977,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    81.44882898358837,
+    9.84851907842565,
+    0.0
+   ],
+   "max": [
+    81.94882898358837,
+    10.34851907842565,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    80.39882898358837,
+    8.798519078425649,
+    2.6
+   ],
+   "max": [
+    82.99882898358837,
+    11.39851907842565,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    96.71907678677034,
+    74.85365950732371,
+    0.0
+   ],
+   "max": [
+    97.21907678677034,
+    75.35365950732371,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.66907678677035,
+    73.80365950732372,
+    2.6
+   ],
+   "max": [
+    98.26907678677034,
+    76.40365950732371,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.64791075028226,
+    30.842244275148342,
+    0.0
+   ],
+   "max": [
+    95.14791075028226,
+    31.342244275148342,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    93.59791075028227,
+    29.79224427514834,
+    2.6
+   ],
+   "max": [
+    96.19791075028226,
+    32.39224427514834,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    96.67707437036987,
+    89.26962763808797,
+    0.0
+   ],
+   "max": [
+    97.17707437036987,
+    89.76962763808797,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.62707437036987,
+    88.21962763808797,
+    2.6
+   ],
+   "max": [
+    98.22707437036986,
+    90.81962763808797,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.08500789465936,
+    23.14089850221697,
+    0.0
+   ],
+   "max": [
+    94.58500789465936,
+    23.64089850221697,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    93.03500789465936,
+    22.09089850221697,
+    2.6
+   ],
+   "max": [
+    95.63500789465935,
+    24.69089850221697,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    82.74785975866486,
+    65.0519189512331,
+    0.0
+   ],
+   "max": [
+    83.24785975866486,
+    65.5519189512331,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    81.69785975866486,
+    64.00191895123311,
+    2.6
+   ],
+   "max": [
+    84.29785975866486,
+    66.6019189512331,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    89.56107594443637,
+    94.25221003633771,
+    0.0
+   ],
+   "max": [
+    90.06107594443637,
+    94.75221003633771,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.51107594443637,
+    93.20221003633772,
+    2.6
+   ],
+   "max": [
+    91.11107594443637,
+    95.80221003633771,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.99568392134651,
+    94.75721716286178,
+    0.0
+   ],
+   "max": [
+    96.49568392134651,
+    95.25721716286178,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.94568392134651,
+    93.70721716286178,
+    2.6
+   ],
+   "max": [
+    97.54568392134651,
+    96.30721716286178,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.88042108300644,
+    47.39959690176258,
+    0.0
+   ],
+   "max": [
+    96.38042108300644,
+    47.89959690176258,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.83042108300644,
+    46.34959690176258,
+    2.6
+   ],
+   "max": [
+    97.43042108300644,
+    48.949596901762575,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.51715168031004,
+    31.16065986967063,
+    0.0
+   ],
+   "max": [
+    84.01715168031004,
+    31.66065986967063,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    82.46715168031004,
+    30.11065986967063,
+    2.6
+   ],
+   "max": [
+    85.06715168031003,
+    32.71065986967063,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    84.58190829244857,
+    90.60308741316994,
+    0.0
+   ],
+   "max": [
+    85.08190829244857,
+    91.10308741316994,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.53190829244858,
+    89.55308741316995,
+    2.6
+   ],
+   "max": [
+    86.13190829244857,
+    92.15308741316994,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    78.09023458214976,
+    14.521622411738782,
+    0.0
+   ],
+   "max": [
+    78.59023458214976,
+    15.021622411738782,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    77.04023458214976,
+    13.471622411738782,
+    2.6
+   ],
+   "max": [
+    79.64023458214976,
+    16.071622411738783,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    89.19580360877389,
+    46.92661034693823,
+    0.0
+   ],
+   "max": [
+    89.69580360877389,
+    47.42661034693823,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.14580360877389,
+    45.876610346938236,
+    2.6
+   ],
+   "max": [
+    90.74580360877388,
+    48.47661034693823,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    89.74563573091123,
+    89.22792138083155,
+    0.0
+   ],
+   "max": [
+    90.24563573091123,
+    89.72792138083155,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    88.69563573091123,
+    88.17792138083155,
+    2.6
+   ],
+   "max": [
+    91.29563573091123,
+    90.77792138083154,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.81263714083398,
+    16.723833154918836,
+    0.0
+   ],
+   "max": [
+    96.31263714083398,
+    17.223833154918836,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    94.76263714083399,
+    15.673833154918835,
+    2.6
+   ],
+   "max": [
+    97.36263714083398,
+    18.273833154918837,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    96.25832283053427,
+    4.7804384457763,
+    0.0
+   ],
+   "max": [
+    96.75832283053427,
+    5.2804384457763,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    95.20832283053427,
+    3.7304384457763,
+    2.6
+   ],
+   "max": [
+    97.80832283053427,
+    6.330438445776299,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    84.90248202155809,
+    57.00540238442814,
+    0.0
+   ],
+   "max": [
+    85.40248202155809,
+    57.50540238442814,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.85248202155809,
+    55.95540238442814,
+    2.6
+   ],
+   "max": [
+    86.45248202155808,
+    58.555402384428135,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    83.18346099442707,
+    81.48999446763457,
+    0.0
+   ],
+   "max": [
+    83.68346099442707,
+    81.98999446763457,
+    3.2
+   ],
+   "kind": "tree",
+   "colour": "trunk",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    82.13346099442707,
+    80.43999446763458,
+    2.6
+   ],
+   "max": [
+    84.73346099442706,
+    83.03999446763457,
+    4.4
+   ],
+   "kind": "canopy",
+   "colour": "canopy",
+   "blocks": false,
+   "walkable": false,
+   "name": ""
+  }
+ ],
+ "spawn_points": [
+  {
+   "region": "Central Warehouse",
+   "name": "Loading Bay",
+   "x": 43.0,
+   "y": 44.0,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.85,
+   "tags": [
+    "inside"
+   ],
+   "reachable": true,
+   "location_name": "Central Warehouse - Loading Bay"
+  },
+  {
+   "region": "Central Warehouse",
+   "name": "Behind Crates",
+   "x": 48.0,
+   "y": 58.8,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.7,
+   "tags": [
+    "inside",
+    "behind_obstacle"
+   ],
+   "reachable": true,
+   "location_name": "Central Warehouse - Behind Crates"
+  },
+  {
+   "region": "Central Warehouse",
+   "name": "Pillar",
+   "x": 54.0,
+   "y": 51.2,
+   "z": 0.02,
+   "yaw_deg": 180.0,
+   "probability": 0.6,
+   "tags": [
+    "inside",
+    "partially_obscured"
+   ],
+   "reachable": true,
+   "location_name": "Central Warehouse - Pillar"
+  },
+  {
+   "region": "Central Warehouse",
+   "name": "Mezzanine West",
+   "x": 56.0,
+   "y": 41.0,
+   "z": 3.5,
+   "yaw_deg": 180.0,
+   "probability": 0.75,
+   "tags": [
+    "upstairs"
+   ],
+   "reachable": true,
+   "location_name": "Central Warehouse - Mezzanine West"
+  },
+  {
+   "region": "Central Warehouse",
+   "name": "Mezzanine East",
+   "x": 57.5,
+   "y": 59.5,
+   "z": 3.5,
+   "yaw_deg": 180.0,
+   "probability": 0.65,
+   "tags": [
+    "upstairs"
+   ],
+   "reachable": true,
+   "location_name": "Central Warehouse - Mezzanine East"
+  },
+  {
+   "region": "Central Warehouse",
+   "name": "South Wall",
+   "x": 37.0,
+   "y": 44.0,
+   "z": 0.0,
+   "yaw_deg": 180.0,
+   "probability": 0.8,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Central Warehouse - South Wall"
+  },
+  {
+   "region": "Central Plaza",
+   "name": "Fountain Square",
+   "x": 64.0,
+   "y": 50.0,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.7,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Central Plaza - Fountain Square"
+  },
+  {
+   "region": "South Field",
+   "name": "Haystack",
+   "x": 28.0,
+   "y": 66.0,
+   "z": 0.0,
+   "yaw_deg": 90.0,
+   "probability": 0.6,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "South Field - Haystack"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "House 1",
+   "x": 60.5,
+   "y": 80.5,
+   "z": 0.02,
+   "yaw_deg": 270.0,
+   "probability": 0.8,
+   "tags": [
+    "inside",
+    "doorway"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - House 1"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "House 2",
+   "x": 71.5,
+   "y": 83.5,
+   "z": 0.02,
+   "yaw_deg": 180.0,
+   "probability": 0.7,
+   "tags": [
+    "inside",
+    "doorway"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - House 2"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "Narrow Door House",
+   "x": 49.5,
+   "y": 91.5,
+   "z": 0.02,
+   "yaw_deg": 270.0,
+   "probability": 0.75,
+   "tags": [
+    "inside",
+    "narrow_doorway"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - Narrow Door House"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "Two-Storey House Ground",
+   "x": 37.5,
+   "y": 87.5,
+   "z": 0.02,
+   "yaw_deg": 180.0,
+   "probability": 0.6,
+   "tags": [
+    "inside"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - Two-Storey House Ground"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "Two-Storey House Upstairs",
+   "x": 38.0,
+   "y": 85.0,
+   "z": 3.5,
+   "yaw_deg": 180.0,
+   "probability": 0.8,
+   "tags": [
+    "inside",
+    "upstairs"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - Two-Storey House Upstairs"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "Village Square",
+   "x": 52.0,
+   "y": 79.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.85,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - Village Square"
+  },
+  {
+   "region": "Eastern Settlement",
+   "name": "Behind Fence",
+   "x": 69.0,
+   "y": 93.0,
+   "z": 0.0,
+   "yaw_deg": 270.0,
+   "probability": 0.55,
+   "tags": [
+    "behind_obstacle"
+   ],
+   "reachable": true,
+   "location_name": "Eastern Settlement - Behind Fence"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Clearing",
+   "x": 84.0,
+   "y": 40.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.9,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Northern Forest - Clearing"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Ranger Hut",
+   "x": 91.0,
+   "y": 77.8,
+   "z": 0.02,
+   "yaw_deg": 270.0,
+   "probability": 0.7,
+   "tags": [
+    "inside",
+    "doorway"
+   ],
+   "reachable": true,
+   "location_name": "Northern Forest - Ranger Hut"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Behind Rocks",
+   "x": 80.2,
+   "y": 22.2,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.65,
+   "tags": [
+    "behind_obstacle"
+   ],
+   "reachable": true,
+   "location_name": "Northern Forest - Behind Rocks"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Fallen Log",
+   "x": 93.0,
+   "y": 53.2,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.6,
+   "tags": [
+    "behind_obstacle"
+   ],
+   "reachable": true,
+   "location_name": "Northern Forest - Fallen Log"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Deep Woods",
+   "x": 86.0,
+   "y": 12.0,
+   "z": 0.0,
+   "yaw_deg": 90.0,
+   "probability": 0.5,
+   "tags": [
+    "partially_obscured"
+   ],
+   "reachable": true,
+   "location_name": "Northern Forest - Deep Woods"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Water Tower Platform",
+   "x": 89.5,
+   "y": 61.5,
+   "z": 3.0,
+   "yaw_deg": 180.0,
+   "probability": 0.9,
+   "tags": [
+    "upstairs",
+    "unreachable"
+   ],
+   "reachable": false,
+   "location_name": "Northern Forest - Water Tower Platform"
+  },
+  {
+   "region": "Northern Forest",
+   "name": "Treeline",
+   "x": 78.0,
+   "y": 66.0,
+   "z": 0.0,
+   "yaw_deg": 180.0,
+   "probability": 0.7,
+   "tags": [
+    "partially_obscured"
+   ],
+   "reachable": true,
+   "location_name": "Northern Forest - Treeline"
+  },
+  {
+   "region": "Western Outpost",
+   "name": "Gatehouse",
+   "x": 44.0,
+   "y": 23.2,
+   "z": 0.0,
+   "yaw_deg": 90.0,
+   "probability": 0.8,
+   "tags": [
+    "inside_walls",
+    "doorway"
+   ],
+   "reachable": true,
+   "location_name": "Western Outpost - Gatehouse"
+  },
+  {
+   "region": "Western Outpost",
+   "name": "Watchtower Platform",
+   "x": 49.8,
+   "y": 9.5,
+   "z": 4.0,
+   "yaw_deg": 180.0,
+   "probability": 0.75,
+   "tags": [
+    "upstairs"
+   ],
+   "reachable": true,
+   "location_name": "Western Outpost - Watchtower Platform"
+  },
+  {
+   "region": "Western Outpost",
+   "name": "Behind Sandbags",
+   "x": 55.6,
+   "y": 15.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.7,
+   "tags": [
+    "behind_obstacle"
+   ],
+   "reachable": true,
+   "location_name": "Western Outpost - Behind Sandbags"
+  },
+  {
+   "region": "Western Outpost",
+   "name": "Tent",
+   "x": 42.0,
+   "y": 18.8,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.65,
+   "tags": [
+    "partially_obscured"
+   ],
+   "reachable": true,
+   "location_name": "Western Outpost - Tent"
+  },
+  {
+   "region": "Western Outpost",
+   "name": "Courtyard",
+   "x": 52.0,
+   "y": 21.0,
+   "z": 0.0,
+   "yaw_deg": 90.0,
+   "probability": 0.85,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Western Outpost - Courtyard"
+  },
+  {
+   "region": "Western Outpost",
+   "name": "Outside Wall",
+   "x": 32.0,
+   "y": 14.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.6,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Western Outpost - Outside Wall"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Pier End",
+   "x": 1.7,
+   "y": 47.0,
+   "z": 0.5,
+   "yaw_deg": 0.0,
+   "probability": 0.8,
+   "tags": [
+    "upstairs",
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Southern Docks - Pier End"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Container Row",
+   "x": 14.45,
+   "y": 31.0,
+   "z": 0.0,
+   "yaw_deg": 90.0,
+   "probability": 0.7,
+   "tags": [
+    "behind_obstacle"
+   ],
+   "reachable": true,
+   "location_name": "Southern Docks - Container Row"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Sealed Container",
+   "x": 12.2,
+   "y": 61.0,
+   "z": 0.12,
+   "yaw_deg": 0.0,
+   "probability": 1.0,
+   "tags": [
+    "inside",
+    "unreachable"
+   ],
+   "reachable": false,
+   "location_name": "Southern Docks - Sealed Container"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Crane Base",
+   "x": 18.0,
+   "y": 82.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.75,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Southern Docks - Crane Base"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Boathouse",
+   "x": 10.5,
+   "y": 20.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.7,
+   "tags": [
+    "inside"
+   ],
+   "reachable": true,
+   "location_name": "Southern Docks - Boathouse"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Quay",
+   "x": 8.5,
+   "y": 70.0,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.8,
+   "tags": [
+    "open"
+   ],
+   "reachable": true,
+   "location_name": "Southern Docks - Quay"
+  },
+  {
+   "region": "Southern Docks",
+   "name": "Behind Barrels",
+   "x": 22.2,
+   "y": 53.6,
+   "z": 0.0,
+   "yaw_deg": 0.0,
+   "probability": 0.65,
+   "tags": [
+    "behind_obstacle",
+    "decoys"
+   ],
+   "reachable": true,
+   "location_name": "Southern Docks - Behind Barrels"
+  }
+ ]
+}

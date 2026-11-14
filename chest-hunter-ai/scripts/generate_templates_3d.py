@@ -88,7 +88,8 @@ def main(argv: list[str] | None = None) -> int:
                 cv2.imwrite(str(args.output / f"{name}_labels.png"), labels)
                 index.append({"name": name, "category": "chest" if state == "closed"
                               else "chest_opened", "view_yaw_deg": yaw,
-                              "elevation_deg": elevation, **{k: round(v, 4) for k, v in meta.items()}})
+                              "elevation_deg": elevation,
+                              **{k: round(v, 4) for k, v in meta.items()}})
     (args.output / "templates.json").write_text(json.dumps(
         {"format": "chest-templates-3d/1", "render_distance_m": DISTANCE, "templates": index},
         indent=1) + "\n", encoding="utf-8")

@@ -187,8 +187,7 @@ class ChestDetector3D:
             y0 = max(0, int(by - 0.3 * bh) - 1)
             y1 = min(h_img, int(by + bh + max(1.2 * bh, 0.9 * bw)) + 2)
             window = classes[y0:y1, x0:x1]
-            obj = (window > 0).astype(np.uint8)
-            obj = cv2.morphologyEx(obj, cv2.MORPH_CLOSE, _KERNEL3)
+            obj = cv2.morphologyEx((window > 0).astype(np.uint8), cv2.MORPH_CLOSE, _KERNEL3)
             n2, lab2, st2, _ = cv2.connectedComponentsWithStats(obj, connectivity=8)
             seed = lab2[by - y0:by - y0 + bh, bx - x0:bx - x0 + bw]
             ids = np.unique(seed[(window[by - y0:by - y0 + bh, bx - x0:bx - x0 + bw] == BROWN_ID)])
@@ -200,7 +199,8 @@ class ChestDetector3D:
             if xs.size < self.min_area:
                 continue
             cx0, cx1, cy0, cy1 = int(xs.min()), int(xs.max()) + 1, int(ys.min()), int(ys.max()) + 1
-            region = np.where(member[cy0:cy1, cx0:cx1], window[cy0:cy1, cx0:cx1], 0).astype(np.uint8)
+            region = np.where(member[cy0:cy1, cx0:cx1], window[cy0:cy1, cx0:cx1],
+                              0).astype(np.uint8)
             gold = int(np.count_nonzero(region == GOLD_ID))
             brown_n = int(np.count_nonzero(region == BROWN_ID))
             cream = int(np.count_nonzero(region == CREAM_ID))
@@ -294,7 +294,8 @@ class ChestDetector3D:
                 res = cv2.matchTemplate(small, tmpl, cv2.TM_CCOEFF_NORMED)
                 ys, xs = np.nonzero(res >= 0.82)
                 for yy, xx in zip(ys[:50], xs[:50], strict=True):
-                    found.append(Detection3D(t.category, (int(xx) * 2, int(yy) * 2, width * 2, th * 2),
+                    box = (int(xx) * 2, int(yy) * 2, width * 2, th * 2)
+                    found.append(Detection3D(t.category, box,
                                              float(min(1.0, res[yy, xx])), timestamp, "template",
                                              view=t.name, width_m=t.width_m, height_m=t.height_m))
         return _nms(found)
@@ -321,7 +322,8 @@ def _lid_is_upright(region: np.ndarray) -> bool:
     rows_gold = np.nonzero(np.any(region == GOLD_ID, axis=1))[0]
     if rows_brown.size == 0 or rows_gold.size == 0:
         return False
-    return (rows_brown.max() - rows_brown.min() + 1) >= 0.9 * (rows_gold.max() - rows_gold.min() + 1)
+    brown_rows = rows_brown.max() - rows_brown.min() + 1
+    return bool(brown_rows >= 0.9 * (rows_gold.max() - rows_gold.min() + 1))
 
 
 def _nms(dets: list[Detection3D], threshold: float = 0.3) -> list[Detection3D]:

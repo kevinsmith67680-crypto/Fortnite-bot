@@ -1117,6 +1117,10 @@ def _load_settings(args: argparse.Namespace) -> Settings:
     return settings
 
 
+#: Commands that never read or write the database (no existing database is required).
+_COMMANDS_WITHOUT_DATABASE = frozenset({"init-db", "export-arena-3d"})
+
+
 def _require_database(db: DatabaseManager) -> None:
     """Refuse to create a database implicitly; bring an existing one up to date."""
     if not db.exists():
@@ -1140,7 +1144,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         configure_logging(getattr(args, "log_level", None) or settings.logging.level)
         db = DatabaseManager(settings.database.path)
         try:
-            if args.command != "init-db":
+            if args.command not in _COMMANDS_WITHOUT_DATABASE:
                 _require_database(db)
             return int(args.handler(args, CommandContext(settings=settings, db=db)))
         finally:

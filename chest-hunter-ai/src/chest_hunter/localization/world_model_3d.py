@@ -21,7 +21,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 import numpy as np
 
@@ -35,7 +35,7 @@ ASSOCIATION_RADIUS = 1.6        # metres, horizontal, track <-> spawn prior
 ASSOCIATION_HEIGHT = 1.0
 
 
-class PriorStatus3D(str, Enum):
+class PriorStatus3D(StrEnum):
     UNKNOWN = "unknown"
     EMPTY = "empty"
     CHEST_SEEN = "chest_seen"
@@ -82,7 +82,8 @@ class PerceptionUpdate:
 
 
 class WorldModel3D:
-    def __init__(self, priors: Sequence[SpawnPrior3D], *, estimator: DistanceEstimator | None = None,
+    def __init__(self, priors: Sequence[SpawnPrior3D], *,
+                 estimator: DistanceEstimator | None = None,
                  tracker: Tracker3D | None = None, empty_confirmations: int = 2,
                  vote_range: float = 9.0) -> None:
         self.priors = {p.location_id: p for p in priors}
@@ -169,10 +170,10 @@ class WorldModel3D:
                 prior.track_id = None
         for track in self.tracker.tracks:
             if track.location_id is None:
-                prior = self.nearest_prior(track.xyz, exclude_tracked=True)
-                if prior is not None:
-                    track.location_id = prior.location_id
-                    prior.track_id = track.track_id
+                match = self.nearest_prior(track.xyz, exclude_tracked=True)
+                if match is not None:
+                    track.location_id = match.location_id
+                    match.track_id = track.track_id
             linked = self.priors.get(track.location_id) if track.location_id else None
             if linked is None or track.state is TrackState3D.TENTATIVE:
                 continue
@@ -189,9 +190,9 @@ class WorldModel3D:
             if exclude_tracked and p.track_id is not None and self.tracker.get(p.track_id):
                 continue
             d = math.hypot(p.x - point[0], p.y - point[1])
-            if d <= ASSOCIATION_RADIUS and abs(p.z - point[2]) <= ASSOCIATION_HEIGHT:
-                if best is None or d < best[0]:
-                    best = (d, p)
+            if d <= ASSOCIATION_RADIUS and abs(p.z - point[2]) <= ASSOCIATION_HEIGHT \
+                    and (best is None or d < best[0]):
+                best = (d, p)
         return None if best is None else best[1]
 
     def _vote_empty(self, obs: Observation3D, pose: CameraPose,
@@ -240,7 +241,7 @@ class WorldModel3D:
             return True
         region = classes[y0:y1, x0:x1]
         chesty = np.count_nonzero((region == GOLD_ID) | (region == BROWN_ID))
-        return chesty > max(3, 0.02 * region.size)
+        return bool(chesty > max(3, 0.02 * region.size))
 
     # -- queries --------------------------------------------------------------------------------
 

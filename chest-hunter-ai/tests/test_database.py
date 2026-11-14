@@ -8,6 +8,7 @@ import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from chest_hunter.chest_repository import ChestRepository
 from chest_hunter.database import EXPECTED_TABLES, MIGRATIONS, SCHEMA_VERSION, DatabaseManager
 from chest_hunter.exceptions import (
     ConflictError,
@@ -16,7 +17,6 @@ from chest_hunter.exceptions import (
     RecordNotFoundError,
     ValidationError,
 )
-from chest_hunter.chest_repository import ChestRepository
 from chest_hunter.run_repository import RunRepository
 from chest_hunter.session_repository import SessionRepository
 
@@ -415,7 +415,7 @@ class SchemaVersion2Tests(DatabaseTestCase):
 
     def test_version_2_database_is_migrated_to_3_without_data_loss(self) -> None:
         with self.db.transaction() as conn:
-            for version, statements in MIGRATIONS[:2]:
+            for _version, statements in MIGRATIONS[:2]:
                 for statement in statements:
                     conn.execute(statement)
             conn.execute("PRAGMA user_version = 2")

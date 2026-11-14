@@ -114,7 +114,8 @@ class DistanceEstimator:
                 base_b = hit + horizontal / norm * CHEST_HALF_DEPTH
                 d_b = float(np.linalg.norm(base_b + np.array([0, 0, CHEST_HEIGHT / 2]) - cam))
                 sigma_b = (0.12 + 0.02 * d_b
-                           + d_b * d_b * (1.5 * self.pixel_sigma / intr.fy) / max(0.3, height_above))
+                           + d_b * d_b * (1.5 * self.pixel_sigma / intr.fy)
+                           / max(0.3, height_above))
                 score = abs(d_b - d_a) / math.hypot(sigma_a, sigma_b)
                 if not _plausible(base_b, z, anchors, own_floor):
                     score += 2.5
