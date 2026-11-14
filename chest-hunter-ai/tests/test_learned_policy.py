@@ -37,6 +37,7 @@ class DatasetPipeline(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name) / "data"
         shutil.copytree(tiny_dataset(), self.root)
+        (self.root / "splits.json").unlink(missing_ok=True)          # start unsplit
 
     def test_statistics_and_labels(self) -> None:
         ds = DemonstrationDataset(self.root)
@@ -61,8 +62,11 @@ class DatasetPipeline(unittest.TestCase):
         self.assertTrue((self.root / "splits.json").exists())
         again = DemonstrationDataset(self.root).split(by="episode", seed=99)   # other seed
         self.assertEqual(again, split)                               # persisted assignment
+        with self.assertRaises(DatasetError):                        # no silent re-split
+            DemonstrationDataset(self.root).split(by="map")
 
     def test_split_by_map_keeps_maps_together(self) -> None:
+        (self.root / "splits.json").unlink(missing_ok=True)
         ds = DemonstrationDataset(self.root)
         split = ds.split(by="map", fractions=(0.5, 0.5, 0.0), seed=1, persist=False)
         for name, ids in split.items():

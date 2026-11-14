@@ -10,6 +10,7 @@ opened per minute.**
 | 1. Data foundation | Done | SQLite database of chest spawn points, simulation sessions and observations; CLI; tests |
 | 2. Autonomous navigation | Done | Grid-world simulator, A* pathfinding, route planning, continuous movement, 10-state agent, Tkinter GUI, headless runs, benchmarking |
 | 3. Computer vision and visual navigation | Done | Simulated camera, OpenCV chest/obstacle/prompt detection, object tracking, visual localisation, occupancy mapping, frontier exploration, closed-loop interaction with visual verification, debug overlays, oracle-vs-visual benchmark |
+| 5. Imitation learning, adaptive exploration, generalisation | Done on the Python reference arena; **no human demonstrations recorded, Unreal untested** | Demonstration recorder (teleoperation + synthetic scripted), dataset pipeline, NumPy behaviour cloning, ONNX FP32/INT8 export and CPU inference, policy selector with safety layer, Bayesian spawn estimates, route memory, adaptive planner, classified recovery, procedural maps, paired policy and generalisation benchmarks (section 16) |
 | 4. 3D agent and Unreal Engine 5 integration | Python side done and tested; **Unreal project prepared but not compiled or run** | Localhost bridge protocol, client and protocol-identical reference server; 3D reference arena (capsule physics, spring-arm camera, perspective renderer, NavMesh-style graph); perspective chest detection, distance estimation, 3D tracking; NavMesh-hybrid and NavMesh-free navigation; 14-state closed-loop controller; UE5 C++ project sources; 50-episode benchmark (section 15) |
 
 > The simulator is entirely self-contained. The project never talks to a game
@@ -56,8 +57,12 @@ python -m chest_hunter seed-demo --scenario research_arena_3d
 python -m chest_hunter simulate-3d --backend reference --agent visual --seed 42 --headless-controller
 python -m chest_hunter benchmark-3d --episodes 50 --seed 42 --workers 3
 
-python -m pip install -e ".[test]"
-python -m pytest tests            # runs the unittest-style and pytest-style tests
+# Phase 5: learned and adaptive control (synthetic demonstrations; see section 16)
+python -m chest_hunter simulate-3d --backend reference --policy hybrid \
+    --model training/checkpoints/bc_synthetic_v1 --adaptive-planning --smart-recovery --seed 42
+python -m chest_hunter benchmark-policies --episodes 100 --workers 4
+
+python -m unittest discover -s tests -v
 ```
 
 ---
@@ -431,10 +436,11 @@ The plan is recalculated after every observation. The strategy, seed,
 episode and all parameters are stored in `simulation_runs` for every
 session.
 
-## 11. Database structure (schema version 3)
+## 11. Database structure (schema version 4)
 
 Phase 4 added migration 3 (`reward_received`, `navigation_failures`;
-section 15.7). The rest of this section describes migrations 1 and 2.
+section 15.7) and Phase 5 migration 4 (`spawn_estimates`, `route_memory`; section 16.3).
+The rest of this section describes migrations 1 and 2.
 
 Phase 1 tables are unchanged. Migration 2 adds one table and
 `python -m chest_hunter init-db` upgrades a Phase 1 database in place. Every
@@ -492,6 +498,14 @@ How the agent uses Phase 1 records:
 | `simulate-3d [--agent visual\|hybrid\|visual-nav\|oracle] [--backend unreal\|reference] [--host H] [--port P] [--seed S] [--episode N] [--observation-width PX] [--observation-height PX] [--max-ticks N] [--detector color\|template\|hybrid] [--graphics-quality low\|medium\|high] [--evaluate] [--headless-controller\|--render-debug]` | One 3D episode against the Unreal research server or the Python reference arena (section 15) |
 | `benchmark-3d [--episodes N] [--seed S] [--modes LIST] [--workers N] [--max-ticks N] [--observation-width PX] [--observation-height PX] [--output-dir DIR] [--quiet]` | Oracle vs hybrid vs visual-navigation on paired 3D episodes (section 15.5) |
 | `export-arena-3d [--output PATH]` | Write the 3D arena layout JSON used by the Unreal arena builder (needs no database) |
+| `record-demo [--controller scripted\|human] [--map M ...] [--episodes N] [--seed S] [--output DIR] [--experience-db PATH] [--workers N] [--max-ticks N] [--backend reference\|unreal]` | Record demonstrations (human teleoperation window, or the scripted controller labelled synthetic) |
+| `train-policy --dataset DIR [--output DIR] [--train-config JSON] [--epochs N] [--batch-size N] [--learning-rate X] [--seed S] [--split-by episode\|map] [--no-export]` | Train the behaviour-cloning policy (episode-level splits, early stopping) and export it |
+| `export-policy [--model DIR] [--dataset DIR] [--no-int8]` | ONNX FP32/INT8 export, parity checks, CPU latency |
+| `evaluate-policy [--model DIR] [--episodes N] [--policy learned\|hybrid] [--map M] [--quantized]` | Held-out test metrics and paired episodes against the deterministic controller |
+| `benchmark-policies [--episodes N] [--strategies LIST] [--map M] [--model DIR] [--experience-db PATH] [--workers N] [--online]` | Paired strategy comparison with confidence intervals (section 16.4) |
+| `benchmark-generalization [--familiar N] [--unseen N] [--episodes N] [--strategies LIST] [--model DIR]` | Familiar (training) vs unseen (test) procedural maps with online adaptation |
+| `generate-maps --split train\|test [--count N] [--start N] [--export-unreal] [--export-dir DIR]` | Procedural maps (database spawn points with an uninformative prior; Unreal layouts) |
+| `estimate-spawns [--map M] [--prior configured\|uniform] [--prior-strength S] [--store]` | Bayesian spawn estimates from recorded observations |
 
 Global options (`--config`, `--db`, `--log-level`) may appear before or
 after the command name. Exit codes: 0 success, 1 failure, 2 invalid usage,
@@ -728,7 +742,7 @@ oldest) is evicted.
   steps behind a dead zone, so it only coarsely follows the agent. The
   agent's exact position, heading, chests and walls all come from pixels.
   Estimating the camera pose from images alone (visual odometry or
-  landmarks) is a next step (section 21). Tests check the round trip and
+  landmarks) is a next step (section 22). Tests check the round trip and
   that the transform is not an identity.
 * **Filter.** The pose is predicted from the agent's own velocity commands
   (dead reckoning) and corrected with each visual fix by exponential
@@ -970,7 +984,7 @@ What the numbers say:
   * Each one was the Blue House attic/basement pair, 0.28 cells apart: the
     chest is opened, but the spot it was credited to had already been judged
     empty, so the opening is not recorded (reproduced and traced for episode
-    0, and consistent with the limitation in section 20).
+    0, and consistent with the limitation in section 21).
   * Openings were **never over-reported** in any mode or map.
 * **Cost.**
   * Perception averaged 3.2-4.0 ms per analysed frame, at 6-8 analyses per
@@ -1208,21 +1222,147 @@ their backend, camera and detector settings in `parameters_json`.
   traces). Unreal odometry drift uses a different seeded random stream, so
   Python and Unreal trajectories are not bit-identical.
 
-## 16. Running the tests
+## 16. Phase 5: imitation learning, adaptive exploration and generalisation
+
+Phase 5 adds a learning layer to the Phase 4 visual agent:
+
+* a demonstration recorder (human teleoperation, or the scripted controller);
+* a dataset pipeline;
+* a compact imitation policy, trained offline in NumPy and exported to ONNX for CPU inference;
+* a policy selector with a safety layer and a deterministic fallback;
+* Bayesian spawn estimates;
+* route memory;
+* an adaptive target planner;
+* classified, bounded recovery;
+* procedural maps for testing on layouts the agent has never seen.
+
+The deterministic Phase 4 controller remains the default.
+
+> **What is verified and what is not**
+> * **No human demonstrations exist.** The teleoperation recorder works (tested with
+>   simulated key presses), but no person recorded with it. The training data is
+>   **synthetic**: 30 episodes of the deterministic controller, labelled
+>   `synthetic-scripted-expert` everywhere. The learned policy imitates that controller.
+>   Nothing here claims human-like behaviour.
+> * All results come from the **Python reference arena**, not from Unreal Engine.
+>   Unreal is not installed. The small C++ additions (procedural layouts, lighting and
+>   chest appearance, the map list) are **not compiled**.
+> * Throughput is chests per **simulated** minute. It is not a real-world speed claim.
+
+Design details, data formats and every rule: [`docs/phase5_learning_architecture.md`](docs/phase5_learning_architecture.md).
+
+### 16.1 Commands
 
 ```bash
-python -m pip install -e ".[test]"
-python -m pytest tests                                 # 512 tests (all phases)
-xvfb-run -a python -m pytest tests                     # including the GUI tests on a headless Linux box
-python -m unittest discover -s tests -v                # still runs the 318 unittest-style tests (Phases 1-3 + DB)
+# Demonstrations (human: Tk window, keys act on that window only; or scripted = synthetic)
+python -m chest_hunter record-demo --controller human --map research_arena_3d --output training/datasets/demo_01
+python -m chest_hunter record-demo --controller scripted --map proc_train_000 --episodes 2 --seed 1000 \
+    --output training/datasets/demo_01
+
+# Train (early stopping on the validation episodes) and export ONNX FP32 + INT8
+python -m chest_hunter train-policy --dataset training/datasets/demo_01 --epochs 30 --batch-size 32
+python -m chest_hunter export-policy --model training/checkpoints/bc_synthetic_v1
+
+# Evaluate: held-out test metrics + paired episodes against the deterministic controller
+python -m chest_hunter evaluate-policy --model training/checkpoints/bc_synthetic_v1 --episodes 50
+
+# Run with a policy: deterministic | learned | hybrid, optionally adaptive planning
+python -m chest_hunter simulate-3d --backend reference --agent hybrid --policy hybrid \
+    --model training/checkpoints/bc_synthetic_v1 --adaptive-planning --smart-recovery --seed 42
+python -m chest_hunter simulate-3d --backend reference --policy hybrid --render-debug   # switch policy live
+
+# Compare strategies (paired seeds) and test generalisation on unseen maps
+python -m chest_hunter benchmark-policies --episodes 100 --workers 4
+python -m chest_hunter benchmark-generalization --familiar 4 --unseen 4 --episodes 6 --workers 4
+
+# Procedural maps and Bayesian spawn estimates
+python -m chest_hunter generate-maps --split test --count 4 --export-unreal
+python -m chest_hunter estimate-spawns --map research_arena_3d --store
 ```
 
-* **Coverage.** 127 Phase 1 tests, 109 Phase 2 tests, 80 Phase 3 tests and
-  196 Phase 4 tests (2 database migration tests plus 194 pytest tests:
-  protocol, bridge, perspective, reference arena, 3D navigation, 3D vision,
-  agent episodes and information boundaries, CLI/config, dashboard, and
-  C++/Python consistency). Phase 4 tests use pytest; the older tests remain
-  `unittest` test cases, which pytest also runs.
+`simulate-3d --agent hybrid` keeps its Phase 4 meaning (camera plus NavMesh route
+service). The control policy is chosen separately with `--policy`. The default policy comes
+from the `learning` configuration section (`deterministic`).
+
+### 16.2 The learned policy
+
+* **Model:** a 28,493-parameter CNN.
+  * Input: a 128×72 camera frame, plus camera pitch and speed.
+  * Outputs: move, strafe, yaw and pitch rates, jump, interact, and an auxiliary
+    controller-phase head.
+  * Trained in NumPy with Huber, BCE and cross-entropy losses, Adam and early stopping. The
+    backward pass is checked against numerical gradients.
+  * PyTorch was not used: its CPU index is blocked here, and the default build pulls about
+    3 GB of CUDA libraries.
+* **Data:** 29,109 samples from 30 synthetic episodes on 13 maps, split **by episode**
+  (22 / 4 / 4).
+* **Held-out test episodes:** compared with predicting the mean action, the model's MAE is:
+  * move_forward 0.098 (baseline 0.448);
+  * move_right 0.091 (0.130);
+  * look_pitch 0.053 (0.109);
+  * **look_yaw 0.166, worse than the baseline's 0.156.** The expert's turning depends on
+    route plans that one frame does not show.
+
+  Interact accuracy is 1.00 and phase accuracy 0.94.
+* **Export:**
+  * FP32 ONNX (116 KB) matches the NumPy model within 1e-6.
+  * INT8 (42 KB) keeps every interact decision but changes the continuous outputs by 0.037
+    on average, and is slower than FP32 for this small model.
+  * CPU latency per observation (one thread): **0.14 ms** with ONNX Runtime FP32, 0.21 ms
+    INT8, 1.3 ms NumPy. The proposed target was 20 ms.
+* **Policy selector:**
+  * *learned*: the model drives every decision.
+  * *hybrid*: the model replaces the controller's movement and camera commands only while
+    approaching and aligning with a visible chest, and only when it is validated and
+    confident.
+  * Safety layer:
+    * clamped ranges and speed, and camera pitch limits;
+    * bounded output reuse;
+    * interaction only with the prompt visible;
+    * a 20 ms inference limit;
+    * fallback to deterministic control on errors or invalid output, with the model
+      disabled after 10 consecutive failures;
+    * bounded handovers when a learned policy is stuck.
+
+### 16.3 Adaptive exploration
+
+* **Spawn estimates:** each location's chest probability is `Beta(4·p0, 4·(1−p0))` updated
+  with presence and absence observations.
+  * Only completed sessions on the same layout version count, one observation per session.
+  * Unvisited spots keep their prior, and rewards are never used.
+  * Estimates are stored in `spawn_estimates`; the configured value is never changed.
+* **Route memory** (`route_memory`) learns travel-time factors and decayed reliabilities per
+  region pair. It ignores other layout versions and can be invalidated.
+* **Adaptive planner:** scores candidates with
+  `(p̂·q + λ·information gain + μ·cluster value) / (expected time + ε)`, and prefers
+  reliable chest clusters.
+* **Classified recovery:** seven failure classes, each with a bounded strategy. One of
+  these confirms an opening that the agent was notified about but did not see clearly.
+* **Schema version 4** (migration 4) adds the two tables. Existing data is kept (tested).
+
+### 16.4 Policy benchmark (research arena, 100 paired episodes)
+
+@@P5_POLICY_TABLE@@
+
+### 16.5 Generalisation: familiar vs unseen maps
+
+@@P5_GENERALIZATION@@
+
+### 16.6 Phase 5 limitations
+
+@@P5_LIMITATIONS@@
+
+## 17. Running the tests
+
+```bash
+python -m unittest discover -s tests -v                # every phase (standard library only)
+xvfb-run -a python -m unittest discover -s tests       # including the GUI tests on a headless Linux box
+python -m pip install onnx onnxruntime                 # optional: enables the ONNX export tests
+```
+
+* **Coverage.** @@TEST_COVERAGE@@ All tests are
+  `unittest` test cases. The Phase 4 tests were first written for pytest and converted
+  in Phase 5 without dropping any case; pytest can still run the whole suite.
   Earlier tests still pass unchanged, except two config tests whose example
   "unknown section" was literally named after a section that later became
   real (`navigation`, then `vision`).
@@ -1276,15 +1416,11 @@ python -m unittest discover -s tests -v                # still runs the 318 unit
 * **GUI tests** are skipped automatically when Tkinter or a display is
   missing.
 
-Verified with `python -m pytest tests` on Python 3.11 and 3.13 (508 passed,
-the 4 GUI tests skipped because those builds lack Tkinter) and Python 3.12 + Tk
-under Xvfb (512 passed, none skipped). `mypy --strict` passes on all 78 source
-modules, and ruff reports nothing for the rule set E, F, W, B, UP, SIM, I
-(SIM117 excluded, line length 100). The Unreal C++ code is not built by these
+@@TEST_RESULTS@@ The Unreal C++ code is not built by these
 tests (see section 15); `tests/test_unreal_sources.py` compiles only the shared
 SplitMix64/UnitRoll functions with the host C++ compiler.
 
-## 17. Example output
+## 18. Example output
 
 ```text
 $ python -m chest_hunter simulate --map research_arena_01 --strategy weighted --seed 42 --headless
@@ -1320,7 +1456,7 @@ the episode itself takes about 0.05 s. Running
 `simulate --render --strategy weighted --seed 42` gives exactly the same
 result in the GUI: 4,120 ticks, 25 opened, 10.92 chests/min.
 
-## 18. Programmatic use
+## 19. Programmatic use
 
 ```python
 from chest_hunter.agent import SimulationRunner
@@ -1348,7 +1484,7 @@ optionally `evaluate=True` to measure perception against ground truth:
 loops. `runner.env.add_obstacle(...)` changes the map at runtime; cached
 paths are invalidated automatically.
 
-## 19. Troubleshooting
+## 20. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -1369,9 +1505,12 @@ paths are invalidated automatically.
 | `simulate-3d`: `... must be a loopback address` | The bridge only connects to this machine; use `127.0.0.1` |
 | `simulate-3d`: `observation size ... is not supported` | Use 320x180, 480x270, 640x360 or 800x450 |
 | `forbidden` from the research server | Expected for the visual agent: privileged state is only served to `--agent oracle` / `--evaluate` runs on a server started for them |
-| `No module named pytest` | `python -m pip install -e ".[test]"` (Phase 4 tests use pytest; pytest also runs the older unittest tests) |
+| `no trained policy in ... (policy.json missing)` | Train one (`train-policy`) or pass `--model training/checkpoints/bc_synthetic_v1` |
+| `ONNX export needs the 'onnx' package` | `pip install onnx onnxruntime` (optional; the NumPy backend runs without them) |
+| `argument --config: ...` with `train-policy` | The training configuration option is `--train-config` (`--config` selects the settings file) |
+| Human demonstrations: `need Tkinter and a display` | Run on a desktop session (or `xvfb-run` for testing) |
 
-## 20. Known limitations
+## 21. Known limitations
 
 * **2D only.** `z` is ignored, so stacked chests share a grid position. They
   are visited one after the other without moving.
@@ -1423,7 +1562,7 @@ Phase 3:
   sprites. There are no textures, shadows, perspective or motion blur, and
   the templates match the rendering exactly.
 
-## 21. Recommended next steps
+## 22. Recommended next steps
 
 1. **Tour optimisation for full sweeps.** For example, nearest-neighbour
    plus 2-opt over the distance oracle, since full-sweep throughput is

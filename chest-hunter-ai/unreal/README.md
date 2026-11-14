@@ -18,3 +18,14 @@ layout comes from `Content/ResearchData/research_arena_3d.json`, produced by
 `python -m chest_hunter export-arena-3d`.
 
 Build, run and protocol details: [`docs/phase4_3d_architecture.md`](../docs/phase4_3d_architecture.md).
+
+## Phase 5 additions (also not compiled)
+
+* `python -m chest_hunter generate-maps --split test --count 4 --export-unreal` writes
+  procedural layouts (`proc_train_NNN`, `proc_test_NNN`) next to `research_arena_3d.json`.
+  The arena builder loads any of them by map id, and `HELLO` lists every layout file found.
+* Optional `appearance` fields in a layout are applied at reset: `lighting` scales the
+  sun, and `chest_value` / `chest_hue_shift` tint the chest materials.
+* Human demonstrations can be recorded against a running Unreal server with
+  `record-demo --controller human --backend unreal` (untested). Exact replay of such a
+  recording requires the engine to step deterministically, which has not been verified.

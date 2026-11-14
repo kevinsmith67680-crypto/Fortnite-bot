@@ -422,7 +422,7 @@ class SchemaVersion2Tests(DatabaseTestCase):
             chest_id = insert_chest(conn)
             session_id = insert_session(conn)
             insert_observation(conn, session_id, chest_id)
-        self.assertEqual(self.db.initialize(), 3)
+        self.assertEqual(self.db.initialize(), SCHEMA_VERSION)   # migrations 3 and later
         row = self.db.query_one("SELECT chest_present, reward_received FROM chest_observations")
         assert row is not None
         self.assertEqual((row[0], row[1]), (1, None))       # old rows: reward not reported

@@ -150,6 +150,11 @@ class DemonstrationDataset:
         ids = sorted(self.episodes)
         if path.exists():
             saved = json.loads(path.read_text(encoding="utf-8"))
+            if saved.get("by") != by:
+                raise DatasetError(
+                    f"{path} already splits this dataset by {saved.get('by')}; re-splitting by "
+                    f"{by} could move test episodes into training. Delete splits.json to "
+                    "start a new split deliberately.")
             covered = sorted(i for name in SPLIT_NAMES for i in saved["episodes"][name])
             if covered == ids and saved.get("by") == by:
                 return {name: list(saved["episodes"][name]) for name in SPLIT_NAMES}
