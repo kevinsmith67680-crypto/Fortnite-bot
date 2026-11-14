@@ -214,7 +214,30 @@ _SCHEMA_V2: tuple[str, ...] = (
     """,
 )
 
-MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = ((1, _SCHEMA_V1), (2, _SCHEMA_V2))
+# Schema version 3 (Phase 4): the 3D agent records whether an opening produced a
+# (simulated) reward, and every run records its navigation failures. Both columns
+# are nullable so existing rows stay valid; nothing else changes.
+_SCHEMA_V3: tuple[str, ...] = (
+    """
+    ALTER TABLE chest_observations ADD COLUMN reward_received INTEGER
+        CHECK (reward_received IS NULL OR reward_received IN (0, 1))
+    """,
+    """
+    CREATE TRIGGER trg_chest_observations_reward_requires_opening
+    BEFORE INSERT ON chest_observations
+    WHEN NEW.reward_received = 1 AND NEW.chest_opened = 0
+    BEGIN
+        SELECT RAISE(ABORT, 'a reward requires a successful opening');
+    END
+    """,
+    """
+    ALTER TABLE simulation_runs ADD COLUMN navigation_failures INTEGER
+        CHECK (navigation_failures IS NULL OR navigation_failures >= 0)
+    """,
+)
+
+MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
+    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3))
 """Ordered ``(version, statements)`` pairs. Append new versions; never edit old ones."""
 
 SCHEMA_VERSION: int = MIGRATIONS[-1][0]

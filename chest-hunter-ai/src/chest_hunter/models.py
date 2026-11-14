@@ -300,6 +300,7 @@ class ChestObservation:
     chest_present: bool
     chest_opened: bool
     interaction_seconds: float = 0.0
+    reward_received: bool | None = None     # schema v3; None = not reported
 
     def __post_init__(self) -> None:
         self.validate()
@@ -320,6 +321,10 @@ class ChestObservation:
             raise ValidationError(
                 "A chest cannot be recorded as opened when it was not present."
             )
+        if self.reward_received is not None:
+            self.reward_received = require_bool("reward_received", self.reward_received)
+            if self.reward_received and not self.chest_opened:
+                raise ValidationError("A reward can only follow a successful opening.")
 
 
 # ---------------------------------------------------------------------------
@@ -403,6 +408,7 @@ class SimulationRun:
     abandoned_targets: int | None = None
     rewards: int | None = None
     finished_at: str | None = None
+    navigation_failures: int | None = None    # schema v3
 
     def __post_init__(self) -> None:
         self.session_id = require_positive_int("session_id", self.session_id)

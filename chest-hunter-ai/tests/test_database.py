@@ -16,6 +16,7 @@ from chest_hunter.exceptions import (
     RecordNotFoundError,
     ValidationError,
 )
+from chest_hunter.chest_repository import ChestRepository
 from chest_hunter.run_repository import RunRepository
 from chest_hunter.session_repository import SessionRepository
 
@@ -390,9 +391,10 @@ class PersistenceTests(DatabaseTestCase):
 
 
 class SchemaVersion2Tests(DatabaseTestCase):
-    def test_schema_version_is_two(self) -> None:
-        self.assertEqual(SCHEMA_VERSION, 2)
-        self.assertEqual(self.db.initialize(), 2)
+    def test_schema_version_includes_two(self) -> None:
+        self.assertGreaterEqual(SCHEMA_VERSION, 2)
+        self.assertIn(2, [version for version, _ in MIGRATIONS])
+        self.assertEqual(self.db.initialize(), SCHEMA_VERSION)
         self.assertIn("simulation_runs", EXPECTED_TABLES)
 
     def test_version_1_database_is_migrated_without_data_loss(self) -> None:
@@ -405,11 +407,51 @@ class SchemaVersion2Tests(DatabaseTestCase):
             insert_observation(conn, session_id, chest_id)
         self.assertEqual(self.db.schema_version(), 1)
 
-        self.assertEqual(self.db.initialize(), 2)
+        self.assertEqual(self.db.initialize(), SCHEMA_VERSION)
         counts = [self.db.query_one(f"SELECT COUNT(*) FROM {table}")[0]  # type: ignore[index]
                   for table in ("chest_locations", "simulation_sessions", "chest_observations",
                                 "simulation_runs")]
         self.assertEqual(counts, [1, 1, 1, 0])
+
+    def test_version_2_database_is_migrated_to_3_without_data_loss(self) -> None:
+        with self.db.transaction() as conn:
+            for version, statements in MIGRATIONS[:2]:
+                for statement in statements:
+                    conn.execute(statement)
+            conn.execute("PRAGMA user_version = 2")
+            chest_id = insert_chest(conn)
+            session_id = insert_session(conn)
+            insert_observation(conn, session_id, chest_id)
+        self.assertEqual(self.db.initialize(), 3)
+        row = self.db.query_one("SELECT chest_present, reward_received FROM chest_observations")
+        assert row is not None
+        self.assertEqual((row[0], row[1]), (1, None))       # old rows: reward not reported
+        columns = {r[1] for r in self.db.query_all("PRAGMA table_info(simulation_runs)")}
+        self.assertIn("navigation_failures", columns)
+
+    def test_reward_requires_an_opening(self) -> None:
+        self.db.initialize()
+        sessions = SessionRepository(self.db)
+        session = sessions.start_session("arena")
+        chest = ChestRepository(self.db).add_chest("arena", "Spot", 1.0, 2.0)
+        assert session.id is not None and chest.id is not None
+        with self.assertRaises(ValidationError):
+            sessions.record_observation(session.id, chest.id, chest_present=True,
+                                        chest_opened=False, reward_received=True)
+        obs = sessions.record_observation(session.id, chest.id, chest_present=True,
+                                          chest_opened=True, interaction_seconds=2.0,
+                                          reward_received=True)
+        self.assertTrue(obs.reward_received)
+        with self.assertRaises(DatabaseIntegrityError):            # schema-level backstop
+            with self.db.transaction() as conn:
+                conn.execute(
+                    "INSERT INTO chest_observations (session_id, chest_location_id, observed_at,"
+                    " chest_present, chest_opened, interaction_seconds, reward_received) "
+                    "VALUES (?, ?, ?, 1, 0, 0, 1)", (session.id, chest.id, obs.observed_at))
+        runs = RunRepository(self.db)
+        runs.create_run(session.id, strategy="3d-hybrid-visual", seed=1)
+        finished = runs.finish_run(session.id, outcome="completed", navigation_failures=4)
+        self.assertEqual(finished.navigation_failures, 4)
 
     def test_run_repository_lifecycle(self) -> None:
         self.db.initialize()

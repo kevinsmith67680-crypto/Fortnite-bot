@@ -52,6 +52,7 @@ class PendingObservation:
     opened: bool
     interaction_seconds: float
     observed_at: datetime
+    reward_received: bool | None = None
 
 
 class ObservationRecorder:
@@ -74,9 +75,11 @@ class ObservationRecorder:
         return len(self._pending)
 
     def record(self, chest_id: int, *, present: bool, opened: bool,
-               interaction_seconds: float, observed_at: datetime) -> None:
+               interaction_seconds: float, observed_at: datetime,
+               reward_received: bool | None = None) -> None:
         self._pending.append(PendingObservation(chest_id, present, opened,
-                                                interaction_seconds, observed_at))
+                                                interaction_seconds, observed_at,
+                                                reward_received))
         if len(self._pending) >= self.batch_size:
             self.flush()
 
@@ -94,6 +97,7 @@ class ObservationRecorder:
                     chest_opened=item.opened,
                     interaction_seconds=item.interaction_seconds,
                     observed_at=item.observed_at,
+                    reward_received=item.reward_received,
                 )
         self.recorded += len(batch)
         self.flushes += 1

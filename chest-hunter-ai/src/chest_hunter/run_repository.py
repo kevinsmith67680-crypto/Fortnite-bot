@@ -30,7 +30,7 @@ from chest_hunter.models import (
 _COLUMNS: Final = (
     "session_id, strategy, seed, episode, parameters_json, outcome, failure_reason, "
     "ticks, simulated_seconds, travel_distance, recoveries, unreachable_targets, "
-    "abandoned_targets, rewards, created_at, finished_at"
+    "abandoned_targets, rewards, created_at, finished_at, navigation_failures"
 )
 
 
@@ -52,6 +52,7 @@ def _row_to_run(row: sqlite3.Row) -> SimulationRun:
         abandoned_targets=row["abandoned_targets"],
         rewards=row["rewards"],
         finished_at=row["finished_at"],
+        navigation_failures=row["navigation_failures"],
     )
 
 
@@ -117,6 +118,7 @@ class RunRepository:
         unreachable_targets: int = 0,
         abandoned_targets: int = 0,
         rewards: int = 0,
+        navigation_failures: int | None = None,
     ) -> SimulationRun:
         """Store the final outcome and metrics of a run (only once)."""
         require_positive_int("session_id", session_id)
@@ -132,12 +134,13 @@ class RunRepository:
                     UPDATE simulation_runs
                        SET outcome = ?, failure_reason = ?, ticks = ?, simulated_seconds = ?,
                            travel_distance = ?, recoveries = ?, unreachable_targets = ?,
-                           abandoned_targets = ?, rewards = ?, finished_at = ?
+                           abandoned_targets = ?, rewards = ?, finished_at = ?,
+                           navigation_failures = ?
                      WHERE session_id = ?
                     """,
                     (outcome, failure_reason, ticks, simulated_seconds, travel_distance,
                      recoveries, unreachable_targets, abandoned_targets, rewards,
-                     finished_at, session_id),
+                     finished_at, navigation_failures, session_id),
                 ).rowcount
         except DatabaseIntegrityError as exc:
             raise ConflictError(

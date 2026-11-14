@@ -80,3 +80,19 @@ def seed_scenario(db: DatabaseManager, map_id: str = VISUAL_ARENA_ID, *,
     if scenario is None:
         raise KeyError(f"Unknown scenario map '{map_id}'.")
     return seed_demo_chests(db, map_id, clock=clock, chests=scenario.chests)
+
+
+ARENA_3D_ID = "research_arena_3d"
+
+
+def arena_3d_chests() -> tuple[DemoChest, ...]:
+    """The 35 spawn points of the Phase 4 3D arena (metres; z = floor height)."""
+    from chest_hunter.simulation3d.arena import build_research_arena_3d  # lazy: needs NumPy
+
+    return tuple(DemoChest(s.region, s.name, s.x, s.y, s.z, s.probability, 2.0)
+                 for s in build_research_arena_3d().spawns)
+
+
+def seed_arena_3d(db: DatabaseManager, *, clock: Clock = utc_now) -> SeedResult:
+    """Insert the 3D arena's spawn points (idempotent)."""
+    return seed_demo_chests(db, ARENA_3D_ID, clock=clock, chests=arena_3d_chests())

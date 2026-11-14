@@ -1,0 +1,284 @@
+"""Run one autonomous 3D episode against a research server (Unreal or reference).
+
+The runner owns everything the policy must not touch:
+
+* the SQLite session, run row and batched observation recording,
+* the bridge connection (the policy only gets an :class:`AgentPort`),
+* the optional embedded reference server (``backend="reference"``),
+* evaluation: labels and final ground truth through the privileged channel,
+  used only *after* the policy has acted, for metrics.
+
+Modes:
+
+* ``oracle``: exact chest positions (privileged channel), NavMesh paths.
+* ``hybrid``: vision for chests + NavMesh navigation service (Phase 4 target).
+* ``visual_nav``: vision for chests + only local navigation probes; the agent
+  builds its own map and plans its own paths.
+"""
+
+from __future__ import annotations
+
+import logging
+import resource
+import sys
+import time
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any
+
+from chest_hunter.agent.controller_3d import (
+    Agent3DConfig,
+    Metrics3D,
+    OracleAgent3D,
+    VisualAgent3D,
+)
+from chest_hunter.agent.recorder import ObservationRecorder
+from chest_hunter.analytics.vision_metrics_3d import Evaluator3D
+from chest_hunter.chest_repository import ChestRepository
+from chest_hunter.config import Settings
+from chest_hunter.database import DatabaseManager
+from chest_hunter.exceptions import ValidationError
+from chest_hunter.localization.world_model_3d import SpawnPrior3D
+from chest_hunter.models import utc_now
+from chest_hunter.run_repository import RunRepository
+from chest_hunter.session_repository import SessionRepository
+from chest_hunter.unreal_bridge.client import AgentPort, BridgeClient
+from chest_hunter.unreal_bridge.protocol import DEFAULT_PORT
+from chest_hunter.vision.chest_detector_3d import ChestDetector3D, TemplateSet3D
+
+logger = logging.getLogger(__name__)
+
+MODES_3D = ("oracle", "hybrid", "visual_nav")
+STRATEGY_3D = {"oracle": "3d-oracle", "hybrid": "3d-hybrid-visual", "visual_nav": "3d-visual-nav"}
+_TEMPLATES: dict[str, TemplateSet3D] = {}
+
+
+@dataclass(slots=True)
+class Result3D:
+    mode: str
+    seed: int
+    episode: int
+    outcome: str
+    end_reason: str | None
+    session_id: int
+    sim_seconds: float
+    ticks: int
+    metrics: Metrics3D
+    chests_opened: int
+    chests_per_minute: float | None
+    truth: dict[str, Any] = field(default_factory=dict)       # evaluation only
+    vision: dict[str, Any] | None = None                       # evaluation only
+    cpu_seconds: float = 0.0
+    wall_seconds: float = 0.0
+    bridge_round_trip_ms: float = 0.0
+    backend: str = "reference"
+
+
+class _SimClock:
+    """Session timestamps on the simulated timeline (base = real start time)."""
+
+    def __init__(self) -> None:
+        self.base = utc_now()
+        self.time = 0.0
+
+    def __call__(self) -> datetime:
+        return self.base + timedelta(seconds=self.time)
+
+
+def _templates(settings: Settings) -> TemplateSet3D:
+    path = str(settings.base_dir / "assets" / "templates3d")
+    if path not in _TEMPLATES:
+        _TEMPLATES[path] = TemplateSet3D.load(path)
+    return _TEMPLATES[path]
+
+
+class Runner3D:
+    def __init__(self, db: DatabaseManager, settings: Settings, *, mode: str = "hybrid",
+                 map_id: str = "research_arena_3d", seed: int = 42, episode: int = 0,
+                 backend: str = "reference", host: str = "127.0.0.1", port: int = DEFAULT_PORT,
+                 width: int = 640, height: int = 360, fov_deg: float = 90.0,
+                 graphics_quality: str = "low", max_ticks: int = 30 * 60 * 10,
+                 detector: str = "hybrid", evaluate: bool = False,
+                 config: Agent3DConfig | None = None, env_overrides: dict[str, Any] | None = None,
+                 on_decision: Any = None) -> None:
+        mode = mode.replace("-", "_")
+        if mode not in MODES_3D:
+            raise ValidationError(f"mode must be one of {', '.join(MODES_3D)}; got {mode!r}")
+        if backend not in ("reference", "unreal"):
+            raise ValidationError("backend must be 'reference' or 'unreal'")
+        self.db, self.settings = db, settings
+        self.mode, self.map_id, self.seed, self.episode = mode, map_id, seed, episode
+        self.backend, self.host, self.port = backend, host, port
+        self.width, self.height, self.fov = width, height, fov_deg
+        self.graphics_quality, self.max_ticks = graphics_quality, max_ticks
+        self.detector_method = detector
+        self.evaluate = evaluate
+        self.config = config or Agent3DConfig()
+        self.env_overrides = dict(env_overrides or {})
+        self.on_decision = on_decision
+        self.controller: VisualAgent3D | OracleAgent3D | None = None
+        self.evaluator: Evaluator3D | None = None
+        self.server: Any = None
+        self.client: BridgeClient | None = None
+
+    # -- setup ---------------------------------------------------------------------------------
+
+    def _priors(self) -> list[SpawnPrior3D]:
+        chests = ChestRepository(self.db).get_chests_by_map(self.map_id)
+        priors = [SpawnPrior3D(c.id, c.location_name, c.x, c.y, c.z, c.spawn_probability)
+                  for c in chests if c.enabled and c.id is not None]
+        if not priors:
+            raise ValidationError(f"Map '{self.map_id}' has no enabled chest locations. Run "
+                                  "'python -m chest_hunter seed-demo --scenario research_arena_3d'.")
+        return priors
+
+    def _start_server(self) -> int:
+        from chest_hunter.simulation3d.environment3d import EnvSettings
+        from chest_hunter.unreal_bridge.mock_server import MockUnrealServer
+
+        base = EnvSettings(**{**{f: getattr(EnvSettings(), f) for f in EnvSettings.__dataclass_fields__},
+                              **self.env_overrides})
+        self.server = MockUnrealServer(port=0, oracle=self.mode == "oracle",
+                                       evaluation=self.evaluate, base_settings=base).start()
+        return int(self.server.port)
+
+    # -- episode -------------------------------------------------------------------------------
+
+    def run(self) -> Result3D:
+        cpu0, wall0 = time.process_time(), time.perf_counter()
+        priors = self._priors()
+        port = self._start_server() if self.backend == "reference" else self.port
+        client = BridgeClient(self.host, port, timeout=30.0)
+        self.client = client
+        clock = _SimClock()
+        sessions = SessionRepository(self.db, clock=clock)
+        runs = RunRepository(self.db, clock=clock)
+        session = sessions.start_session(self.map_id, notes=f"3D {self.mode} episode")
+        assert session.id is not None
+        runs.create_run(session.id, strategy=STRATEGY_3D[self.mode], seed=self.seed,
+                        episode=self.episode, parameters={
+                            "environment": "3d", "backend": self.backend, "mode": self.mode,
+                            "observation": [self.width, self.height], "fov_deg": self.fov,
+                            "graphics_quality": self.graphics_quality, "detector": self.detector_method,
+                            "max_ticks": self.max_ticks, "time_basis": "simulated",
+                            "decision_ticks": self.config.decision_ticks})
+        recorder = ObservationRecorder(self.db, sessions, session.id,
+                                       batch_size=self.settings.agent.observation_batch_size)
+
+        def record(location_id: int, *, present: bool, opened: bool, seconds: float,
+                   reward: bool | None, sim_time: float) -> None:
+            recorder.record(location_id, present=present, opened=opened,
+                            interaction_seconds=round(seconds, 4),
+                            observed_at=clock.base + timedelta(seconds=sim_time),
+                            reward_received=reward)
+
+        outcome, reason = "failed", None
+        try:
+            client.connect()
+            navigation = {"oracle": "navmesh", "hybrid": "navmesh", "visual_nav": "local"}[self.mode]
+            telemetry = client.reset_episode(self.map_id, seed=self.seed, episode=self.episode,
+                                             width=self.width, height=self.height,
+                                             fov_deg=self.fov, graphics_quality=self.graphics_quality,
+                                             max_ticks=self.max_ticks, navigation=navigation)
+            agent_port = AgentPort(client)
+            controller: VisualAgent3D | OracleAgent3D
+            if self.mode == "oracle":
+                names = {p.name: p.location_id for p in priors}
+                state0 = client.oracle_state()
+                index_to_loc = {c["spawn_index"]: names.get(c["name"]) for c in state0["chests"]}
+                controller = OracleAgent3D(agent_port, client.oracle_state, rules=client.rules,
+                                           location_of=index_to_loc.get, recorder=record,
+                                           decision_ticks=self.config.decision_ticks)
+            else:
+                detector = ChestDetector3D(_templates(self.settings), method=self.detector_method)
+                controller = VisualAgent3D(agent_port, priors, rules=client.rules,
+                                           detector=detector, navigation=navigation,
+                                           config=self.config, recorder=record)
+                if self.evaluate:
+                    from chest_hunter.vision.perspective import CameraIntrinsics
+                    intr = CameraIntrinsics(self.width, self.height, self.fov)
+                    self.evaluator = Evaluator3D(intr.fx, intr.fy)
+            self.controller = controller
+            controller.initialize(telemetry)
+            ticks = 0
+            while not controller.is_terminal():
+                controller.tick()
+                if controller.is_terminal():
+                    break
+                observe = controller.wants_observation()
+                result = client.step(controller.action.to_dict(),
+                                     ticks=self.config.decision_ticks, observe=observe)
+                ticks = result.telemetry.tick
+                clock.time = result.telemetry.sim_time
+                controller.on_step(result)
+                if self.evaluator is not None and result.observation is not None \
+                        and isinstance(controller, VisualAgent3D):
+                    labels = client.evaluation_labels(result.observation.frame_id)
+                    self.evaluator.observe(labels, controller.last_detections,
+                                           controller.last_estimates,
+                                           result.observation.odometry.position)
+                if self.on_decision is not None:
+                    self.on_decision(self, result)
+                if result.ended or ticks >= self.max_ticks:
+                    controller.stop("tick_limit", f"reached max_ticks={self.max_ticks}")
+            outcome = controller.outcome or "completed"
+            reason = controller.end_reason
+            truth: dict[str, Any] = {}
+            if self.evaluate or self.mode == "oracle":
+                truth = self._truth(client, priors)
+            summary = client.stop_episode(f"{self.mode} agent finished")
+            truth["server_summary"] = summary.get("summary", {})
+        except BaseException:
+            outcome, reason = "failed", f"{sys.exc_info()[0].__name__}: {sys.exc_info()[1]}"
+            truth = {}
+            raise
+        finally:
+            recorder.flush()
+            m = self.controller.metrics if self.controller is not None else Metrics3D()
+            final_time = clock.time
+            if outcome in ("completed", "tick_limit"):
+                sessions.complete_session(session.id)
+            else:
+                sessions.abort_session(session.id)
+            runs.finish_run(session.id, outcome=outcome if outcome in
+                            ("completed", "tick_limit", "failed", "cancelled") else "failed",
+                            failure_reason=reason if outcome in ("failed", "cancelled") else None,
+                            ticks=int(round(final_time * 30)), simulated_seconds=final_time,
+                            travel_distance=m.travel_distance, recoveries=m.recoveries,
+                            unreachable_targets=m.unreachable_targets,
+                            abandoned_targets=m.abandoned_targets, rewards=m.rewards,
+                            navigation_failures=m.navigation_failures)
+            client.close()
+            if self.server is not None:
+                self.server.stop()
+        m = self.controller.metrics
+        per_min = m.chests_opened / (final_time / 60.0) if final_time > 0 else None
+        return Result3D(self.mode, self.seed, self.episode, outcome, reason, session.id, final_time,
+                        ticks, m, m.chests_opened, per_min, truth,
+                        self.evaluator.summary() if self.evaluator else None,
+                        time.process_time() - cpu0, time.perf_counter() - wall0,
+                        1000.0 * client.round_trip_seconds / max(1, client.requests), self.backend)
+
+    def _truth(self, client: BridgeClient, priors: list[SpawnPrior3D]) -> dict[str, Any]:
+        """Final ground truth via the privileged channel (evaluation only)."""
+        state = client.oracle_state()
+        from chest_hunter.simulation3d.environment3d import cached_arena
+
+        arena, _, nav = cached_arena(self.map_id)       # shared layout (also used by Unreal)
+        start = arena.start
+        present = [c for c in state["chests"] if c["present"]]
+        reachable = [c for c in present
+                     if nav.find_path(start, tuple(c["position"]), goal_tolerance=1.5).found]
+        names = {p.name: p.location_id for p in priors}
+        return {"present": len(present), "available": len(reachable),
+                "opened_truth": sum(1 for c in present if c["opened"]),
+                "available_names": sorted(c["name"] for c in reachable),
+                "opened_names": sorted(c["name"] for c in present if c["opened"]),
+                "location_ids_opened": sorted(names[c["name"]] for c in present
+                                              if c["opened"] and c["name"] in names)}
+
+
+def peak_rss_mb() -> float:
+    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return usage / 1024.0 if sys.platform != "darwin" else usage / (1024.0 * 1024.0)
+

@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 _SESSION_COLUMNS: Final = "id, map_id, started_at, ended_at, status, notes"
 _OBSERVATION_COLUMNS: Final = (
     "id, session_id, chest_location_id, observed_at, chest_present, "
-    "chest_opened, interaction_seconds"
+    "chest_opened, interaction_seconds, reward_received"
 )
 
 
@@ -72,6 +72,7 @@ def _row_to_observation(row: sqlite3.Row) -> ChestObservation:
         chest_present=bool(row["chest_present"]),
         chest_opened=bool(row["chest_opened"]),
         interaction_seconds=row["interaction_seconds"],
+        reward_received=None if row["reward_received"] is None else bool(row["reward_received"]),
     )
 
 
@@ -227,6 +228,7 @@ class SessionRepository:
         chest_opened: bool = False,
         interaction_seconds: float = 0.0,
         observed_at: datetime | None = None,
+        reward_received: bool | None = None,
     ) -> ChestObservation:
         """Record the outcome of visiting a chest location during a running session.
 
@@ -255,6 +257,7 @@ class SessionRepository:
             chest_present=chest_present,
             chest_opened=chest_opened,
             interaction_seconds=require_non_negative("interaction_seconds", interaction_seconds),
+            reward_received=reward_received,
         )
         try:
             with self._db.transaction() as conn:
@@ -305,8 +308,8 @@ class SessionRepository:
                     """
                     INSERT INTO chest_observations (
                         session_id, chest_location_id, observed_at, chest_present,
-                        chest_opened, interaction_seconds
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                        chest_opened, interaction_seconds, reward_received
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         observation.session_id,
@@ -315,6 +318,8 @@ class SessionRepository:
                         int(observation.chest_present),
                         int(observation.chest_opened),
                         observation.interaction_seconds,
+                        None if observation.reward_received is None
+                        else int(observation.reward_received),
                     ),
                 )
                 observation.id = cursor.lastrowid
