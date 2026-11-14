@@ -284,10 +284,13 @@ names) and runs a hybrid episode against a server with every privileged command 
 
 ## 9. Performance
 
-See the README (section 15.6) for measured numbers. On the development container (4 vCPU,
-no GPU) the reference arena renders a 640×360 frame in tens of milliseconds and the hybrid
-detector takes a few milliseconds per frame; the agent analyses 3–10 frames per simulated
-second depending on its state.
+Measured on the development container (4 vCPU Xeon 2.1 GHz, no GPU; README section 15.6
+has the full tables): the reference renderer takes 16.5 ms per 640×360 frame (median), the
+hybrid detector 3.1 ms, a loopback `STEP` returning a 640×360 frame 20.2 ms and one without
+a frame 0.9 ms. The agent analyses 2–10 frames per simulated second depending on its state
+(2 idle, 3 travelling, 8 searching or approaching, 10 aligning, interacting or verifying).
+A hybrid episode costs about 0.19 CPU-seconds per simulated second; peak memory of a worker
+process stayed below 117 MiB.
 
 Unreal: not measured (no installation). The project is configured for a low rendering cost
 (no Lumen, Nanite or virtual shadow maps, low scalability, 640×360 capture), but a full

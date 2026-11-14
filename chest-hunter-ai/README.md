@@ -1,14 +1,16 @@
 # chest-hunter-ai
 
 A lightweight research project: an **autonomous agent that navigates a
-controlled 2D research environment, finds simulated chests, opens them, and
-tries to maximise chests opened per minute.**
+controlled research environment (2D, and since Phase 4 a third-person 3D
+arena), finds simulated chests, opens them, and tries to maximise chests
+opened per minute.**
 
 | Phase | Status | What it provides |
 |---|---|---|
 | 1. Data foundation | Done | SQLite database of chest spawn points, simulation sessions and observations; CLI; tests |
 | 2. Autonomous navigation | Done | Grid-world simulator, A* pathfinding, route planning, continuous movement, 10-state agent, Tkinter GUI, headless runs, benchmarking |
 | 3. Computer vision and visual navigation | Done | Simulated camera, OpenCV chest/obstacle/prompt detection, object tracking, visual localisation, occupancy mapping, frontier exploration, closed-loop interaction with visual verification, debug overlays, oracle-vs-visual benchmark |
+| 4. 3D agent and Unreal Engine 5 integration | Python side done and tested; **Unreal project prepared but not compiled or run** | Localhost bridge protocol, client and protocol-identical reference server; 3D reference arena (capsule physics, spring-arm camera, perspective renderer, NavMesh-style graph); perspective chest detection, distance estimation, 3D tracking; NavMesh-hybrid and NavMesh-free navigation; 14-state closed-loop controller; UE5 C++ project sources; 50-episode benchmark (section 15) |
 
 > The simulator is entirely self-contained. The project never talks to a game
 > client, game service or network. It never reads or writes game memory or
@@ -17,6 +19,10 @@ tries to maximise chests opened per minute.**
 > **fictional** research arena, and its coordinates are not real game data.
 > Phase 3 "camera frames" are images the simulator draws for itself. The
 > project never captures the screen or windows of any other application.
+> Phase 4 adds a self-made 3D research arena: its Unreal Engine project uses
+> engine basic shapes only, and its bridge listens on 127.0.0.1 only. Movement
+> goes through the environment's own control interface, never through
+> operating-system input injection.
 
 ![The simulator mid-run: obstacles, the agent following a cyan A* path to its orange-ringed target, opened (green), unopened (gold) and empty (grey) spawn points](docs/gui_screenshot.png)
 
@@ -45,7 +51,13 @@ python -m chest_hunter simulate --map visual_arena_01 --agent visual --seed 42 -
 python -m chest_hunter simulate --map visual_arena_01 --agent visual --seed 42 --headless
 python -m chest_hunter benchmark-vision --map visual_arena_01 --episodes 100 --seed 42
 
-python -m unittest discover -s tests -v
+# Phase 4: the 3D third-person agent on the Python reference arena (no Unreal needed)
+python -m chest_hunter seed-demo --scenario research_arena_3d
+python -m chest_hunter simulate-3d --backend reference --agent visual --seed 42 --headless-controller
+python -m chest_hunter benchmark-3d --episodes 50 --seed 42 --workers 3
+
+python -m pip install -e ".[test]"
+python -m pytest tests            # runs the unittest-style and pytest-style tests
 ```
 
 ---
@@ -419,7 +431,10 @@ The plan is recalculated after every observation. The strategy, seed,
 episode and all parameters are stored in `simulation_runs` for every
 session.
 
-## 11. Database structure (schema version 2)
+## 11. Database structure (schema version 3)
+
+Phase 4 added migration 3 (`reward_received`, `navigation_failures`;
+section 15.7). The rest of this section describes migrations 1 and 2.
 
 Phase 1 tables are unchanged. Migration 2 adds one table and
 `python -m chest_hunter init-db` upgrades a Phase 1 database in place. Every
@@ -466,7 +481,7 @@ How the agent uses Phase 1 records:
 | Command | Purpose |
 |---|---|
 | `init-db` | Create the database or apply pending migrations (never erases data) |
-| `seed-demo [--map MAP] [--scenario research_arena\|visual_arena]` | Insert the 35 fictional demo locations, or the 20-location Phase 3 acceptance arena `visual_arena_01` (idempotent) |
+| `seed-demo [--map MAP] [--scenario research_arena\|visual_arena\|research_arena_3d]` | Insert the 35 fictional demo locations, the 20-location Phase 3 acceptance arena `visual_arena_01`, or the 35 spawn points of the Phase 4 3D arena (idempotent) |
 | `list-chests`, `show-chest`, `add-chest`, `update-chest`, `delete-chest` | Manage spawn points |
 | `start-session`, `record-observation`, `complete-session`, `abort-session`, `list-sessions`, `unvisited-chests` | Manual sessions (Phase 1) |
 | `session-stats --session ID` | Session statistics. Agent-driven sessions also show strategy, seed, outcome, travel and recoveries |
@@ -474,6 +489,9 @@ How the agent uses Phase 1 records:
 | `simulate ... [--agent oracle\|visual\|chest-vision]` | Run the autonomous agent (sections 6 and 14) |
 | `benchmark ...` | Paired strategy comparison (section 13) |
 | `benchmark-vision [--map M] [--episodes N] [--seed S] [--modes LIST] [--max-ticks N] [--output-dir DIR] [--detector-frames N] [--quiet]` | Oracle vs chest-vision vs visual agent on paired episodes, plus a detector comparison (section 14.12) |
+| `simulate-3d [--agent visual\|hybrid\|visual-nav\|oracle] [--backend unreal\|reference] [--host H] [--port P] [--seed S] [--episode N] [--observation-width PX] [--observation-height PX] [--max-ticks N] [--detector color\|template\|hybrid] [--graphics-quality low\|medium\|high] [--evaluate] [--headless-controller\|--render-debug]` | One 3D episode against the Unreal research server or the Python reference arena (section 15) |
+| `benchmark-3d [--episodes N] [--seed S] [--modes LIST] [--workers N] [--max-ticks N] [--observation-width PX] [--observation-height PX] [--output-dir DIR] [--quiet]` | Oracle vs hybrid vs visual-navigation on paired 3D episodes (section 15.5) |
+| `export-arena-3d [--output PATH]` | Write the 3D arena layout JSON used by the Unreal arena builder (needs no database) |
 
 Global options (`--config`, `--db`, `--log-level`) may appear before or
 after the command name. Exit codes: 0 success, 1 failure, 2 invalid usage,
@@ -710,7 +728,7 @@ oldest) is evicted.
   steps behind a dead zone, so it only coarsely follows the agent. The
   agent's exact position, heading, chests and walls all come from pixels.
   Estimating the camera pose from images alone (visual odometry or
-  landmarks) is a next step (section 20). Tests check the round trip and
+  landmarks) is a next step (section 21). Tests check the round trip and
   that the transform is not an identity.
 * **Filter.** The pose is predicted from the agent's own velocity commands
   (dead reckoning) and corrected with each visual fix by exponential
@@ -952,7 +970,7 @@ What the numbers say:
   * Each one was the Blue House attic/basement pair, 0.28 cells apart: the
     chest is opened, but the spot it was credited to had already been judged
     empty, so the opening is not recorded (reproduced and traced for episode
-    0, and consistent with the limitation in section 19).
+    0, and consistent with the limitation in section 20).
   * Openings were **never over-reported** in any mode or map.
 * **Cost.**
   * Perception averaged 3.2-4.0 ms per analysed frame, at 6-8 analyses per
@@ -962,14 +980,238 @@ What the numbers say:
     episodes and all result rows kept in memory).
 
 
-## 15. Running the tests
+## 15. Phase 4: 3D third-person agent and Unreal Engine 5 integration
+
+Phase 4 moves the agent into a **3D, third-person** research arena: a character
+with a capsule body, an over-the-shoulder spring-arm camera, stairs, upper
+floors, doorways and occluders. The agent finds chests in **perspective camera
+images**, estimates how far away they are, walks there through a navigation
+mesh (or without one), aligns with the chest, holds *interact* while watching
+the on-screen progress bar and confirms the opening visually.
+
+The target environment is a small **Unreal Engine 5** project
+(`unreal/ChestHunterResearch`). The Python agent talks to it over a
+**localhost-only TCP bridge** with a versioned binary protocol. Unreal Engine is
+not installed on the development machine, so the project also ships a
+**Python reference arena** that serves exactly the same protocol. All Phase 4
+results below come from that reference arena.
+
+> **What is verified and what is not.**
+> * **Verified (automated tests, benchmark):** the protocol, the bridge client
+>   and mock server over real loopback sockets, the reference arena (physics,
+>   camera, renderer, navigation graph, interaction rules), 3D perception,
+>   navigation, the controller, database records, CLI, dashboard, and the
+>   agent end to end on the reference arena.
+> * **Prepared, not verified:** the Unreal C++ module, its automation tests
+>   and the editor map script. They have **not been compiled or run**, and the
+>   Python agent has **never been connected to Unreal**. Static checks compare
+>   the C++ sources with the Python protocol, and the shared deterministic
+>   random-number code is compiled with g++ and matches Python bit for bit.
+>   That is all that could be checked without Unreal.
+> * The reference arena is not Unreal Engine. Its numbers say nothing about
+>   Unreal's rendering, lighting or physics. The colour detector will need
+>   recalibration on Unreal frames.
+
+Full design, protocol reference, build steps and troubleshooting:
+[`docs/phase4_3d_architecture.md`](docs/phase4_3d_architecture.md).
+
+### 15.1 Quick start
 
 ```bash
-python -m unittest discover -s tests -v              # 316 tests
-xvfb-run -a python -m unittest tests.test_renderer -v  # GUI tests on a headless Linux box
+python -m chest_hunter init-db
+python -m chest_hunter seed-demo --scenario research_arena_3d      # 35 spawn points
+
+# Reference arena (no Unreal needed), standard visual agent, no window:
+python -m chest_hunter simulate-3d --backend reference --agent visual --seed 42 --headless-controller
+# ... with the debug dashboard (camera feed with detections, map, statistics; needs Tk):
+python -m chest_hunter simulate-3d --backend reference --agent visual --seed 42 --render-debug
+# Other agents: --agent visual-nav (no route service), --agent oracle (privileged baseline)
+# Options: --observation-width/--observation-height (320x180 ... 800x450), --max-ticks,
+#          --detector color|template|hybrid, --graphics-quality low|medium|high, --evaluate
+
+# Against a running Unreal research server (see the architecture doc; untested):
+python -m chest_hunter simulate-3d --backend unreal --port 47820
+
+# Paired benchmark, three modes:
+python -m chest_hunter benchmark-3d --episodes 50 --seed 42 --workers 3
 ```
 
-* **Coverage.** 127 Phase 1 tests, 109 Phase 2 tests and 80 Phase 3 tests.
+### 15.2 Components
+
+| Area | Module(s) | Notes |
+|---|---|---|
+| Bridge protocol | `unreal_bridge/protocol.py` (C++ mirror: `ResearchProtocol.h/.cpp`) | 16-byte prefix + JSON header + raw `bgr8` payload; size limits; strict validation of every command and action; version negotiation |
+| Bridge client | `unreal_bridge/client.py` | Loopback only; timeouts; reconnect with back-off; STEP resent with the same id after a dropped connection (applied at most once); stale-frame detection; `AgentPort` is the only surface the visual agent gets |
+| Mock / reference server | `unreal_bridge/mock_server.py`, `simulation3d/` | Same commands and semantics as the Unreal subsystem; privileged commands are off unless started in oracle or evaluation mode |
+| Unreal project | `unreal/ChestHunterResearch/` | Chest actor, third-person character with `USceneCaptureComponent2D`, arena built from `Content/ResearchData/research_arena_3d.json`, Recast NavMesh, loopback server thread, game-thread command subsystem, synchronous fixed-step stepping, automation tests (**not compiled**) |
+| Perception | `vision/perspective.py`, `chest_detector_3d.py`, `depth_estimation.py`, `tracker_3d.py`, `interaction_cues_3d.py` | Pinhole model; colour / template / hybrid detection with 72 multi-view templates; distance from apparent size (A), ground plane (B), triangulation (C); 3D tracks |
+| World model | `localization/world_model_3d.py` | Spawn priors from SQLite, statuses, empty-spot votes with line-of-sight checks |
+| Navigation | `navigation/navigation_3d.py` | Hybrid: NavMesh route service queried with *estimated* positions. Visual-nav: own occupancy map from raycast probes plus A*. Path following, stuck detection, scan patterns |
+| Controller | `agent/controller_3d.py` | 14-state machine: OBSERVING, SCANNING, EXPLORING, TARGET_DETECTED, PLANNING_ROUTE, NAVIGATING, APPROACHING, ALIGNING, INTERACTING, VERIFYING_OPEN, RECOVERING, ... |
+| Runner, benchmark, dashboard | `agent/runner_3d.py`, `analytics/benchmark_3d.py`, `analytics/vision_metrics_3d.py`, `agent/dashboard_3d.py` | Sessions, observations and runs in SQLite; paired benchmark; vision metrics against labels; Tk dashboard |
+
+### 15.3 The 3D arena
+
+`research_arena_3d` (100 m × 100 m) has 35 spawn points in a central warehouse
+with a mezzanine, an eastern settlement (houses with doorways, a 1.3 m narrow
+door, a two-storey house), a northern forest, a western outpost with a
+watchtower, southern docks, a central plaza and a south field. It includes gold
+decoys (the same colour as the chests) and two spawns that are **unreachable by
+design**: a water-tower platform with no ladder and a sealed container. Chest
+presence is a deterministic function of (seed, episode, spawn index), identical
+in Python and C++. Opening a chest needs `interact` held for 2 s within 1.8 m,
+facing it (60° cone), with line of sight. A notification then reports the
+player's own opening and whether it gave a reward (30 %).
+
+### 15.4 What the agent may and may not know
+
+| The standard visual agent receives | It never receives |
+|---|---|
+| Camera images rendered by the environment's own scene capture of the third-person view, with the camera intrinsics | Chest presence, chest positions or opened state |
+| Its own camera rig (yaw, pitch, arm length, camera position relative to its feet) | Its true position (only odometry with random-walk drift) |
+| Odometry with seeded drift (0.5 % of distance travelled, per axis) | Evaluation labels or the oracle state (the server refuses them unless started for evaluation, and `AgentPort` cannot send them) |
+| Its own notifications (opened / reward / failed) and the game rules | Desktop screenshots or any other application's window |
+| Spawn priors from SQLite (location + probability, as in Phases 1 to 3) | Routes to hidden chests: route queries take *estimated* destinations only |
+
+`tests/test_agent_3d.py` checks this statically (the agent's modules import
+neither the simulator nor the mock server, and contain no privileged names). It
+also checks it at run time, with a full episode against a server that refuses
+every privileged command.
+
+### 15.5 Benchmark: oracle vs hybrid vs visual navigation (50 paired episodes)
+
+`benchmark-3d --episodes 50 --seed 42 --workers 3`, reference arena, 640×360,
+90° horizontal FOV, 10 simulated minutes maximum per episode. All three modes
+play the same seeds. Episodes end early when the agent has resolved every
+spawn point (all three modes usually do). Chests per minute is therefore
+`opened / episode duration`, in simulated time.
+
+* **A, oracle:** true chest positions over the privileged channel, NavMesh routes. An upper bound, not a vision result.
+* **B, hybrid:** chests from the camera only, NavMesh route service with estimated positions.
+* **C, visual navigation:** chests from the camera only, local raycast probes and its own A*. No route service and no knowledge of stairs.
+
+| Mode | Chests / min, mean (median, min-max) | % of available chests opened | % of seen chests opened | Episode length (sim.) | Travel | Recoveries | Navigation failures |
+|---|---|---|---|---|---|---|---|
+| A oracle | **7.81** (7.73, 7.01-8.58) | 100.0 | - | 180 s | 585 m | 0.0 | 0.0 |
+| B hybrid | **4.06** (4.12, 2.95-5.45) | 84.9 | 90.4 | 276 s | 816 m | 11.2 | 0.26 |
+| C visual-nav | **1.98** (1.98, 0.84-3.15) | 45.7 | 72.0 | 302 s | 668 m | 34.9 | 28.4 |
+
+Means over 50 episodes. "Available" means present and reachable from the
+start (1,175 chests in 50 episodes). Paired against the oracle, the hybrid
+agent was slower in all 50 episodes (mean −3.75 chests/min) and visual-nav in
+all 50 (mean −5.84).
+
+**Openings checked against ground truth.** No mode ever recorded an opening
+that did not happen (0 over-reported). Oracle recorded 1,175 of 1,175 real
+openings. Hybrid opened 1,000 chests and recorded 934. Visual-nav opened 537
+and recorded 492. The gap is chests the agent opened but could not confirm
+visually (for example, seeing the opened chest only from behind), so it did
+not write them. Outcomes: oracle and hybrid 50/50 completed. Visual-nav 49
+completed and 1 hit the tick limit. One visual-nav episode (episode 19) ended
+after 85 s with 2 of 23 available chests opened, because the agent considered
+every spawn point resolved.
+
+**Perception against the reference renderer's labels** (every analysed frame;
+hybrid 78,057 frames, visual-nav 76,890):
+
+| | Hybrid | Visual-nav |
+|---|---|---|
+| Detection precision / recall (pooled) | 0.983 / 0.925 | 0.979 / 0.932 |
+| Distance error, median of per-episode median absolute error | 0.35 m | 0.38 m |
+| Distance error, mean absolute (episode mean) | 0.83 m | 0.73 m |
+| ... by true distance 0-5 / 5-10 / 10-20 / 20-40 m | 0.23 / 0.35 / 0.72 / 2.01 m | 0.30 / 0.33 / 0.84 / 1.51 m |
+| Matched detections without a usable distance | 3.6 % | 3.1 % |
+| Odometry error (mean over the episode, mean of episodes) | 0.042 m | 0.039 m |
+
+The exported counts include 12,577 (hybrid) and 9,024 (visual-nav) matched
+detections whose open/closed class disagreed with the label. This run did not
+export the matched-detection totals, so a per-detection rate cannot be given,
+and the causes were not broken down.
+
+Raw data: `benchmark_results/phase4/navigation_3d.csv` (one row per episode and
+mode), `vision_3d.csv` and `summary_3d.json`. Before committing, the first 3
+paired episodes were re-run on the final code. They reproduced every
+non-timing field exactly.
+
+### 15.6 Measured performance (reference arena)
+
+Same 4-vCPU Intel Xeon 2.1 GHz machine, no GPU, Python 3.13, three benchmark
+workers running in parallel:
+
+| Measurement | Hybrid | Visual-nav | Oracle |
+|---|---|---|---|
+| CPU per episode | 52.1 s for 276 simulated s (**~5.3× faster than real time** on one core) | 47.3 s for 302 s | 2.5 s for 180 s (no images) |
+| Perception per analysed frame (detect, estimate, track, world model) | 6.5 ms | 6.0 ms | - |
+| Bridge round trip per request (incl. rendering when a frame is requested) | 7.2 ms | 5.8 ms | 0.41 ms |
+| Peak memory per worker process (RSS), max over the run | 116 MiB | | |
+| Whole benchmark (150 episodes) | 1,802 s wall, 5,098 CPU-s | | |
+
+Single-process micro-benchmark on the same machine (medians of 60 frames,
+moving camera):
+
+| Resolution | Render one frame (reference software renderer) | Hybrid chest detection |
+|---|---|---|
+| 320×180 | 11.4 ms | 0.9 ms |
+| 480×270 | 14.3 ms | 2.2 ms |
+| 640×360 | 16.5 ms | 3.1 ms |
+| 800×450 | 21.2 ms | 5.0 ms |
+
+Bridge over loopback TCP, 640×360: a `STEP` (2 ticks) without a frame takes
+0.9 ms, a `STEP` returning a frame (691 KB raw `bgr8` payload, rendering
+included) 20.2 ms, and `PING` 0.13 ms. Physics alone is 0.13 ms per 2-tick
+step. Rendering, not the bridge or perception, dominates the reference
+arena's cost.
+
+**Unreal Engine was not measured** (not installed). The project is configured
+for a low rendering cost: no Lumen, Nanite or virtual shadow maps, low
+scalability and a 640×360 capture. Even so, a UE5 editor is **not expected to
+run reliably on 8 GB of RAM or integrated graphics**. A packaged development
+build in a small window is the realistic option on modest hardware, and it has
+not been tried. Camera images need rendering: `-nullrhi` runs (fine for the
+protocol automation tests) cannot produce observations.
+
+### 15.7 Database (schema version 3)
+
+Migration 3 adds `chest_observations.reward_received` (NULL when unknown) with a
+trigger forbidding a reward without an opening, and
+`simulation_runs.navigation_failures`. Existing data is kept (tested). 3D runs
+use strategies `3d-oracle`, `3d-hybrid-visual` and `3d-visual-nav`, and store
+their backend, camera and detector settings in `parameters_json`.
+
+### 15.8 Phase 4 limitations
+
+* **No Unreal verification.** The C++ module has not been compiled. The Unreal
+  automation tests and map script have not been run, and the agent has not been
+  connected to Unreal.
+* **Detector tuned to the reference renderer.** HSV classes and templates
+  match its flat shading. Unreal lighting, shadows, tone mapping and
+  anti-aliasing will need recalibration and probably new templates.
+* **Unconfirmed openings.** About 7 % (hybrid) of real openings were not
+  recorded, because the opened chest was never seen clearly afterwards.
+* **Visual-nav cannot use stairs**, so upper-floor chests are out of its
+  reach (45.7 % of the available chests opened).
+* **Remaining hybrid misses** include chests behind occluders where alignment
+  keeps failing (for example, the South Field haystack, seen during
+  development), and chests whose opened state is misread.
+* Unreal evaluation labels are approximate (projected boxes plus visibility
+  traces). Unreal odometry drift uses a different seeded random stream, so
+  Python and Unreal trajectories are not bit-identical.
+
+## 16. Running the tests
+
+```bash
+python -m pip install -e ".[test]"
+python -m pytest tests                                 # 512 tests (all phases)
+xvfb-run -a python -m pytest tests                     # including the GUI tests on a headless Linux box
+python -m unittest discover -s tests -v                # still runs the 318 unittest-style tests (Phases 1-3 + DB)
+```
+
+* **Coverage.** 127 Phase 1 tests, 109 Phase 2 tests, 80 Phase 3 tests and
+  196 Phase 4 tests (2 database migration tests plus 194 pytest tests:
+  protocol, bridge, perspective, reference arena, 3D navigation, 3D vision,
+  agent episodes and information boundaries, CLI/config, dashboard, and
+  C++/Python consistency). Phase 4 tests use pytest; the older tests remain
+  `unittest` test cases, which pytest also runs.
   Earlier tests still pass unchanged, except two config tests whose example
   "unknown section" was literally named after a section that later became
   real (`navigation`, then `vision`).
@@ -1023,13 +1265,15 @@ xvfb-run -a python -m unittest tests.test_renderer -v  # GUI tests on a headless
 * **GUI tests** are skipped automatically when Tkinter or a display is
   missing.
 
-Verified on Python 3.11 and 3.13 (316 passed, the 3 GUI tests skipped
-because those builds lack Tkinter) and Python 3.12 + Tk under Xvfb (316
-passed, none skipped). `mypy --strict` passes on all 53 source modules, and
-ruff reports nothing for the rule set E, F, W, B, UP, SIM, I (SIM117
-excluded).
+Verified with `python -m pytest tests` on Python 3.11 and 3.13 (508 passed,
+the 4 GUI tests skipped because those builds lack Tkinter) and Python 3.12 + Tk
+under Xvfb (512 passed, none skipped). `mypy --strict` passes on all 78 source
+modules, and ruff reports nothing for the rule set E, F, W, B, UP, SIM, I
+(SIM117 excluded, line length 100). The Unreal C++ code is not built by these
+tests (see section 15); `tests/test_unreal_sources.py` compiles only the shared
+SplitMix64/UnitRoll functions with the host C++ compiler.
 
-## 16. Example output
+## 17. Example output
 
 ```text
 $ python -m chest_hunter simulate --map research_arena_01 --strategy weighted --seed 42 --headless
@@ -1065,7 +1309,7 @@ the episode itself takes about 0.05 s. Running
 `simulate --render --strategy weighted --seed 42` gives exactly the same
 result in the GUI: 4,120 ticks, 25 opened, 10.92 chests/min.
 
-## 17. Programmatic use
+## 18. Programmatic use
 
 ```python
 from chest_hunter.agent import SimulationRunner
@@ -1093,7 +1337,7 @@ optionally `evaluate=True` to measure perception against ground truth:
 loops. `runner.env.add_obstacle(...)` changes the map at runtime; cached
 paths are invalidated automatically.
 
-## 18. Troubleshooting
+## 19. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -1110,8 +1354,13 @@ paths are invalidated automatically.
 | `error: Map 'visual_arena_01' has no enabled chest locations` | `python -m chest_hunter seed-demo --scenario visual_arena` |
 | `error: ... needs vision.enabled = true` | Set `vision.enabled` to `true` in the config, or use `--agent oracle` |
 | Visual agent slower than expected | Use 480x270 (`vision.default_width/height`); perception cost scales with pixels (section 3) |
+| `simulate-3d`: `no research server on 127.0.0.1:47820` | Start the Unreal research project (`docs/phase4_3d_architecture.md`) or add `--backend reference` |
+| `simulate-3d`: `... must be a loopback address` | The bridge only connects to this machine; use `127.0.0.1` |
+| `simulate-3d`: `observation size ... is not supported` | Use 320x180, 480x270, 640x360 or 800x450 |
+| `forbidden` from the research server | Expected for the visual agent: privileged state is only served to `--agent oracle` / `--evaluate` runs on a server started for them |
+| `No module named pytest` | `python -m pip install -e ".[test]"` (Phase 4 tests use pytest; pytest also runs the older unittest tests) |
 
-## 19. Known limitations
+## 20. Known limitations
 
 * **2D only.** `z` is ignored, so stacked chests share a grid position. They
   are visited one after the other without moving.
@@ -1163,7 +1412,7 @@ Phase 3:
   sprites. There are no textures, shadows, perspective or motion blur, and
   the templates match the rendering exactly.
 
-## 20. Recommended next steps
+## 21. Recommended next steps
 
 1. **Tour optimisation for full sweeps.** For example, nearest-neighbour
    plus 2-opt over the distance oracle, since full-sweep throughput is
@@ -1176,8 +1425,9 @@ Phase 3:
    boundary, multiple agents.
 5. **A stable environment interface** for later RL experiments (observation
    and action spaces wrapping `SimulationRunner.step`).
-6. **A custom Unreal Engine research environment** reusing the same
-   database, runner and metrics.
+6. **Build and verify the prepared Unreal project** (Phase 4): compile the
+   C++ module, run its automation tests, connect the agent, then recalibrate
+   the detector and templates on Unreal frames and repeat the benchmark there.
 7. **Camera pose from images** (visual odometry against the occupancy map),
    removing the last piece of geometric metadata from observations.
 8. **Harder rendering:** perspective, partial occlusion by walls, textures
@@ -1185,3 +1435,11 @@ Phase 3:
    classical ones on the same benchmark.
 9. **Active perception:** choose viewpoints that resolve the most spawn
    points per second, rather than driving to frontier centres.
+10. **Phase 4: confirm more openings.** About 7 % of real hybrid openings went
+    unrecorded because the opened chest was never seen clearly. Use the
+    reward/notification event together with a short look-back manoeuvre.
+11. **Phase 4: stairs for NavMesh-free navigation.** Detect stairs from
+    raycast height profiles so that visual-nav mode can reach upper floors.
+12. **Phase 4: learned detector on Unreal frames.** Once Unreal runs, collect
+    labelled frames through `-ResearchEvaluation` and compare a small learned
+    detector with the HSV/template pipeline.
