@@ -1,0 +1,43 @@
+{
+ "opset": 17,
+ "fp32": {
+  "path": "policy.onnx",
+  "bytes": 115626,
+  "agreement": {
+   "max_abs_diff": 1e-06,
+   "mean_abs_action_diff": 0.0,
+   "interact_decision_agreement": 1.0,
+   "samples": 256.0
+  }
+ },
+ "int8": {
+  "path": "policy_int8.onnx",
+  "bytes": 42256,
+  "agreement": {
+   "max_abs_diff": 0.439932,
+   "mean_abs_action_diff": 0.037101,
+   "interact_decision_agreement": 1.0,
+   "samples": 256.0
+  }
+ },
+ "latency_single_thread": {
+  "numpy_fp32": {
+   "mean_ms": 1.3256,
+   "median_ms": 1.371,
+   "p95_ms": 1.6301,
+   "runs": 300.0
+  },
+  "onnxruntime_fp32": {
+   "mean_ms": 0.1402,
+   "median_ms": 0.137,
+   "p95_ms": 0.1642,
+   "runs": 300.0
+  },
+  "onnxruntime_int8": {
+   "mean_ms": 0.2126,
+   "median_ms": 0.2072,
+   "p95_ms": 0.2466,
+   "runs": 300.0
+  }
+ }
+}

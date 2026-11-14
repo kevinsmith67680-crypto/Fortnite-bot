@@ -175,7 +175,7 @@ def run_job(job: Job) -> list[dict[str, Any]]:
                                    smart_recovery=strategy.smart_recovery)
             runner = Runner3D.from_settings(
                 db, settings, mode="hybrid", seed=job.seed, episode=episode,
-                backend="reference", map_id=job.map_id, evaluate=True, config=config,
+                backend="reference", map_id=job.map_id, collect_truth=True, config=config,
                 max_ticks=job.max_ticks, width=job.width, height=job.height,
                 policy=strategy.policy, learned_policy=policy, planner=planner)
             result = runner.run()

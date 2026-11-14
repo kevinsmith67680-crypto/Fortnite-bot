@@ -103,7 +103,8 @@ class Runner3D:
                  config: Agent3DConfig | None = None, env_overrides: dict[str, Any] | None = None,
                  on_decision: Any = None, demo_recorder: Any = None, demo_episode_id: int = 0,
                  policy: str = "deterministic", learned_policy: Any = None,
-                 planner: Any = None, policy_options: dict[str, Any] | None = None) -> None:
+                 planner: Any = None, policy_options: dict[str, Any] | None = None,
+                 collect_truth: bool = False) -> None:
         mode = mode.replace("-", "_")
         if mode not in MODES_3D:
             raise ValidationError(f"mode must be one of {', '.join(MODES_3D)}; got {mode!r}")
@@ -134,6 +135,9 @@ class Runner3D:
         self.policy_options = dict(policy_options or {})
         #: Phase 5 adaptive target planner (exploration.adaptive_planner.AdaptivePlanner).
         self.planner = planner
+        #: Ground truth at the end of the episode only (runner-side, privileged channel; no
+        #: per-frame labels). The policy's AgentPort cannot request it in any case.
+        self.collect_truth = collect_truth
         self.selector: Any = None
         self.controller: Any = None
         self.evaluator: Evaluator3D | None = None
@@ -181,7 +185,7 @@ class Runner3D:
 
         defaults = {f: getattr(EnvSettings(), f) for f in EnvSettings.__dataclass_fields__}
         base = EnvSettings(**{**defaults, **self.env_overrides})
-        self.server = MockUnrealServer(port=0, oracle=self.mode == "oracle",
+        self.server = MockUnrealServer(port=0, oracle=self.mode == "oracle" or self.collect_truth,
                                        evaluation=self.evaluate, base_settings=base).start()
         return int(self.server.port)
 
@@ -311,7 +315,7 @@ class Runner3D:
                 self.demo_recorder.stop(outcome={"outcome": outcome, "reason": reason,
                                                  "chests_opened": controller.metrics.chests_opened})
             truth: dict[str, Any] = {}
-            if self.evaluate or self.mode == "oracle":
+            if self.evaluate or self.mode == "oracle" or self.collect_truth:
                 truth = self._truth(client, priors)
             summary = client.stop_episode(f"{self.mode} agent finished")
             truth["server_summary"] = summary.get("summary", {})

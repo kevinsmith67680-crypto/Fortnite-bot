@@ -197,6 +197,55 @@ class Teleoperation(unittest.TestCase):
             session.root.destroy()
 
 
+class LearningDashboard(unittest.TestCase):
+    def _runner(self, policy: str, hook: object) -> object:
+        from chest_hunter.agent.runner_3d import Runner3D
+        from chest_hunter.scenarios import seed_arena_3d
+
+        db = DatabaseManager(":memory:")
+        db.initialize()
+        self.addCleanup(db.close)
+        seed_arena_3d(db)
+        return Runner3D.from_settings(db, settings(), mode="hybrid", seed=3, backend="reference",
+                                      max_ticks=150, width=320, height=180, policy=policy,
+                                      learned_policy=LearnedPolicy(tiny_model(), backend="numpy"),
+                                      on_decision=hook)
+
+    def test_learning_panel_shows_policy_model_and_run_statistics(self) -> None:
+        from chest_hunter.agent.dashboard_3d import learning_text
+
+        texts: list[str] = []
+        runner = self._runner("hybrid", lambda r, _res: texts.append(learning_text(r)))
+        runner.run()                                              # type: ignore[attr-defined]
+        text = texts[-1]
+        for expected in ("Policy: hybrid", "Model:", "(synthetic)", "Throughput:",
+                         "Navigation success", "Learned decisions"):
+            self.assertIn(expected, text)
+
+    @unittest.skipUnless(os.environ.get("DISPLAY"), "no display (run under xvfb-run)")
+    def test_policy_can_be_switched_from_the_window(self) -> None:
+        try:
+            import tkinter  # noqa: F401
+        except ImportError:
+            self.skipTest("this Python build has no Tk")
+        from chest_hunter.agent.dashboard_3d import Dashboard3D
+
+        dashboard = Dashboard3D(refresh_seconds=0.0)
+        self.addCleanup(dashboard.close)
+        modes: list[str] = []
+
+        def hook(runner: object, result: object) -> None:
+            dashboard.update(runner, result)
+            if not modes:
+                dashboard.policy_choice.set("learned")
+                dashboard._switch()
+            modes.append(runner.selector.mode)                    # type: ignore[attr-defined]
+
+        self._runner("deterministic", hook).run()                 # type: ignore[attr-defined]
+        self.assertEqual(modes[0], "learned")
+        self.assertIn("Policy: learned", dashboard.learning.get())
+
+
 class AcceptanceWorkflow(unittest.TestCase):
     """Spec section 20 on the reference arena with tiny settings (SYNTHETIC demonstrations)."""
 

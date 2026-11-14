@@ -3,11 +3,12 @@ window is exercised when a display is available (CI: under Xvfb)."""
 
 from __future__ import annotations
 
+import importlib
 import os
+import unittest
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from chest_hunter.agent.dashboard_3d import draw_camera_overlay, draw_map, stats_text
 from chest_hunter.agent.runner_3d import Runner3D
@@ -27,35 +28,44 @@ def _runner(on_decision=None) -> Runner3D:  # type: ignore[no-untyped-def]
                                   max_ticks=450, on_decision=on_decision)
 
 
-def test_overlays_are_drawn_on_copies() -> None:
-    snapshots: list[tuple[np.ndarray, np.ndarray, np.ndarray, str]] = []
+class TestDashboard3D(unittest.TestCase):
+    def test_overlays_are_drawn_on_copies(self) -> None:
+        snapshots: list[tuple[np.ndarray, np.ndarray, np.ndarray, str]] = []
 
-    def capture(runner: Runner3D, result: object) -> None:
-        c = runner.controller
-        if c is None or getattr(c, "obs", None) is None or len(snapshots) > 3:
-            return
-        before = c.obs.frame.copy()
-        overlay = draw_camera_overlay(c)
-        assert overlay is not None
-        snapshots.append((before, c.obs.frame, overlay, stats_text(c)))
-        assert draw_map(c).shape == (300, 300, 3)
+        def capture(runner: Runner3D, result: object) -> None:
+            c = runner.controller
+            if c is None or getattr(c, "obs", None) is None or len(snapshots) > 3:
+                return
+            before = c.obs.frame.copy()
+            overlay = draw_camera_overlay(c)
+            self.assertIsNotNone(overlay)
+            snapshots.append((before, c.obs.frame, overlay, stats_text(c)))  # type: ignore[arg-type]
+            self.assertEqual(draw_map(c).shape, (300, 300, 3))
 
-    _runner(capture).run()
-    assert snapshots
-    for before, after, overlay, text in snapshots:
-        assert np.array_equal(before, after)              # the agent's frame is untouched
-        assert overlay.shape == before.shape and not np.array_equal(overlay, before)
-        assert "State:" in text and "Chests opened" in text
+        runner = _runner(capture)
+        self.addCleanup(runner.db.close)
+        runner.run()
+        self.assertTrue(snapshots)
+        for before, after, overlay, text in snapshots:
+            self.assertTrue(np.array_equal(before, after))   # the agent's frame is untouched
+            self.assertEqual(overlay.shape, before.shape)
+            self.assertFalse(np.array_equal(overlay, before))
+            self.assertIn("State:", text)
+            self.assertIn("Chests opened", text)
 
+    @unittest.skipUnless(os.environ.get("DISPLAY"), "no display (run under xvfb-run)")
+    def test_dashboard_window_updates(self) -> None:
+        try:
+            importlib.import_module("tkinter")
+        except ImportError:
+            self.skipTest("this Python build has no Tk")
+        from chest_hunter.agent.dashboard_3d import Dashboard3D
 
-@pytest.mark.skipif(not os.environ.get("DISPLAY"), reason="no display (run under xvfb-run)")
-def test_dashboard_window_updates() -> None:
-    pytest.importorskip("tkinter", reason="this Python build has no Tk")
-    from chest_hunter.agent.dashboard_3d import Dashboard3D
-
-    dashboard = Dashboard3D(refresh_seconds=0.0)
-    try:
-        _runner(dashboard.update).run()
-        assert dashboard.frames_shown > 5
-    finally:
-        dashboard.close()
+        dashboard = Dashboard3D(refresh_seconds=0.0)
+        try:
+            runner = _runner(dashboard.update)
+            self.addCleanup(runner.db.close)
+            runner.run()
+            self.assertGreater(dashboard.frames_shown, 5)
+        finally:
+            dashboard.close()

@@ -20,7 +20,7 @@ from chest_hunter.simulation3d.procedural import (
     map_id,
     parse_map_id,
 )
-from tests.phase5_helpers import settings, tiny_model
+from tests.phase5_helpers import ROOT, settings, tiny_model
 
 SMALL = EnvSettings(width=320, height=180)
 
@@ -130,3 +130,21 @@ class UnseenMapEpisodes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UnrealLayoutSupport(unittest.TestCase):
+    """Static checks only: the Unreal module is not compiled in this environment."""
+
+    SOURCE = ROOT / "unreal" / "ChestHunterResearch" / "Source" / "ChestHunterResearch"
+
+    def test_cpp_reads_the_procedural_appearance_fields(self) -> None:
+        import json
+
+        from chest_hunter.simulation3d.arena import arena_to_json
+
+        builder = (self.SOURCE / "Private" / "ResearchArenaBuilder.cpp").read_text()
+        layout = json.loads(arena_to_json(build_procedural("proc_test_000")[0]))
+        for key in layout["appearance"]:
+            self.assertIn(f'TEXT("{key}")', builder, key)
+        self.assertIn("AvailableMaps", (self.SOURCE / "Private" /
+                                        "ResearchBridgeSubsystem.cpp").read_text())
