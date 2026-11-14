@@ -290,9 +290,10 @@ def build_research_arena_3d() -> Arena3D:
     b += _building(30.0, 80.0, 40.0, 90.0, 6.8, "house_wall", {"S": (85.5, 1.5)},
                    name="two-storey house")
     b += _stairs(31.4, 81.15, "+X", 14, width=1.5)            # 31.4 -> 36.3, top z 3.5
-    b.append(box(30.3, 82.0, 3.3, 39.7, 89.7, 3.5, "floor", "interior_floor", name="upper floor"))
-    b.append(box(36.3, 80.3, 3.3, 39.7, 82.0, 3.5, "floor", "interior_floor"))
-    b.append(_railing_x(30.3, 36.3, 82.0, 3.5))
+    # The stairwell opening is wider than the stairs (Y 80.4-81.9) so heads clear the slab.
+    b.append(box(30.3, 82.6, 3.3, 39.7, 89.7, 3.5, "floor", "interior_floor", name="upper floor"))
+    b.append(box(36.3, 80.3, 3.3, 39.7, 82.6, 3.5, "floor", "interior_floor"))
+    b.append(_railing_x(30.3, 36.3, 82.6, 3.5))
     b.append(box(64.0, 90.8, 0.0, 74.0, 91.0, 1.0, "fence", "fence", name="settlement fence"))
     b.append(box(56.5, 70.6, 0.0, 57.9, 71.6, 1.0, "decoy", "decoy_hay", name="hay bale"))
     b.append(box(58.4, 70.6, 0.0, 59.8, 71.6, 1.0, "decoy", "decoy_hay"))

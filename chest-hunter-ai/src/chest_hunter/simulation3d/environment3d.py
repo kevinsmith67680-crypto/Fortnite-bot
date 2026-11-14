@@ -95,7 +95,7 @@ class EnvSettings:
     interaction_seconds: float = 2.0
     interaction_failure_probability: float = 0.0
     reward_probability: float = 0.3
-    odometry_drift: float = 0.02        # per-tick sigma = drift * distance moved that tick
+    odometry_drift: float = 0.005       # per-tick sigma = drift * distance moved that tick (~0.1 m per 300 m)
     noise_std: float = 5.0
     lighting_variation: float = 0.08
     graphics_quality: str = "low"

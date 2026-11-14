@@ -146,9 +146,9 @@ class ChestDetector3D:
             # flicker into the lid's brown range).
             hsv = cv2.cvtColor(cv2.GaussianBlur(frame, (3, 3), 0), cv2.COLOR_BGR2HSV)
             classes = segment_classes(hsv)
-            if exclude is not None:
-                x, y, w, h = exclude
-                classes[max(0, y):y + h, max(0, x):x + w] = BACKGROUND
+            # ``exclude`` (the agent's own body) is not blanked: its colours never fall in
+            # the chest classes, and a chest right next to the agent must stay visible.
+            # Candidates touching it are only marked partial.
             cands = self._candidates(classes, exclude)
             dets = []
             for c in cands:
@@ -185,7 +185,7 @@ class ChestDetector3D:
             x0 = max(0, int(bx - 0.15 * bw) - 1)
             x1 = min(w_img, int(bx + bw + 0.15 * bw) + 2)
             y0 = max(0, int(by - 0.3 * bh) - 1)
-            y1 = min(h_img, int(by + bh + max(1.6 * bh, 1.1 * bw)) + 2)
+            y1 = min(h_img, int(by + bh + max(1.2 * bh, 0.9 * bw)) + 2)
             window = classes[y0:y1, x0:x1]
             obj = (window > 0).astype(np.uint8)
             obj = cv2.morphologyEx(obj, cv2.MORPH_CLOSE, _KERNEL3)
@@ -330,3 +330,4 @@ def _nms(dets: list[Detection3D], threshold: float = 0.3) -> list[Detection3D]:
         if all(iou(d.bbox, k.bbox) <= threshold for k in kept):
             kept.append(d)
     return kept
+

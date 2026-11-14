@@ -142,8 +142,15 @@ class Tracker3D:
         prior_var = t.sigma ** 2 + 0.01                    # small process noise
         meas_var = est.sigma ** 2
         m = np.array(est.position)
-        t.position = (t.position * meas_var + m * prior_var) / (prior_var + meas_var)
-        t.sigma = max(0.05, math.sqrt(prior_var * meas_var / (prior_var + meas_var)))
+        if est.distance < 5.0 and float(np.linalg.norm((t.position - m)[:2])) > 3.0 * est.sigma:
+            # A close, accurate measurement contradicts a track built from distant views
+            # (e.g. a box merged with a neighbouring object): trust the close look.
+            t.position = m
+            t.sigma = max(0.05, est.sigma)
+            t.rays.clear()
+        else:
+            t.position = (t.position * meas_var + m * prior_var) / (prior_var + meas_var)
+            t.sigma = max(0.05, math.sqrt(prior_var * meas_var / (prior_var + meas_var)))
         t.rays.append((np.array(est.ray_origin), np.array(est.ray_direction)))
         self._triangulate(t)
         t.hits += 1

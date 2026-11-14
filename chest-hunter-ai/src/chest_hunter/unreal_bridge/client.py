@@ -23,6 +23,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from chest_hunter.exceptions import ChestHunterError
 from chest_hunter.unreal_bridge.observation_adapter import (
     Observation3D,
     Telemetry,
@@ -44,7 +45,7 @@ from chest_hunter.unreal_bridge.protocol import (
 logger = logging.getLogger(__name__)
 
 
-class BridgeError(Exception):
+class BridgeError(ChestHunterError):
     def __init__(self, code: str, message: str) -> None:
         super().__init__(f"{code}: {message}")
         self.code = code
@@ -134,7 +135,9 @@ class BridgeClient:
         else:
             raise BridgeConnectionError(
                 "connect_failed", f"no research server on {self.host}:{self.port} after "
-                                  f"{self.connect_attempts} attempt(s): {last}")
+                                  f"{self.connect_attempts} attempt(s) ({last}). Start the Unreal "
+                                  "research project (see docs/phase4_3d_architecture.md) or use "
+                                  "--backend reference for the built-in Python reference arena")
         reply = self._request("HELLO", {"protocol": PROTOCOL_NAME, "version": PROTOCOL_VERSION,
                                         "client": "chest_hunter"})
         self.server_info = reply.header

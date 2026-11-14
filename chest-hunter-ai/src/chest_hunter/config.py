@@ -178,6 +178,36 @@ class VisualDebugSettings:
 
 
 @dataclass(frozen=True)
+class UnrealBridgeSettings:
+    """Phase 4: how to reach the research server (Unreal plugin or reference server)."""
+
+    host: str = "127.0.0.1"
+    port: int = 47820
+    timeout_seconds: float = 30.0
+    connect_attempts: int = 5
+
+
+@dataclass(frozen=True)
+class Simulation3DSettings:
+    """Phase 4: 3D episode and agent parameters."""
+
+    default_map: str = "research_arena_3d"
+    backend: str = "unreal"
+    observation_width: int = 640
+    observation_height: int = 360
+    fov_deg: float = 90.0
+    graphics_quality: str = "low"
+    max_ticks: int = 18000
+    decision_ticks: int = 2
+    detector: str = "hybrid"
+    odometry_drift: float = 0.005
+    noise_std: float = 5.0
+    reward_probability: float = 0.3
+    interaction_failure_probability: float = 0.0
+    template_dir: str = "assets/templates3d"
+
+
+@dataclass(frozen=True)
 class LoggingSettings:
     level: str
 
@@ -197,10 +227,16 @@ class Settings:
     localization: LocalizationSettings = field(default_factory=LocalizationSettings)
     visual_navigation: VisualNavigationSettings = field(default_factory=VisualNavigationSettings)
     visual_debug: VisualDebugSettings = field(default_factory=VisualDebugSettings)
+    unreal_bridge: UnrealBridgeSettings = field(default_factory=UnrealBridgeSettings)
+    simulation_3d: Simulation3DSettings = field(default_factory=Simulation3DSettings)
 
     def template_dir(self) -> Path:
         """Absolute directory of the perception templates."""
         return _resolve_path(self.vision.template_dir, self.base_dir)
+
+    def template_dir_3d(self) -> Path:
+        """Absolute directory of the Phase 4 multi-view chest templates."""
+        return _resolve_path(self.simulation_3d.template_dir, self.base_dir)
 
     def with_database_path(self, path: str | os.PathLike[str]) -> Settings:
         """Return a copy that uses ``path`` (resolved against ``base_dir``) as the database."""
@@ -380,6 +416,30 @@ _VISUAL_DEBUG_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
     ("show_camera_view", True, _boolean),
 )
 
+_UNREAL_BRIDGE_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("host", "127.0.0.1", _non_empty_string),
+    ("port", 47820, _int_range(1, 65535)),
+    ("timeout_seconds", 30.0, _float_range(0.5, 600.0)),
+    ("connect_attempts", 5, _int_range(1, 50)),
+)
+
+_SIMULATION_3D_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
+    ("default_map", "research_arena_3d", _map_id),
+    ("backend", "unreal", _choice("unreal", "reference")),
+    ("observation_width", 640, _int_range(320, 800)),
+    ("observation_height", 360, _int_range(180, 450)),
+    ("fov_deg", 90.0, _float_range(60.0, 110.0)),
+    ("graphics_quality", "low", _choice("low", "medium", "high")),
+    ("max_ticks", 18000, _int_range(30, 10_000_000)),
+    ("decision_ticks", 2, _int_range(1, 30)),
+    ("detector", "hybrid", _choice("color", "template", "hybrid")),
+    ("odometry_drift", 0.005, _float_range(0.0, 0.2)),
+    ("noise_std", 5.0, _float_range(0.0, 40.0)),
+    ("reward_probability", 0.3, _probability),
+    ("interaction_failure_probability", 0.0, _probability),
+    ("template_dir", "assets/templates3d", _non_empty_string),
+)
+
 SUPPORTED_FRAME_SIZES: Final = ((320, 180), (480, 270), (640, 360), (800, 450))
 
 FIELD_UNITS: Final[dict[str, str]] = {
@@ -508,6 +568,8 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
     localization_section = _section(data, "localization", required=False)
     visual_nav_section = _section(data, "visual_navigation", required=False)
     visual_debug_section = _section(data, "visual_debug", required=False)
+    bridge_section = _section(data, "unreal_bridge", required=False)
+    sim3d_section = _section(data, "simulation_3d", required=False)
 
     db_values = _parse_fields("database", database, (("path", _REQUIRED, lambda n, v: v),))
     db_path = db_values["path"]
@@ -533,6 +595,19 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
         **_parse_fields("visual_navigation", visual_nav_section, _VISUAL_NAVIGATION_FIELDS))
     visual_debug = VisualDebugSettings(
         **_parse_fields("visual_debug", visual_debug_section, _VISUAL_DEBUG_FIELDS))
+    unreal_bridge = UnrealBridgeSettings(
+        **_parse_fields("unreal_bridge", bridge_section, _UNREAL_BRIDGE_FIELDS))
+    if unreal_bridge.host not in ("127.0.0.1", "localhost", "::1"):
+        raise ValidationError("'unreal_bridge.host' must be a loopback address (127.0.0.1, "
+                              "localhost or ::1): the research bridge never leaves this machine.")
+    simulation_3d = Simulation3DSettings(
+        **_parse_fields("simulation_3d", sim3d_section, _SIMULATION_3D_FIELDS))
+    if (simulation_3d.observation_width, simulation_3d.observation_height) \
+            not in SUPPORTED_FRAME_SIZES:
+        sizes = ", ".join(f"{w}x{h}" for w, h in SUPPORTED_FRAME_SIZES)
+        raise ValidationError(
+            f"'simulation_3d' observation size {simulation_3d.observation_width}x"
+            f"{simulation_3d.observation_height} is not supported; use one of {sizes}.")
     if (vision.default_width, vision.default_height) not in SUPPORTED_FRAME_SIZES:
         sizes = ", ".join(f"{w}x{h}" for w, h in SUPPORTED_FRAME_SIZES)
         raise ValidationError(
@@ -561,6 +636,8 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
         localization=localization,
         visual_navigation=visual_navigation,
         visual_debug=visual_debug,
+        unreal_bridge=unreal_bridge,
+        simulation_3d=simulation_3d,
     )
 
 

@@ -94,6 +94,7 @@ class WorldModel3D:
         self.position: tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.camera_pose: CameraPose | None = None
         self.objective = "-"
+        self.seen_locations: set[int] = set()        # spawn points where a chest was seen
 
     # -- perception integration ----------------------------------------------------------------
 
@@ -176,6 +177,7 @@ class WorldModel3D:
             if linked is None or track.state is TrackState3D.TENTATIVE:
                 continue
             linked.empty_votes = 0
+            self.seen_locations.add(linked.location_id)
             if linked.status in (PriorStatus3D.UNKNOWN, PriorStatus3D.EMPTY) \
                     and track.category == "chest":
                 linked.status = PriorStatus3D.CHEST_SEEN

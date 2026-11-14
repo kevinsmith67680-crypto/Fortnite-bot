@@ -42,7 +42,7 @@ from chest_hunter.vision.chest_detector_3d import segment_classes  # noqa: E402
 from chest_hunter.vision.perspective import CameraIntrinsics, CameraPose  # noqa: E402
 
 YAWS = (0, 30, 60, 90, 135, 180)              # camera bearing relative to the chest front
-ELEVATIONS = (-8, 8, 20, 35, 55)              # degrees the camera looks down at the chest
+ELEVATIONS = (-8, 8, 20, 35, 55, 70)          # degrees the camera looks down at the chest
 DISTANCE = 4.0
 
 

@@ -110,7 +110,10 @@ class Character3D:
                 self._advance(sx, sy)
                 continue
             obstructed = True
-            if sx and self._free(world, dynamic, self.x + sx, self.y):
+            slid = self._slide(world, dynamic, self.x + sx, self.y + sy, sx, sy)
+            if slid is not None:
+                self._advance(slid[0] - self.x, slid[1] - self.y)
+            elif sx and self._free(world, dynamic, self.x + sx, self.y):
                 self._advance(sx, 0.0)
                 self.vy = 0.0
             elif sy and self._free(world, dynamic, self.x, self.y + sy):
@@ -160,6 +163,41 @@ class Character3D:
         lo, hi = self.z + p.step_height, self.z + height
         return not any(b.z1 > lo and b.z0 < hi and circle_overlaps_box_xy(x, y, p.radius, b)
                        for b in dynamic)
+
+    def _slide(self, world: World3D, dynamic: Sequence[Box], x: float, y: float,
+               sx: float, sy: float) -> tuple[float, float] | None:
+        """Capsule push-out: move the circle out of the boxes it penetrates along the
+        contact normals, so it slides along walls and around corners (door frames) like
+        Unreal's character movement. Accepted only if it still makes forward progress."""
+        p = self.p
+        height = p.height * (0.6 if self.crouched else 1.0)
+        lo, hi = self.z + p.step_height, self.z + height
+        boxes = [b for b in list(world.nearby(x, y, p.radius + 0.3)) + list(dynamic)
+                 if b.blocks and b.z1 > lo and b.z0 < hi]
+        for _ in range(4):
+            moved = False
+            for b in boxes:
+                nx = min(max(x, b.x0), b.x1)
+                ny = min(max(y, b.y0), b.y1)
+                dx, dy = x - nx, y - ny
+                d = math.hypot(dx, dy)
+                if d >= p.radius:
+                    continue
+                if d < 1e-9:                            # centre inside the box: shortest axis
+                    pushes = ((b.x0 - p.radius - x, 0.0), (b.x1 + p.radius - x, 0.0),
+                              (0.0, b.y0 - p.radius - y), (0.0, b.y1 + p.radius - y))
+                    ox, oy = min(pushes, key=lambda v: abs(v[0]) + abs(v[1]))
+                    x, y = x + ox, y + oy
+                else:
+                    push = p.radius - d + 1e-4
+                    x, y = x + dx / d * push, y + dy / d * push
+                moved = True
+            if not moved:
+                break
+        progress = (x - self.x) * sx + (y - self.y) * sy
+        if progress <= 0.2 * (sx * sx + sy * sy) or math.hypot(x - self.x, y - self.y) > 0.3:
+            return None
+        return (x, y) if self._free(world, dynamic, x, y) else None
 
     def _dynamic_support(self, dynamic: Sequence[Box]) -> float:
         best = -math.inf

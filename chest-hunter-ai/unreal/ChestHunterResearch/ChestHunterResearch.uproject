@@ -1,0 +1,20 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.4",
+	"Category": "Research",
+	"Description": "Controlled third-person research arena for the chest-hunter-ai agent. Local loopback bridge only; no online services.",
+	"Modules": [
+		{
+			"Name": "ChestHunterResearch",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [ "Engine", "CoreUObject" ]
+		}
+	],
+	"Plugins": [
+		{ "Name": "PythonScriptPlugin", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "OnlineSubsystem", "Enabled": false },
+		{ "Name": "OnlineSubsystemUtils", "Enabled": false }
+	]
+}

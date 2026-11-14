@@ -86,7 +86,7 @@ class _SimClock:
 
 
 def _templates(settings: Settings) -> TemplateSet3D:
-    path = str(settings.base_dir / "assets" / "templates3d")
+    path = str(settings.template_dir_3d())
     if path not in _TEMPLATES:
         _TEMPLATES[path] = TemplateSet3D.load(path)
     return _TEMPLATES[path]
@@ -121,6 +121,23 @@ class Runner3D:
         self.server: Any = None
         self.client: BridgeClient | None = None
 
+    @classmethod
+    def from_settings(cls, db: DatabaseManager, settings: Settings, **overrides: Any) -> Runner3D:
+        """Defaults from the ``simulation_3d`` and ``unreal_bridge`` config sections."""
+        c3, br = settings.simulation_3d, settings.unreal_bridge
+        kwargs: dict[str, Any] = {
+            "map_id": c3.default_map, "backend": c3.backend, "host": br.host, "port": br.port,
+            "width": c3.observation_width, "height": c3.observation_height, "fov_deg": c3.fov_deg,
+            "graphics_quality": c3.graphics_quality, "max_ticks": c3.max_ticks,
+            "detector": c3.detector, "config": Agent3DConfig(decision_ticks=c3.decision_ticks),
+            "env_overrides": {"odometry_drift": c3.odometry_drift, "noise_std": c3.noise_std,
+                              "reward_probability": c3.reward_probability,
+                              "interaction_failure_probability":
+                                  c3.interaction_failure_probability},
+        }
+        kwargs.update({k: v for k, v in overrides.items() if v is not None})
+        return cls(db, settings, **kwargs)
+
     # -- setup ---------------------------------------------------------------------------------
 
     def _priors(self) -> list[SpawnPrior3D]:
@@ -148,8 +165,15 @@ class Runner3D:
         cpu0, wall0 = time.process_time(), time.perf_counter()
         priors = self._priors()
         port = self._start_server() if self.backend == "reference" else self.port
-        client = BridgeClient(self.host, port, timeout=30.0)
+        client = BridgeClient(self.host, port, timeout=self.settings.unreal_bridge.timeout_seconds,
+                              connect_attempts=self.settings.unreal_bridge.connect_attempts)
         self.client = client
+        try:                                   # connect before any session is opened
+            client.connect()
+        except BaseException:
+            if self.server is not None:
+                self.server.stop()
+            raise
         clock = _SimClock()
         sessions = SessionRepository(self.db, clock=clock)
         runs = RunRepository(self.db, clock=clock)
@@ -174,7 +198,6 @@ class Runner3D:
 
         outcome, reason = "failed", None
         try:
-            client.connect()
             navigation = {"oracle": "navmesh", "hybrid": "navmesh", "visual_nav": "local"}[self.mode]
             telemetry = client.reset_episode(self.map_id, seed=self.seed, episode=self.episode,
                                              width=self.width, height=self.height,
@@ -274,6 +297,9 @@ class Runner3D:
                 "opened_truth": sum(1 for c in present if c["opened"]),
                 "available_names": sorted(c["name"] for c in reachable),
                 "opened_names": sorted(c["name"] for c in present if c["opened"]),
+                "seen_names": sorted(p.name for p in priors
+                                     if isinstance(self.controller, VisualAgent3D)
+                                     and p.location_id in self.controller.world.seen_locations),
                 "location_ids_opened": sorted(names[c["name"]] for c in present
                                               if c["opened"] and c["name"] in names)}
 

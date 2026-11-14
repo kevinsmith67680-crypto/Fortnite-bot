@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import math
 import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -74,9 +75,10 @@ TRANSITIONS_3D: dict[Agent3DState, frozenset[Agent3DState]] = {
     S.INITIALIZING: frozenset({S.OBSERVING}) | _END,
     S.OBSERVING: frozenset({S.SCANNING, S.EXPLORING, S.TARGET_DETECTED, S.PLANNING_ROUTE}) | _END,
     S.SCANNING: frozenset({S.EXPLORING, S.TARGET_DETECTED}) | _END,
-    S.EXPLORING: frozenset({S.TARGET_DETECTED, S.PLANNING_ROUTE, S.SCANNING}) | _END,
+    S.EXPLORING: frozenset({S.TARGET_DETECTED, S.PLANNING_ROUTE, S.SCANNING, S.OBSERVING}) | _END,
     S.TARGET_DETECTED: frozenset({S.PLANNING_ROUTE, S.APPROACHING, S.EXPLORING}) | _END,
-    S.PLANNING_ROUTE: frozenset({S.NAVIGATING, S.APPROACHING, S.EXPLORING, S.SCANNING}) | _END,
+    S.PLANNING_ROUTE: frozenset({S.NAVIGATING, S.APPROACHING, S.EXPLORING, S.SCANNING,
+                                 S.OBSERVING}) | _END,
     S.NAVIGATING: frozenset({S.APPROACHING, S.EXPLORING, S.TARGET_DETECTED, S.SCANNING,
                              S.PLANNING_ROUTE, S.RECOVERING}) | _END,
     S.APPROACHING: frozenset({S.ALIGNING, S.PLANNING_ROUTE, S.RECOVERING, S.EXPLORING}) | _END,
@@ -102,8 +104,10 @@ class Agent3DConfig:
     scan_step_deg: float = 50.0
     scan_half_width_deg: float = 75.0
     approach_switch_m: float = 4.5     # start visual approach within this distance
-    stand_distance_m: float = 1.25     # where to stand from the chest centre
-    arrive_m: float = 1.55
+    stand_distance_m: float = 1.1      # where to stand from the chest centre
+    arrive_margin_m: float = 0.3       # arrived when within stand distance + margin
+    close_pitch_min_deg: float = -32.0 # a spring-arm camera aimed at a chest underfoot would
+                                       # otherwise converge to ~45 degrees looking down
     max_attempts: int = 3
     max_inspections: int = 2
     inspect_range_m: float = 6.0
@@ -169,7 +173,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self.recorder = recorder
         self.world = WorldModel3D(priors, vote_range=self.cfg.vote_range_m)
         self.navigator: NavMeshNavigator | LocalNavigator = (
-            NavMeshNavigator(port) if navigation == "navmesh" else LocalNavigator(port))
+            NavMeshNavigator(port) if navigation == "navmesh"
+            else LocalNavigator(port, floors=tuple(round(p.z, 2) for p in priors)))
         self.metrics = Metrics3D()
         self.tick_rate = int(rules.get("tick_rate", 30))
         self.step_seconds = self.cfg.decision_ticks / self.tick_rate
@@ -206,6 +211,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._last_position: tuple[float, float, float] | None = None
         self._approach_progress = (math.inf, 0.0)
         self._approach_goal: tuple[float, float, float] | None = None
+        self._off_mesh_waits = 0
+        self._approach_side = 0.0
+        self._plan_failures: dict[int, int] = {}
+        self._trail: deque[tuple[float, tuple[float, float, float]]] = deque(maxlen=90)
         self._approach_path: PathFollower | None = None
         self._handlers = {
             S.OBSERVING: self._observe, S.SCANNING: self._scanning, S.EXPLORING: self._explore,
@@ -255,6 +264,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self.metrics.travel_distance += math.hypot(b[0] - a[0], b[1] - a[1])
         self.telemetry = tel
         self.now = tel.sim_time
+        self._trail.append((self.now, tel.odometry.position))
         for event in tel.events:
             if event.get("type") == "chest_opened_notification":
                 self._verify["reward"] += 1
@@ -365,6 +375,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         return self.telemetry.camera.pitch_deg if self.telemetry else 0.0
 
     def _enter(self) -> None:
+        self._approach_progress = (math.inf, self.now)
         self._phase_start = self.now
         self._phase_analyses = 0
         self._settled_since = -1.0
@@ -402,6 +413,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         dx, dy = point[0] - cam.x, point[1] - cam.y
         dz = point[2] + CHEST_HEIGHT / 2 - cam.z
         pitch = math.degrees(math.atan2(dz, max(0.3, math.hypot(dx, dy))))
+        if math.hypot(point[0] - self.position[0], point[1] - self.position[1]) <= 4.5:
+            pitch = max(pitch, self.cfg.close_pitch_min_deg)
         return self._look(yaw, pitch)
 
     def _view_yaw(self, point: tuple[float, float, float]) -> float:
@@ -509,6 +522,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         for _, p in candidates[:4]:
             length = self.navigator.path_length(pos, p.xyz, tolerance=2.5)
             if length is None:
+                if self.navigator.last_status == "start_off_navmesh":
+                    return self._wait_to_land(S.EXPLORING)
+                if isinstance(self.navigator, LocalNavigator) and abs(p.z - pos[2]) <= 0.8:
+                    continue                              # unknown to the local map: try later
                 self._mark_unreachable(p)
                 continue
             score = p.probability / (length / speed + 1.0)
@@ -526,6 +543,25 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self.metrics.scans += 1
         return S.SCANNING
 
+    def _wait_to_land(self, then: Agent3DState) -> Agent3DState:
+        """The agent is momentarily off the navigation mesh (falling, squeezed against
+        geometry): wait briefly and retry instead of declaring goals unreachable."""
+        self._off_mesh_waits += 1
+        if self._off_mesh_waits > 12:
+            self._off_mesh_waits = 0
+            self._maneuver_bearing = self._retrace_bearing()
+            self._maneuver_until = self.now + 0.8
+        self._after_observe = then
+        return self._go(S.OBSERVING)
+
+    def _retrace_bearing(self) -> float:
+        """Direction back along the agent's own recent trail (known to be walkable)."""
+        pos = self.position
+        for t, p in reversed(self._trail):
+            if self.now - t >= 1.2 and math.dist(p[:2], pos[:2]) > 0.6:
+                return bearing_deg(p[0] - pos[0], p[1] - pos[1])
+        return (self._cam_yaw + 180.0) % 360.0
+
     def _mark_unreachable(self, prior: SpawnPrior3D) -> None:
         if prior.location_id in self._unreachable_keys:
             return
@@ -542,6 +578,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         track = min(targets, key=lambda t: (math.dist(pos, t.xyz), t.track_id))
         self.goal = Goal3D("chest", track.xyz, track.location_id, track.track_id)
         self.metrics.targets_selected += 1
+        self._approach_side = 0.0
         self._approach_stand = self.cfg.stand_distance_m
         self._approach_goal = None
         self._approach_path = None
@@ -557,13 +594,28 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             return S.EXPLORING
         tolerance = 1.4 if goal.kind == "chest" else 2.5
         plan = self.navigator.plan(self.position, goal.position, tolerance=tolerance)
+        if plan is None and self.navigator.last_status == "start_off_navmesh":
+            return self._wait_to_land(S.PLANNING_ROUTE)
         if plan is None:
             self.metrics.navigation_failures += 1
             prior = self.world.priors.get(goal.location_id) if goal.location_id else None
             if prior is not None:
-                self._mark_unreachable(prior)
+                # The agent's own map (local mode) is incomplete: a failed plan is weak
+                # evidence. Only a goal on another floor is out of reach for that mode.
+                n = self._plan_failures.get(prior.location_id, 0) + 1
+                self._plan_failures[prior.location_id] = n
+                definitive = isinstance(self.navigator, NavMeshNavigator) \
+                    or self.navigator.last_status == "other_floor" or n >= 3
+                if definitive:
+                    self._mark_unreachable(prior)
+                else:
+                    prior.inspections += 1
             self.goal = None
-            return S.EXPLORING
+            # Go through a timed state so a run of failed plans spends simulated time
+            # instead of chaining instant transitions within one tick.
+            self._after_observe = S.EXPLORING
+            return self._go(S.OBSERVING)
+        self._off_mesh_waits = 0
         self.follower = PathFollower(plan.waypoints, arrive_radius=0.7)
         self.follower.start(self.now)
         return self._go(S.NAVIGATING)
@@ -629,7 +681,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         tx, ty, _ = goal.position
         dist = math.hypot(tx - pos[0], ty - pos[1])
         self._aim_at(goal.position)
-        if dist <= self.cfg.arrive_m:
+        if dist <= self._approach_stand + self.cfg.arrive_margin_m:
             self.metrics.targets_reached += 1
             return self._go(S.ALIGNING)
         if dist < self._approach_progress[0] - 0.15:
@@ -645,6 +697,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         # Stand on the line from the chest towards the agent, at stand distance. If the
         # straight line there is obstructed (bushes, crates), follow a short planned path.
         ux, uy = (pos[0] - tx) / max(dist, 1e-6), (pos[1] - ty) / max(dist, 1e-6)
+        if self._approach_side:                       # retry from another side (occluders)
+            rad = math.radians(self._approach_side)
+            ux, uy = ux * math.cos(rad) - uy * math.sin(rad), ux * math.sin(rad) + uy * math.cos(rad)
         sx, sy = tx + ux * self._approach_stand, ty + uy * self._approach_stand
         stand = (sx, sy, pos[2])
         if self._approach_goal is None or math.dist(self._approach_goal[:2], stand[:2]) > 0.7:
@@ -766,14 +821,19 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self.goal = None
             return S.EXPLORING
         if reason in ("stuck", "approach_blocked", "approach_timeout"):
-            attempt = self._attempts[key]
-            side = 1 if attempt % 2 else -1
-            self._maneuver_bearing = (self._cam_yaw + 180.0 + side * 50.0) % 360.0
+            # Back off along the way we came: unlike a blind side-step it cannot walk
+            # the agent off a staircase or platform edge.
+            self._maneuver_bearing = self._retrace_bearing()
             self._maneuver_until = self.now + 0.7
             self._after_observe = S.PLANNING_ROUTE
             return self._go(S.OBSERVING)
         if reason == "alignment_failed":
+            # Something may block the interaction from this side (a hay bale, a crate):
+            # walk round to another side of the chest.
+            self._approach_side = (100.0, -100.0, 180.0)[(self._attempts[key] - 1) % 3]
             self._approach_stand = self.cfg.stand_distance_m
+            self._approach_goal = None
+            self._approach_path = None
             self._approach_progress = (math.inf, self.now)
             return self._go(S.APPROACHING)
         if interaction:

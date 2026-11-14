@@ -286,10 +286,11 @@ def build_parser() -> argparse.ArgumentParser:
               _cmd_seed_demo)
     sub.add_argument("--map", metavar="MAP_ID",
                      help="map to seed (default: simulation.default_map, or the scenario's map)")
-    sub.add_argument("--scenario", choices=("research_arena", "visual_arena"),
+    sub.add_argument("--scenario", choices=("research_arena", "visual_arena", "research_arena_3d"),
                      default="research_arena",
                      help="research_arena: 35 demo locations (default); visual_arena: the 20-"
-                          "location Phase 3 acceptance arena (map visual_arena_01)")
+                          "location Phase 3 acceptance arena (map visual_arena_01); "
+                          "research_arena_3d: the 35 spawn points of the Phase 4 3D arena")
 
     sub = add("list-chests", "List known chest locations.", _cmd_list_chests)
     sub.add_argument("--map", metavar="MAP_ID", help="only this map (default: all maps)")
@@ -448,6 +449,66 @@ def build_parser() -> argparse.ArgumentParser:
                      help="labelled frames for the detector-method comparison (0 = skip)")
     sub.add_argument("--quiet", action="store_true", help="no progress output")
 
+    # -- Phase 4 -------------------------------------------------------------------
+    sub = add("simulate-3d", "Run the autonomous agent in the 3D research environment (Phase 4).",
+              _cmd_simulate_3d)
+    sub.add_argument("--map", metavar="MAP_ID", help="3D map (default: simulation_3d.default_map)")
+    sub.add_argument("--agent", choices=("visual", "hybrid", "visual-nav", "oracle"),
+                     default="visual",
+                     help="visual/hybrid: vision for chests + NavMesh service (default); "
+                          "visual-nav: vision + local probes only; oracle: exact chest "
+                          "positions (needs a server started in oracle mode)")
+    sub.add_argument("--seed", type=_non_negative_int, metavar="N",
+                     help="episode seed (default: simulation.default_seed)")
+    sub.add_argument("--episode", type=_non_negative_int, default=0, metavar="N")
+    sub.add_argument("--backend", choices=("unreal", "reference"),
+                     help="unreal: connect to a running Unreal research server on --host/--port; "
+                          "reference: start the built-in Python reference arena "
+                          "(default: simulation_3d.backend)")
+    sub.add_argument("--host", help="research server host, loopback only (default: "
+                                    "unreal_bridge.host)")
+    sub.add_argument("--port", type=_positive_int, help="research server port "
+                                                       "(default: unreal_bridge.port)")
+    sub.add_argument("--observation-width", type=_positive_int, metavar="PX")
+    sub.add_argument("--observation-height", type=_positive_int, metavar="PX")
+    sub.add_argument("--max-ticks", type=_positive_int, metavar="N",
+                     help="tick budget (default: simulation_3d.max_ticks; 30 ticks = 1 s)")
+    sub.add_argument("--detector", choices=("color", "template", "hybrid"))
+    sub.add_argument("--graphics-quality", choices=("low", "medium", "high"))
+    sub.add_argument("--evaluate", action="store_true",
+                     help="also score perception against ground truth (reference backend, or an "
+                          "Unreal server started with -ResearchEvaluation)")
+    view = sub.add_mutually_exclusive_group()
+    view.add_argument("--headless-controller", dest="render_debug", action="store_false",
+                      help="no debug window (default). The environment still renders the "
+                           "camera frames the agent observes.")
+    view.add_argument("--render-debug", dest="render_debug", action="store_true",
+                      help="open the Tkinter debug dashboard (camera feed with overlays, map)")
+    sub.set_defaults(render_debug=False)
+
+    sub = add("benchmark-3d", "Oracle vs hybrid visual vs visual-navigation on paired 3D episodes "
+                              "(reference arena).", _cmd_benchmark_3d)
+    sub.add_argument("--map", metavar="MAP_ID")
+    sub.add_argument("--episodes", type=_positive_int, default=50, metavar="N",
+                     help="paired episodes per mode (default: 50)")
+    sub.add_argument("--seed", type=_non_negative_int, metavar="N")
+    sub.add_argument("--modes", default="oracle,hybrid,visual_nav", metavar="LIST",
+                     help="comma-separated from oracle,hybrid,visual_nav")
+    sub.add_argument("--workers", type=_positive_int, default=1, metavar="N",
+                     help="parallel worker processes (episodes are independent)")
+    sub.add_argument("--max-ticks", type=_positive_int, metavar="N")
+    sub.add_argument("--observation-width", type=_positive_int, metavar="PX")
+    sub.add_argument("--observation-height", type=_positive_int, metavar="PX")
+    sub.add_argument("--output-dir", metavar="PATH",
+                     help="results directory (default: benchmark_results/phase4)")
+    sub.add_argument("--quiet", action="store_true", help="no progress output")
+
+    sub = add("export-arena-3d", "Write the 3D arena layout JSON used by the Unreal arena builder.",
+              _cmd_export_arena_3d)
+    sub.add_argument("--output", metavar="PATH",
+                     help="default: unreal/ChestHunterResearch/Content/ResearchData/"
+                          "research_arena_3d.json")
+
     return parser
 
 
@@ -491,7 +552,12 @@ def _cmd_init_db(args: argparse.Namespace, ctx: CommandContext) -> int:
 
 
 def _cmd_seed_demo(args: argparse.Namespace, ctx: CommandContext) -> int:
-    if args.scenario == "visual_arena":
+    if args.scenario == "research_arena_3d":
+        from chest_hunter.scenarios import seed_arena_3d
+
+        result = seed_arena_3d(ctx.db)
+        total = result.total
+    elif args.scenario == "visual_arena":
         from chest_hunter.scenarios import VISUAL_ARENA_CHESTS, VISUAL_ARENA_ID
 
         result = seed_demo_chests(ctx.db, args.map or VISUAL_ARENA_ID,
@@ -844,6 +910,116 @@ def _cmd_benchmark_vision(args: argparse.Namespace, ctx: CommandContext) -> int:
     print("Chests/min uses SIMULATED time; CPU and wall seconds are real time on this machine.")
     print(f"Results written to {output}/navigation_benchmark.csv, vision_benchmark.csv, "
           "summary.json")
+    return EXIT_OK
+
+
+def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
+    from chest_hunter.agent.runner_3d import Runner3D
+
+    settings = ctx.settings
+    c3 = settings.simulation_3d
+    mode = {"visual": "hybrid", "hybrid": "hybrid", "visual-nav": "visual_nav",
+            "oracle": "oracle"}[args.agent]
+    seed = settings.simulation.default_seed if args.seed is None else args.seed
+    backend = args.backend or c3.backend
+    on_decision = None
+    dashboard = None
+    if args.render_debug:
+        from chest_hunter.agent.dashboard_3d import Dashboard3D
+
+        dashboard = Dashboard3D()
+        on_decision = dashboard.update
+    runner = Runner3D.from_settings(
+        ctx.db, settings, mode=mode, seed=seed, episode=args.episode, backend=backend,
+        host=args.host, port=args.port, width=args.observation_width,
+        height=args.observation_height, max_ticks=args.max_ticks, detector=args.detector,
+        graphics_quality=args.graphics_quality, map_id=args.map,
+        evaluate=args.evaluate or mode == "oracle" and backend == "reference",
+        on_decision=on_decision)
+    where = ("the built-in Python reference arena (NOT Unreal Engine)" if backend == "reference"
+             else f"the Unreal research server at {runner.host}:{runner.port}")
+    print(f"3D episode on {runner.map_id} using {where}: {mode} agent, seed {seed}, episode "
+          f"{args.episode}, {runner.width}x{runner.height} observations, max {runner.max_ticks} "
+          f"ticks{' (debug dashboard)' if dashboard else ''} ...")
+    try:
+        result = runner.run()
+    finally:
+        if dashboard is not None:
+            dashboard.close()
+    m = result.metrics
+    rows = [
+        ("Outcome", f"{result.outcome} ({result.end_reason})"),
+        ("Simulated time", f"{result.sim_seconds:.1f} s"),
+        ("Chests opened", f"{result.chests_opened} (verified visually; recorded in session "
+                          f"{result.session_id})"),
+        ("Chests opened/minute", "-" if result.chests_per_minute is None
+         else f"{result.chests_per_minute:.2f} (simulated time)"),
+        ("Rewards (fictional)", str(m.rewards)),
+        ("Travel distance", f"{m.travel_distance:.1f} m"),
+        ("Recoveries", f"{m.recoveries} {dict(m.recovery_reasons) or ''}".strip()),
+        ("Navigation failures", str(m.navigation_failures)),
+        ("Unreachable / abandoned", f"{m.unreachable_targets} / {m.abandoned_targets}"),
+        ("Failed interactions", str(m.failed_interactions)),
+        ("Visual analyses", f"{m.analyses} ({m.perception_ms_mean:.2f} ms mean, "
+                            f"{1000 * m.perception_peak:.1f} ms peak)"),
+        ("Bridge round trip", f"{result.bridge_round_trip_ms:.2f} ms mean"),
+        ("CPU / wall time", f"{result.cpu_seconds:.1f} s / {result.wall_seconds:.1f} s"),
+    ]
+    print(format_key_values(rows))
+    if result.truth:
+        t = result.truth
+        print("Ground truth (evaluation only; the visual agent never saw it)")
+        print(format_key_values([
+            ("Chests present / reachable", f"{t.get('present')} / {t.get('available')}"),
+            ("Opened per simulator", f"{t.get('opened_truth')} (agent recorded "
+                                     f"{result.chests_opened})")]))
+    if result.vision:
+        v = result.vision
+        print(format_key_values([
+            ("Detection precision / recall", f"{v['precision']} / {v['recall']}"),
+            ("Distance error median / mean", f"{v['distance_median_abs_error_m']} / "
+                                             f"{v['distance_mean_abs_error_m']} m"),
+            ("Pose error mean / max", f"{v['pose_error_mean_m']} / {v['pose_error_max_m']} m")]))
+    return EXIT_OK if result.outcome in ("completed", "tick_limit") else EXIT_FAILURE
+
+
+def _cmd_benchmark_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
+    from chest_hunter.analytics.benchmark_3d import format_summary_3d, run_benchmark_3d
+
+    settings = ctx.settings
+    c3 = settings.simulation_3d
+    modes = tuple(m.strip().replace("-", "_") for m in args.modes.split(",") if m.strip())
+    seed = settings.simulation.default_seed if args.seed is None else args.seed
+    output = Path(args.output_dir).expanduser().resolve() if args.output_dir else (
+        settings.base_dir / "benchmark_results" / "phase4")
+    print(f"3D benchmark: {args.episodes} paired episode(s) x {', '.join(modes)}, seed {seed}, "
+          f"{args.workers} worker(s), Python reference arena.")
+
+    def progress(message: str) -> None:
+        if not args.quiet:
+            print(message, file=sys.stderr, flush=True)
+
+    summary = run_benchmark_3d(
+        settings, map_id=args.map or c3.default_map, modes=modes, episodes=args.episodes,
+        seed=seed, max_ticks=args.max_ticks or c3.max_ticks,
+        width=args.observation_width or c3.observation_width,
+        height=args.observation_height or c3.observation_height, workers=args.workers,
+        output_dir=output, progress=progress)
+    print(format_summary_3d(summary))
+    print(f"Results written to {output}/navigation_3d.csv, vision_3d.csv, summary_3d.json")
+    return EXIT_OK
+
+
+def _cmd_export_arena_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
+    from chest_hunter.simulation3d.arena import arena_to_json, build_research_arena_3d
+
+    output = Path(args.output).expanduser().resolve() if args.output else (
+        ctx.settings.base_dir / "unreal" / "ChestHunterResearch" / "Content" / "ResearchData"
+        / "research_arena_3d.json")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    arena = build_research_arena_3d()
+    output.write_text(arena_to_json(arena) + "\n", encoding="utf-8")
+    print(f"Wrote {len(arena.boxes)} boxes and {len(arena.spawns)} spawn points to {output}")
     return EXIT_OK
 
 

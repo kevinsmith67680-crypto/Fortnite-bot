@@ -56,20 +56,27 @@ class NavMeshNavigator:
         self.port = port
         self.queries = 0
         self.failures = 0
-        self._cache: dict[tuple[tuple[int, ...], tuple[int, ...]], Plan | None] = {}
+        self.last_status = "ok"
+        self._cache: dict[tuple[tuple[int, ...], tuple[int, ...]], tuple[Plan | None, str]] = {}
 
     def plan(self, start: Point3, goal: Point3, *, tolerance: float = 0.5) -> Plan | None:
+        """A path, or ``None`` with :attr:`last_status` saying why. ``start_off_navmesh``
+        is transient (the agent is mid-air or squeezed against geometry): it is never
+        cached and must not be taken as proof that the goal is unreachable."""
         key = (tuple(round(c * 2) for c in start), tuple(round(c * 4) for c in goal))
         if key in self._cache:
-            return self._cache[key]
+            plan, self.last_status = self._cache[key]
+            return plan
         self.queries += 1
         result = self.port.nav_query(start, goal, goal_tolerance=tolerance)
         plan = Plan(result.waypoints, result.length) if result.found and result.waypoints else None
+        self.last_status = "ok" if plan is not None else result.status
         if plan is None:
             self.failures += 1
-        if len(self._cache) > 256:
-            self._cache.clear()
-        self._cache[key] = plan
+        if self.last_status != "start_off_navmesh":
+            if len(self._cache) > 256:
+                self._cache.clear()
+            self._cache[key] = (plan, self.last_status)
         return plan
 
     def path_length(self, start: Point3, goal: Point3, *, tolerance: float = 1.5) -> float | None:
@@ -100,14 +107,16 @@ class LocalNavigator:
     PROBE_RANGE = 8.0
 
     def __init__(self, port: NavPort, *, bounds: tuple[float, float, float, float]
-                 = (0.0, 0.0, 100.0, 100.0)) -> None:
+                 = (0.0, 0.0, 100.0, 100.0), floors: tuple[float, ...] = (0.0,)) -> None:
         self.port = port
+        self.floors = tuple(sorted(set(floors) | {0.0}))
         self.bounds = bounds
         self.nx = int(math.ceil((bounds[2] - bounds[0]) / self.RES))
         self.ny = int(math.ceil((bounds[3] - bounds[1]) / self.RES))
         self.grids: dict[int, np.ndarray] = {}         # floor bucket -> int8 (-1/0/1)
         self.queries = 0
         self.failures = 0
+        self.last_status = "ok"
         self.probes = 0
         self._last_probe: Point3 | None = None
         self._finder = PathFinder(cache_paths=False)
@@ -156,8 +165,14 @@ class LocalNavigator:
 
     def plan(self, start: Point3, goal: Point3, *, tolerance: float = 0.5) -> Plan | None:
         self.queries += 1
+        self.last_status = "ok"
+        if not self.on_floor(start):
+            self.failures += 1
+            self.last_status = "start_off_navmesh"      # mid-stairs or airborne: transient
+            return None
         if abs(goal[2] - start[2]) > 0.8:
             self.failures += 1
+            self.last_status = "other_floor"
             return None                                 # no stairs knowledge in this mode
         g = self.grid(start[2])
         grid = GridMap(self.nx, self.ny)
@@ -172,12 +187,14 @@ class LocalNavigator:
             gc = self._free_near(grid, gc, tolerance)
             if gc is None:
                 self.failures += 1
+                self.last_status = "goal_off_navmesh"
                 return None
         if grid.is_blocked(*s):
             grid.set_blocked(s[0], s[1], False)
         result = self._finder.find_path(grid, s, gc)
         if not result.found:
             self.failures += 1
+            self.last_status = "unreachable"
             return None
         pts = [(self.bounds[0] + (i + 0.5) * self.RES, self.bounds[1] + (j + 0.5) * self.RES, start[2])
                for i, j in result.path]
@@ -196,8 +213,16 @@ class LocalNavigator:
                         best = (d, c)
         return None if best is None else best[1]
 
+    def on_floor(self, position: Point3) -> bool:
+        """Standing at a known floor height (not on a staircase or in the air)?"""
+        return any(abs(position[2] - f) <= 0.3 for f in self.floors)
+
     def path_length(self, start: Point3, goal: Point3, *, tolerance: float = 1.5) -> float | None:
+        if not self.on_floor(start):
+            self.last_status = "start_off_navmesh"
+            return None
         if abs(goal[2] - start[2]) > 0.8:
+            self.last_status = "other_floor"
             return None
         return math.dist(start[:2], goal[:2]) * 1.3      # cheap estimate; planned on demand
 
