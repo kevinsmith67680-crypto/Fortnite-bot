@@ -1133,6 +1133,17 @@ mode), `vision_3d.csv` and `summary_3d.json`. Before committing, the first 3
 paired episodes were re-run on the final code. They reproduced every
 non-timing field exactly.
 
+**Against the proposed acceptance targets** (reference arena only; Unreal
+not tested):
+
+| Target | Result |
+|---|---|
+| ≥ 90 % of visually detected, reachable chests opened | Hybrid: **90.6 %** pooled (1,000 of 1,104; per-episode mean 90.4 %, 26 of 50 episodes ≥ 90 %, minimum 77.8 %). Counting only openings the agent confirmed and recorded: 84.6 % (934). Visual-nav: 72.6 %, **not met** |
+| No infinite navigation loops | Met: all 150 episodes ended on their own (149 by resolving every spawn point, 1 at the tick limit); a recovery budget bounds every episode |
+| No duplicate successful openings | Met: database constraint plus tests; 0 duplicates and 0 over-reported openings in the benchmark |
+| No access to hidden chest state during visual runs | Met: static audit of the agent's modules plus a full episode against a server with every privileged command disabled (`tests/test_agent_3d.py`) |
+| Stable across repeated seeded episodes | Met: identical results for repeated seeds (test), and a re-run of 3 benchmark episodes on the final code matched every non-timing field |
+
 ### 15.6 Measured performance (reference arena)
 
 Same 4-vCPU Intel Xeon 2.1 GHz machine, no GPU, Python 3.13, three benchmark
