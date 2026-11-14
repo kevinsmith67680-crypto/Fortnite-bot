@@ -352,7 +352,38 @@ The Python agent and the Unreal runtime should be benchmarked separately.
 
 ## 15. Known limitations
 
-@@LIMITATIONS@@
+* **No human demonstrations.** The teleoperation recorder is tested with simulated key
+  presses only. The policy was trained on synthetic demonstrations from the deterministic
+  controller. Behaviour cloning of that expert is bounded by the expert, so the learned
+  policy is not expected to beat it. Its results say nothing about learning from people.
+* **Single-frame behaviour cloning.** The policy has no memory and no route plan. It
+  cannot know where unexplored spawn points are, and it inherits the usual
+  behaviour-cloning problem: small errors lead to states the expert never visited, where it
+  has no training data. The yaw rate is predicted worse than a constant.
+* **Hybrid control is narrow by design.** The model only steers the local approach and
+  alignment. Everything else stays deterministic.
+* **INT8 quantisation** changes the continuous outputs (mean 0.037) and is slower than FP32
+  for this 28k-parameter model. It is optional, not the default.
+* **Spawn estimation helps only when the priors are wrong.** On the hand-made arena the
+  configured probabilities are the truth, and six training sessions move the estimates
+  *away* from it (MAE 0.097). On procedural maps with an uninformative prior, two sessions
+  per map reduced the error from 0.202 to 0.168.
+* **History in the arena benchmark is static.** The adaptive strategies read the
+  training-time history (6 episodes, seed 1000). They do not update it between the 100
+  benchmark episodes, because those run in parallel. Online adaptation is measured in the
+  generalisation benchmark.
+* **Credited by notification.** With smart recovery, an opening the agent was notified
+  about but could not see is credited after two look-backs. Such openings are counted
+  separately (`credited_by_notification`), and the benchmark checks every recorded opening
+  against ground truth.
+* **Procedural maps** have single-storey buildings, with elevation coming from plateaus. True
+  spawn probabilities are independent uniform draws, so there is no spatial correlation
+  for the planner to exploit.
+* **Unreal** was not available. The C++ additions are not compiled, teleoperation against
+  Unreal is untested, and exact replay there would need deterministic engine stepping.
+* **Training in NumPy** is practical only for small models like this one. A larger model
+  would need a framework (PyTorch or similar) and probably a GPU.
+@@P5_RESULT_LIMITATIONS@@
 
 ## 16. Future improvements
 

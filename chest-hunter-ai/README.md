@@ -1350,7 +1350,38 @@ from the `learning` configuration section (`deterministic`).
 
 ### 16.6 Phase 5 limitations
 
-@@P5_LIMITATIONS@@
+* **No human demonstrations.** The teleoperation recorder is tested with simulated key
+  presses only. The policy was trained on synthetic demonstrations from the deterministic
+  controller. Behaviour cloning of that expert is bounded by the expert, so the learned
+  policy is not expected to beat it. Its results say nothing about learning from people.
+* **Single-frame behaviour cloning.** The policy has no memory and no route plan. It
+  cannot know where unexplored spawn points are, and it inherits the usual
+  behaviour-cloning problem: small errors lead to states the expert never visited, where it
+  has no training data. The yaw rate is predicted worse than a constant.
+* **Hybrid control is narrow by design.** The model only steers the local approach and
+  alignment. Everything else stays deterministic.
+* **INT8 quantisation** changes the continuous outputs (mean 0.037) and is slower than FP32
+  for this 28k-parameter model. It is optional, not the default.
+* **Spawn estimation helps only when the priors are wrong.** On the hand-made arena the
+  configured probabilities are the truth, and six training sessions move the estimates
+  *away* from it (MAE 0.097). On procedural maps with an uninformative prior, two sessions
+  per map reduced the error from 0.202 to 0.168.
+* **History in the arena benchmark is static.** The adaptive strategies read the
+  training-time history (6 episodes, seed 1000). They do not update it between the 100
+  benchmark episodes, because those run in parallel. Online adaptation is measured in the
+  generalisation benchmark.
+* **Credited by notification.** With smart recovery, an opening the agent was notified
+  about but could not see is credited after two look-backs. Such openings are counted
+  separately (`credited_by_notification`), and the benchmark checks every recorded opening
+  against ground truth.
+* **Procedural maps** have single-storey buildings, with elevation coming from plateaus. True
+  spawn probabilities are independent uniform draws, so there is no spatial correlation
+  for the planner to exploit.
+* **Unreal** was not available. The C++ additions are not compiled, teleoperation against
+  Unreal is untested, and exact replay there would need deterministic engine stepping.
+* **Training in NumPy** is practical only for small models like this one. A larger model
+  would need a framework (PyTorch or similar) and probably a GPU.
+@@P5_RESULT_LIMITATIONS@@
 
 ## 17. Running the tests
 
@@ -1360,7 +1391,21 @@ xvfb-run -a python -m unittest discover -s tests       # including the GUI tests
 python -m pip install onnx onnxruntime                 # optional: enables the ONNX export tests
 ```
 
-* **Coverage.** @@TEST_COVERAGE@@ All tests are
+* **Coverage.** 540 tests:
+  * Phase 1: 127; Phase 2: 109; Phase 3: 80.
+  * Phase 4: 143. That is 141 test methods holding all 194 original cases (parametrised
+    cases became sub-tests), plus 2 database migration tests.
+  * Phase 5: 81. They cover:
+    * the recorder and exact replay, and the dataset pipeline;
+    * a numerical gradient check, training, and ONNX FP32/INT8 parity;
+    * the policy selector's safety layer;
+    * the Bayesian estimator, route memory, planner and recovery classes;
+    * procedural maps and episodes on unseen maps;
+    * CLI, configuration and migration 4;
+    * teleoperation and the dashboard under Xvfb;
+    * the end-to-end acceptance workflow.
+
+  All tests are
   `unittest` test cases. The Phase 4 tests were first written for pytest and converted
   in Phase 5 without dropping any case; pytest can still run the whole suite.
   Earlier tests still pass unchanged, except two config tests whose example
@@ -1593,3 +1638,10 @@ Phase 3:
 12. **Phase 4: learned detector on Unreal frames.** Once Unreal runs, collect
     labelled frames through `-ResearchEvaluation` and compare a small learned
     detector with the HSV/template pipeline.
+13. **Phase 5: real human demonstrations.** Record them with the teleoperation
+    window and compare a policy trained on human data with the expert-trained one.
+14. **Phase 5: DAgger-style training.** Run the learned policy, let the deterministic
+    expert label the states it visits, and retrain. This attacks the compounding errors of
+    single-frame behaviour cloning.
+15. **Phase 5: memory in the policy.** Frame stacking or a small recurrent layer, so the
+    policy can remember targets that leave the view.
