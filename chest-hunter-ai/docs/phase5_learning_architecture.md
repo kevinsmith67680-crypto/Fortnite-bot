@@ -507,7 +507,99 @@ The deterministic and deterministic_adaptive strategies do not use the selector.
 100 episodes each were **identical in both runs** (every non-timing column of every row),
 so the fixes did not change the baseline.
 
-@@GEN_RESULTS@@
+### 13.3 Generalisation: familiar vs unseen maps
+
+```bash
+python -m chest_hunter benchmark-generalization --familiar 4 --unseen 4 --episodes 6 --workers 4 \
+    --model training/checkpoints/bc_synthetic_v1 --experience-db training/experience.db \
+    --output-dir benchmark_results/phase5/generalization
+```
+
+**Familiar maps:** `proc_train_000`–`003`.
+
+* The demonstrations include 2 episodes on each (seed 1000), so their frames were in the
+  training data, some in the validation and test episodes.
+* The experience database holds 2 completed sessions per map.
+
+**Unseen maps:** `proc_test_000`–`003`, generated from the test seed range.
+
+* No trained component saw their layouts, obstacles, chest locations, lighting, chest
+  appearance or start poses.
+* There is no history for them.
+
+**Episodes:**
+
+* Seed 5000, never used for training, with 6 episodes per map.
+* Each (strategy, map) pair plays its episodes in sequence, in one in-memory copy of the
+  experience database, so hybrid_adaptive learns from its own earlier episodes on that map.
+* Episodes are paired across strategies by (map, episode).
+* All 192 episodes completed with no errors: 1,154 s wall for the familiar group and
+  1,084 s for the unseen group.
+
+| Strategy | Familiar: mean [95 % CI] | Unseen: mean [95 % CI] | Unseen − familiar, Welch [95 % CI] | Paired Δ vs deterministic, familiar [95 % CI] | Paired Δ vs deterministic, unseen [95 % CI] |
+|---|---|---|---|---|---|
+| deterministic | **3.673** [3.292, 4.054] | **3.422** [2.964, 3.880] | −0.251 [−0.832, +0.329] (−6.8 %) | baseline | baseline |
+| learned | 0.646 [0.566, 0.726] | 0.671 [0.578, 0.764] | +0.025 [−0.094, +0.144] (+3.9 %) | −3.027 [−3.386, −2.668] (−82.4 %), 0 / 24 better | −2.751 [−3.135, −2.367] (−80.4 %), 0 / 24 better |
+| hybrid | 3.063 [2.781, 3.345] | 2.686 [2.409, 2.963] | −0.377 [−0.762, +0.008] (−12.3 %) | −0.610 [−0.884, −0.335] (−16.6 %), 5 / 24 better | −0.736 [−1.025, −0.446] (−21.5 %), 4 / 24 better |
+| hybrid_adaptive | 3.102 [2.821, 3.384] | 2.626 [2.342, 2.910] | −0.476 [−0.866, −0.087] (−15.4 %) | −0.570 [−0.835, −0.306] (−15.5 %), 4 / 24 better | −0.796 [−1.111, −0.480] (−23.2 %), 4 / 24 better |
+
+Chests actually opened per simulated minute. The familiar and unseen groups use different
+maps, so their difference is unpaired.
+
+Further measurements (means per episode):
+
+| Group | Strategy | Agent-counted /min | Under- / over-counted | % of available opened | Chests found | Navigation success | Travel / chest | Simulated s | CPU s | Peak RSS |
+|---|---|---|---|---|---|---|---|---|---|---|
+| familiar | deterministic | 3.607 | 4 / 0 | 78.3 % | 92.4 % | 0.937 | 57.1 m | 144.3 | 17.0 | 170 MiB |
+| familiar | learned | 0.646 | 0 / 0 | 59.0 % | 83.8 % | 0.780 | 174.7 m | 600.0 | 85.7 | 170 MiB |
+| familiar | hybrid | 3.047 | 1 / 0 | 74.5 % | 93.5 % | 0.956 | 61.7 m | 162.0 | 20.0 | 178 MiB |
+| familiar | hybrid_adaptive | 3.102 | 0 / 0 | 82.2 % | 93.2 % | 0.965 | 60.9 m | 177.5 | 21.5 | 171 MiB |
+| unseen | deterministic | 3.241 | 11 / 0 | 75.8 % | 83.4 % | 0.972 | 61.7 m | 131.1 | 15.2 | 192 MiB |
+| unseen | learned | 0.671 | 0 / 0 | 68.8 % | 84.1 % | 0.829 | 164.3 m | 600.0 | 83.4 | 168 MiB |
+| unseen | hybrid | 2.565 | 7 / 0 | 67.1 % | 82.5 % | 0.992 | 75.3 m | 145.9 | 17.6 | 202 MiB |
+| unseen | hybrid_adaptive | 2.626 | 0 / 0 | 72.0 % | 88.3 % | 0.937 | 73.4 m | 160.9 | 18.7 | 195 MiB |
+
+Under- and over-counted values are totals over 24 episodes. The learned policy reached
+the 600 s limit in all 48 of its episodes, using 591 and 598 stuck handovers of the 600
+allowed.
+
+Throughput by position in the episode sequence (mean over the 4 maps), with the number
+of chests present:
+
+| Group | Episode | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|---|
+| familiar | chests present | 10.5 | 9.0 | 8.5 | 13.25 | 11.5 | 14.0 |
+| familiar | deterministic | 3.511 | 3.185 | 2.900 | 3.774 | 4.118 | 4.549 |
+| familiar | hybrid | 3.164 | 2.939 | 2.233 | 3.040 | 3.248 | 3.754 |
+| familiar | hybrid_adaptive | 3.214 | 2.805 | 2.484 | 3.065 | 3.172 | 3.875 |
+| familiar | learned | 0.600 | 0.625 | 0.450 | 0.675 | 0.775 | 0.750 |
+| unseen | chests present | 8.5 | 8.25 | 8.0 | 11.75 | 9.75 | 13.0 |
+| unseen | deterministic | 2.712 | 3.083 | 2.728 | 4.109 | 3.338 | 4.560 |
+| unseen | hybrid | 2.111 | 2.147 | 2.452 | 3.146 | 2.815 | 3.445 |
+| unseen | hybrid_adaptive | 2.119 | 2.192 | 2.111 | 3.120 | 2.728 | 3.486 |
+| unseen | learned | 0.500 | 0.600 | 0.525 | 0.850 | 0.675 | 0.875 |
+
+**Interpretation:**
+
+* **The rise over the sequence is not learning.** It follows the number of chests drawn
+  for each episode, and it is just as strong for deterministic, which keeps no history.
+* **The adaptation effect is the paired difference hybrid_adaptive − hybrid**, which
+  differ only in adaptive planning and recovery:
+  * familiar: +0.040 /min [−0.140, +0.219] (+1.3 %);
+  * unseen: −0.060 /min [−0.294, +0.174] (−2.2 %).
+  * Its least-squares slope over the sequence is +0.009 /min per episode
+    [−0.099, +0.117] on familiar maps and +0.002 [−0.138, +0.143] on unseen ones.
+  * So there is no measurable improvement within six episodes.
+* **The generalisation gap:**
+  * deterministic itself loses 6.8 % on the unseen maps, which hold fewer chests.
+  * The learned components' deficit against deterministic grows from −16.6 % to −21.5 %
+    (hybrid) and from −15.5 % to −23.2 % (hybrid_adaptive).
+  * Neither change is significant. The Welch difference-in-differences is −0.126 /min
+    [−0.514, +0.262] and −0.225 [−0.626, +0.176].
+  * The learned policy's deficit is about the same on both groups (−82.4 %, −80.4 %).
+  * A gap smaller than about 0.4–0.5 /min cannot be resolved with 24 episodes per group.
+
+@@ABLATION_RESULTS@@
 
 ## 14. Hardware requirements
 

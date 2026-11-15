@@ -1422,7 +1422,61 @@ Per-episode rows, the full summary and the report are in
 
 ### 16.5 Generalisation: familiar vs unseen maps
 
-@@P5_GENERALIZATION@@
+**Setup:**
+
+* **Familiar maps:** `proc_train_000`–`003`. They are in the demonstration data (2
+  episodes each, seed 1000), and the experience database holds 2 completed sessions per map.
+* **Unseen maps:** `proc_test_000`–`003`, generated from a disjoint seed range. Their
+  layouts, obstacles, chest locations, lighting, chest appearance and start poses were
+  never used by any trained component, and there is no history for them.
+* **Episodes:** 6 per map from seed 5000, played in sequence for each (strategy, map) with
+  online adaptation. The adaptive strategy updates its spawn estimates and route memory
+  after every episode.
+* **Outcome:** 24 episodes per strategy and group, 192 in total. All completed with no
+  errors.
+
+Chests actually opened per simulated minute (ground truth):
+
+| Strategy | Familiar maps, mean [95 % CI] | Unseen maps, mean [95 % CI] | Unseen − familiar [95 % CI] | Paired change vs deterministic, familiar | … unseen |
+|---|---|---|---|---|---|
+| deterministic | **3.673** [3.292, 4.054] | **3.422** [2.964, 3.880] | −0.251 [−0.832, +0.329] (−6.8 %) | baseline | baseline |
+| learned | 0.646 [0.566, 0.726] | 0.671 [0.578, 0.764] | +0.025 [−0.094, +0.144] (+3.9 %) | −82.4 % | −80.4 % |
+| hybrid | 3.063 [2.781, 3.345] | 2.686 [2.409, 2.963] | −0.377 [−0.762, +0.008] (−12.3 %) | −16.6 % | −21.5 % |
+| hybrid_adaptive | 3.102 [2.821, 3.384] | 2.626 [2.342, 2.910] | −0.476 [−0.866, −0.087] (−15.4 %) | −15.5 % | −23.2 % |
+
+The "Unseen − familiar" column is unpaired (Welch), because the maps differ. Every paired
+change against deterministic in the last two columns is significant at 95 %.
+
+**What the results show:**
+
+* **The deterministic controller is the best strategy on both groups of maps.**
+* **The unseen maps are harder for every strategy.** They hold fewer chests (9.9 against
+  11.1 per episode), and even the deterministic controller, which learned nothing, drops
+  6.8 % (not significant). The fair test is therefore each strategy's deficit against
+  deterministic on the same maps.
+* **That deficit grows on unseen maps, but not significantly.**
+  * hybrid: from −16.6 % to −21.5 %. Difference-in-differences −0.126 /min
+    [−0.514, +0.262].
+  * hybrid_adaptive: from −15.5 % to −23.2 %. Difference-in-differences −0.225 /min
+    [−0.626, +0.176].
+  * learned: unchanged (−82.4 % and −80.4 %).
+  * With 24 episodes per group, only large generalisation gaps would show up.
+* **No measurable online improvement over six episodes.**
+  * Throughput rises over the sequence for every strategy, including deterministic,
+    which does not adapt: the later episodes simply have more chests (8.5 rising to 14 on
+    the familiar maps).
+  * hybrid_adaptive against hybrid is +1.3 % on familiar and −2.2 % on unseen maps,
+    neither significant.
+  * The paired difference shows no trend over the episode sequence: +0.009 /min per
+    episode [−0.099, +0.117] on familiar maps, +0.002 [−0.138, +0.143] on unseen maps.
+* **The learned policy reached the 600 s limit in all 48 episodes.** The procedural maps
+  are smaller, so it opened a larger share of their chests (59 % and 69 %) than in the
+  arena, but still only 0.65 per minute.
+* **No over-counting.** No episode recorded an opening that did not happen.
+
+@@P5_ABLATION@@
+
+Results: [`benchmark_results/phase5/generalization`](benchmark_results/phase5/generalization).
 
 ### 16.6 Phase 5 limitations
 
