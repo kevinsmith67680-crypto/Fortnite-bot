@@ -22,11 +22,12 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
 from chest_hunter.navigation.astar import PathFinder
+from chest_hunter.runtime.profiler import NULL_PROFILER
 from chest_hunter.simulation.collision import GridMap
 from chest_hunter.unreal_bridge.client import NavResult
 from chest_hunter.vision.perspective import angle_difference_deg, bearing_deg
@@ -59,6 +60,11 @@ class NavMeshNavigator:
         self.failures = 0
         self.last_status = "ok"
         self._cache: dict[tuple[tuple[int, ...], tuple[int, ...]], tuple[Plan | None, str]] = {}
+        self.cache_hits = 0
+        self.profiler: Any = NULL_PROFILER
+
+    def clear_cache(self) -> None:
+        self._cache.clear()
 
     def plan(self, start: Point3, goal: Point3, *, tolerance: float = 0.5) -> Plan | None:
         """A path, or ``None`` with :attr:`last_status` saying why. ``start_off_navmesh``
@@ -66,10 +72,12 @@ class NavMeshNavigator:
         cached and must not be taken as proof that the goal is unreachable."""
         key = (tuple(round(c * 2) for c in start), tuple(round(c * 4) for c in goal))
         if key in self._cache:
+            self.cache_hits += 1
             plan, self.last_status = self._cache[key]
             return plan
         self.queries += 1
-        result = self.port.nav_query(start, goal, goal_tolerance=tolerance)
+        with self.profiler.section("navigation_query"):
+            result = self.port.nav_query(start, goal, goal_tolerance=tolerance)
         plan = Plan(result.waypoints, result.length) if result.found and result.waypoints else None
         self.last_status = "ok" if plan is not None else result.status
         if plan is None:
@@ -110,6 +118,7 @@ class LocalNavigator:
     def __init__(self, port: NavPort, *, bounds: tuple[float, float, float, float]
                  = (0.0, 0.0, 100.0, 100.0), floors: tuple[float, ...] = (0.0,)) -> None:
         self.port = port
+        self.profiler: Any = NULL_PROFILER
         self.floors = tuple(sorted(set(floors) | {0.0}))
         self.bounds = bounds
         self.nx = int(math.ceil((bounds[2] - bounds[0]) / self.RES))

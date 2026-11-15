@@ -71,7 +71,7 @@ class SchemaMigration(unittest.TestCase):
             db.close()
             db = DatabaseManager(path)
             self.assertEqual(db.initialize(), SCHEMA_VERSION)
-            self.assertEqual(SCHEMA_VERSION, 4)
+            self.assertGreaterEqual(SCHEMA_VERSION, 4)        # Phase 6 added version 5
             tables = {r["name"] for r in db.query_all(
                 "SELECT name FROM sqlite_master WHERE type = 'table'")}
             self.assertTrue({"spawn_estimates", "route_memory"} <= tables)

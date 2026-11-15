@@ -9,6 +9,12 @@ Tick model: instant states may chain within one tick; *timed* states
 advance the simulation for the whole tick, so at most one timed handler runs
 per tick. A cap on transitions per tick turns any accidental cycle into a
 clean FAILED outcome instead of an infinite loop.
+
+Invalid transitions raise by default (a programming error in a controller). With
+``reject_invalid = True`` (Phase 6, when a supervisor watches the agent) an invalid
+transition is refused instead: the state stays as it was, the refusal is counted and logged,
+and ``on_invalid_transition`` is told, so the supervisor can redirect or end the episode
+cleanly. ``on_transition`` sees every accepted transition, including instant ones.
 """
 
 from __future__ import annotations
@@ -66,6 +72,10 @@ class StateMachine(Generic[S]):
         self.recovery_reason: str | None = None
         self.outcome: str | None = None
         self.end_reason: str | None = None
+        self.reject_invalid = False
+        self.rejected_transitions = 0
+        self.on_transition: Callable[[Transition], None] | None = None
+        self.on_invalid_transition: Callable[[StrEnum, StrEnum, str | None], None] | None = None
 
     # -- queries --------------------------------------------------------------------
 
@@ -130,13 +140,23 @@ class StateMachine(Generic[S]):
 
     def _transition(self, target: S, reason: str | None = None) -> None:
         if not self.can_transition(self.state, target):
-            raise RuntimeError(f"Invalid agent transition {self.state} -> {target}")
+            if not self.reject_invalid:
+                raise RuntimeError(f"Invalid agent transition {self.state} -> {target}")
+            self.rejected_transitions += 1
+            logger.warning("rejected invalid transition %s -> %s (%s)", self.state, target,
+                           reason)
+            if self.on_invalid_transition is not None:
+                self.on_invalid_transition(self.state, target, reason)
+            return
         tick = self._tick_source()
-        self.history.append(Transition(tick, self.state, target, reason))
+        record = Transition(tick, self.state, target, reason)
+        self.history.append(record)
         self.transition_counts[target] += 1
         logger.debug("tick %d: %s -> %s%s", tick, self.state, target,
                      f" ({reason})" if reason else "")
         self.state = target
+        if self.on_transition is not None:
+            self.on_transition(record)
         if self.is_terminal(target):
             self._on_terminal()
 

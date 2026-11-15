@@ -257,6 +257,12 @@ class MockUnrealServer:
         assert self._listener is not None, "server not started"
         return int(self._listener.getsockname()[1])
 
+    @property
+    def running(self) -> bool:
+        """The accept loop is alive (Phase 6 endurance runs check it before a reset)."""
+        return self._thread is not None and self._thread.is_alive() \
+            and not self._stopping.is_set()
+
     def start(self) -> MockUnrealServer:
         family = socket.AF_INET6 if ":" in self.host else socket.AF_INET
         listener = socket.socket(family, socket.SOCK_STREAM)

@@ -25,13 +25,14 @@ never propagate into the simulation loop.
 from __future__ import annotations
 
 import math
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass, field
 from typing import Any
 
 from chest_hunter.agent.controller_3d import Agent3DState, VisualAgent3D
 from chest_hunter.learning.learned_policy import LearnedPolicy, PolicyOutput
 from chest_hunter.localization.world_model_3d import PriorStatus3D
+from chest_hunter.runtime.profiler import NULL_PROFILER
 from chest_hunter.unreal_bridge.action_adapter import ActionCommand
 from chest_hunter.unreal_bridge.client import StepResult
 from chest_hunter.unreal_bridge.observation_adapter import Telemetry
@@ -56,6 +57,15 @@ class SafetyLimits:
     recovery_seconds: float = 3.0
     max_recoveries: int = 25
     attribution_radius_m: float = 2.5
+    #: Phase 6 oscillation monitor (0 = off, the Phase 5 behaviour): this many sign changes
+    #: of the learned yaw or strafe command within ``oscillation_window`` learned decisions
+    #: -> the deterministic command is used (hybrid) or the agent takes over (learned).
+    oscillation_window: int = 12
+    oscillation_flips: int = 0
+    oscillation_min_magnitude: float = 0.2
+    #: Phase 6 (0 = off): learned interaction holds that ended without an opening, in a
+    #: row, before the deterministic agent takes over for a while (learned mode).
+    max_failed_holds: int = 0
 
 
 @dataclass(slots=True)
@@ -73,6 +83,8 @@ class SelectorStats:
     interactions_closed_after_attribution: int = 0
     notifications_to_state_machine: int = 0
     stale_interactions_released: int = 0
+    oscillations: int = 0
+    failed_holds: int = 0
     latencies_ms: list[float] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -90,6 +102,7 @@ class SelectorStats:
             "interactions_closed_after_attribution": self.interactions_closed_after_attribution,
             "notifications_to_state_machine": self.notifications_to_state_machine,
             "stale_interactions_released": self.stale_interactions_released,
+            "oscillations": self.oscillations, "failed_holds": self.failed_holds,
             "latency_mean_ms": round(sum(lat) / len(lat), 4) if lat else None,
             "latency_p95_ms": round(lat[int(0.95 * (len(lat) - 1))], 4) if lat else None,
             "latency_max_ms": round(lat[-1], 4) if lat else None,
@@ -119,6 +132,12 @@ class PolicySelector:
         self._hold_started: float | None = None
         self._next_observation = 0.0
         self._fsm_current = True          # False while the learned policy drives
+        #: Phase 6: every policy switch (mode change, model disabled, handovers), bounded.
+        self.switches: deque[dict[str, Any]] = deque(maxlen=200)
+        self.profiler: Any = NULL_PROFILER
+        self._signs: deque[tuple[int, int]] = deque(maxlen=self.limits.oscillation_window)
+        self._hold_opened = False
+        self._failed_hold_streak = 0
         self.set_mode(mode)
 
     # -- mode -------------------------------------------------------------------------------
@@ -135,7 +154,14 @@ class PolicySelector:
             raise ValueError(f"mode '{mode}' needs a learned policy")
         if mode != "learned":
             self._resume_state_machine()
+        if mode != getattr(self, "_mode", None):
+            self._log_switch(getattr(self, "_mode", None), mode, "set_mode")
         self._mode = mode
+
+    def _log_switch(self, source: str | None, target: str, reason: str) -> None:
+        now = self.agent.now if self.agent.telemetry is not None else 0.0
+        self.switches.append({"sim_time": round(now, 3), "from": source, "to": target,
+                              "reason": reason})
 
     @property
     def learned_available(self) -> bool:
@@ -186,6 +212,8 @@ class PolicySelector:
             self.action = self.agent.action
             if state in HYBRID_STATES and not self.agent.is_terminal():
                 out = self._infer("hybrid")
+                if out is not None and self._oscillating(out):
+                    out = None
                 if out is not None:
                     if out.phase_probability("approach", "align") >= self.limits.confidence:
                         learned = self._safe(out, allow_interact=False)
@@ -205,6 +233,9 @@ class PolicySelector:
         if self._in_recovery():
             return self._safe_fallback()
         out = self._infer("learned")
+        if out is not None and self._oscillating(out):
+            self._hand_over("oscillation")
+            out = None
         if out is None:
             return self._safe_fallback()
         self.action = self._safe(out, allow_interact=True)
@@ -222,11 +253,16 @@ class PolicySelector:
         if self.action.interact and self._hold_started is None:
             self._hold_started = self.agent.now
             self.stats.interaction_holds += 1
+            self._hold_opened = False
         elif not self.action.interact:
+            if self._hold_started is not None and not self._hold_opened:
+                self._failed_hold()
             self._hold_started = None
         for event in result.telemetry.events:
             if event.get("type") != "chest_opened_notification":
                 continue
+            self._hold_opened = True
+            self._failed_hold_streak = 0
             # The state machine's own interaction (started in a stuck handover, a model
             # fallback or with the model disabled) produced this step's action?
             own = self._fsm_current and self.agent.state in INTERACTION_STATES
@@ -285,7 +321,8 @@ class PolicySelector:
             return None
         assert self.policy is not None
         try:
-            out = self.policy.predict(obs.frame, self.agent.telemetry)
+            with self.profiler.section("learned_inference"):
+                out = self.policy.predict(obs.frame, self.agent.telemetry)
         except Exception:                                 # never crash the episode
             return self._failure("model_error")
         self.stats.inferences += 1
@@ -302,10 +339,54 @@ class PolicySelector:
         """Count a failed inference; always returns ``None`` (= fall back)."""
         self.stats.fallbacks[reason] += 1
         self._failures += 1
-        if self._failures >= self.limits.max_consecutive_failures:
+        if self._failures >= self.limits.max_consecutive_failures and not self._disabled:
             self._disabled = True
             self.stats.disabled_reason = f"{self._failures} consecutive failures ({reason})"
+            self._log_switch(self._mode, "deterministic", f"model disabled: "
+                             f"{self.stats.disabled_reason}")
         return None
+
+    # -- Phase 6 reliability monitors -------------------------------------------------------------
+
+    def _oscillating(self, out: PolicyOutput) -> bool:
+        """Repeated sign changes of the learned yaw or strafe command (a policy that keeps
+        turning left-right-left makes no progress). Raw output magnitudes are not treated as
+        confidence; only the command pattern is."""
+        lim = self.limits
+        if lim.oscillation_flips <= 0:
+            return False
+
+        def sign(v: float) -> int:
+            return 0 if abs(v) < lim.oscillation_min_magnitude else (1 if v > 0 else -1)
+
+        self._signs.append((sign(out.look_yaw), sign(out.move_right)))
+        if len(self._signs) < lim.oscillation_window:
+            return False
+        flips = 0
+        for axis in (0, 1):
+            seq = [s[axis] for s in self._signs if s[axis] != 0]
+            flips = max(flips, sum(1 for a, b in zip(seq, seq[1:], strict=False) if a != b))
+        if flips >= lim.oscillation_flips:
+            self.stats.oscillations += 1
+            self.stats.fallbacks["oscillation"] += 1
+            self._signs.clear()
+            return True
+        return False
+
+    def _failed_hold(self) -> None:
+        self.stats.failed_holds += 1
+        self._failed_hold_streak += 1
+        if 0 < self.limits.max_failed_holds <= self._failed_hold_streak:
+            self._failed_hold_streak = 0
+            self._hand_over("failed_interactions")
+
+    def _hand_over(self, reason: str) -> None:
+        """Learned mode: the deterministic agent drives for ``recovery_seconds``."""
+        if self._mode != "learned" or self._in_recovery():
+            return
+        self.stats.fallbacks[f"{reason}_handover"] += 1
+        self._recover_until = self.agent.now + self.limits.recovery_seconds
+        self._log_switch("learned", "deterministic", f"handover: {reason}")
 
     def _safe(self, out: PolicyOutput, *, allow_interact: bool) -> ActionCommand:
         lim = self.limits
@@ -351,6 +432,7 @@ class PolicySelector:
             self.stats.fallbacks["stuck_recovery"] += 1
             self._recover_until = now + self.limits.recovery_seconds
             self._anchor = ((pos[0], pos[1]), now)
+            self._log_switch("learned", "deterministic", "handover: stuck")
 
     def _attribute_opening(self, reward: bool) -> bool:
         """The agent's own notification says it opened a chest: credit the nearest unresolved

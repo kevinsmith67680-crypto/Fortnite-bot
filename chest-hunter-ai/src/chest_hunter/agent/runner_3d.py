@@ -73,6 +73,9 @@ class Result3D:
     wall_seconds: float = 0.0
     bridge_round_trip_ms: float = 0.0
     backend: str = "reference"
+    #: Phase 6: supervisor summary (None when no supervisor watched the episode).
+    supervisor: dict[str, Any] | None = None
+    communication_failure: str | None = None
 
 
 class _SimClock:
@@ -104,7 +107,9 @@ class Runner3D:
                  on_decision: Any = None, demo_recorder: Any = None, demo_episode_id: int = 0,
                  policy: str = "deterministic", learned_policy: Any = None,
                  planner: Any = None, policy_options: dict[str, Any] | None = None,
-                 collect_truth: bool = False) -> None:
+                 collect_truth: bool = False, supervisor: Any = None, profiler: Any = None,
+                 client: BridgeClient | None = None,
+                 partition: dict[str, Any] | None = None) -> None:
         mode = mode.replace("-", "_")
         if mode not in MODES_3D:
             raise ValidationError(f"mode must be one of {', '.join(MODES_3D)}; got {mode!r}")
@@ -138,6 +143,17 @@ class Runner3D:
         #: Ground truth at the end of the episode only (runner-side, privileged channel; no
         #: per-frame labels). The policy's AgentPort cannot request it in any case.
         self.collect_truth = collect_truth
+        #: Phase 6 reliability supervisor (runtime.supervisor.SupervisorConfig or Supervisor).
+        self.supervisor_config = supervisor
+        self.supervisor: Any = None
+        #: Phase 6 component profiler (runtime.profiler.Profiler); None = not profiled.
+        self.profiler = profiler
+        #: Phase 6: a connected client to reuse (endurance runs keep one research server and
+        #: one connection for many episodes); the runner then neither starts a server nor
+        #: closes the connection.
+        self.external_client = client
+        #: Phase 6 experience partition, stored with the run (runtime.configurations).
+        self.partition = partition
         self.selector: Any = None
         self.controller: Any = None
         self.evaluator: Evaluator3D | None = None
@@ -192,18 +208,29 @@ class Runner3D:
     # -- episode -------------------------------------------------------------------------------
 
     def run(self) -> Result3D:
+        from chest_hunter.runtime.profiler import NULL_PROFILER
+        from chest_hunter.unreal_bridge.client import BridgeError
+
         cpu0, wall0 = time.process_time(), time.perf_counter()
+        prof = self.profiler or NULL_PROFILER
         priors = self._priors()
-        port = self._start_server() if self.backend == "reference" else self.port
-        client = BridgeClient(self.host, port, timeout=self.settings.unreal_bridge.timeout_seconds,
-                              connect_attempts=self.settings.unreal_bridge.connect_attempts)
+        if self.external_client is not None:
+            client = self.external_client
+            if not client.connected:
+                client.connect()
+        else:
+            port = self._start_server() if self.backend == "reference" else self.port
+            client = BridgeClient(self.host, port,
+                                  timeout=self.settings.unreal_bridge.timeout_seconds,
+                                  connect_attempts=self.settings.unreal_bridge.connect_attempts)
+            try:                                   # connect before any session is opened
+                client.connect()
+            except BaseException:
+                if self.server is not None:
+                    self.server.stop()
+                raise
         self.client = client
-        try:                                   # connect before any session is opened
-            client.connect()
-        except BaseException:
-            if self.server is not None:
-                self.server.stop()
-            raise
+        comm_failure: str | None = None
         clock = _SimClock()
         sessions = SessionRepository(self.db, clock=clock)
         runs = RunRepository(self.db, clock=clock)
@@ -219,16 +246,19 @@ class Runner3D:
                             "decision_ticks": self.config.decision_ticks,
                             "layout_hash": _layout_hash(self.map_id), "policy": self.policy,
                             "model_version": getattr(self.learned_policy, "version", None),
-                            "adaptive_planning": self.planner is not None})
+                            "adaptive_planning": self.planner is not None,
+                            **({"partition": self.partition} if self.partition else {}),
+                            **({"supervisor": True} if self.supervisor_config else {})})
         recorder = ObservationRecorder(self.db, sessions, session.id,
                                        batch_size=self.settings.agent.observation_batch_size)
 
         def record(location_id: int, *, present: bool, opened: bool, seconds: float,
                    reward: bool | None, sim_time: float) -> None:
-            recorder.record(location_id, present=present, opened=opened,
-                            interaction_seconds=round(seconds, 4),
-                            observed_at=clock.base + timedelta(seconds=sim_time),
-                            reward_received=reward)
+            with prof.section("database_persistence"):
+                recorder.record(location_id, present=present, opened=opened,
+                                interaction_seconds=round(seconds, 4),
+                                observed_at=clock.base + timedelta(seconds=sim_time),
+                                reward_received=reward)
 
         outcome, reason = "failed", None
         try:
@@ -267,6 +297,19 @@ class Runner3D:
                     intr = CameraIntrinsics(self.width, self.height, self.fov)
                     self.evaluator = Evaluator3D(intr.fx, intr.fy)
             self.controller = controller
+            if self.profiler is not None and self.mode != "oracle":
+                visual.set_profiler(self.profiler)
+                if self.selector is not None:
+                    self.selector.profiler = self.profiler
+            supervisor = None
+            if self.supervisor_config is not None and self.mode != "oracle":
+                from chest_hunter.runtime.supervisor import Supervisor
+
+                supervisor = self.supervisor_config if isinstance(
+                    self.supervisor_config, Supervisor) else Supervisor(
+                    self.supervisor_config, episode=self.episode)
+                supervisor.attach(controller)
+                self.supervisor = supervisor
             controller.initialize(telemetry)
             if self.demo_recorder is not None:
                 self.demo_recorder.start(
@@ -282,17 +325,38 @@ class Runner3D:
             ticks = 0
             last_obs = None                      # the frame the controller acts on, if fresh
             while not controller.is_terminal():
-                controller.tick()
+                if supervisor is not None:
+                    supervisor.before_tick()
+                with prof.section("action_generation"):
+                    controller.tick()
                 if controller.is_terminal():
                     break
+                if supervisor is not None:
+                    with prof.section("supervision"):
+                        supervisor.validate_action()
                 observe = controller.wants_observation()
                 action = controller.action.to_dict()
                 action_time = clock.time
                 phase = phase_of(getattr(agent, "state", None))
-                result = client.step(action, ticks=self.config.decision_ticks, observe=observe)
+                try:
+                    with prof.section("simulator_step"):
+                        result = client.step(action, ticks=self.config.decision_ticks,
+                                             observe=observe)
+                except BridgeError as exc:
+                    if supervisor is None:
+                        raise
+                    comm_failure = f"{type(exc).__name__}: {exc}"
+                    supervisor.communication_failure(exc)
+                    break
+                if supervisor is not None:
+                    result = supervisor.filter_step(result, observe=observe, width=self.width,
+                                                    height=self.height)
                 ticks = result.telemetry.tick
                 clock.time = result.telemetry.sim_time
                 controller.on_step(result)
+                if supervisor is not None:
+                    with prof.section("supervision"):
+                        supervisor.after_step(result)
                 if self.demo_recorder is not None:
                     self.demo_recorder.record_step(
                         action=action, ticks=self.config.decision_ticks, action_time=action_time,
@@ -315,10 +379,11 @@ class Runner3D:
                 self.demo_recorder.stop(outcome={"outcome": outcome, "reason": reason,
                                                  "chests_opened": controller.metrics.chests_opened})
             truth: dict[str, Any] = {}
-            if self.evaluate or self.mode == "oracle" or self.collect_truth:
-                truth = self._truth(client, priors)
-            summary = client.stop_episode(f"{self.mode} agent finished")
-            truth["server_summary"] = summary.get("summary", {})
+            if comm_failure is None:
+                if self.evaluate or self.mode == "oracle" or self.collect_truth:
+                    truth = self._truth(client, priors)
+                summary = client.stop_episode(f"{self.mode} agent finished")
+                truth["server_summary"] = summary.get("summary", {})
         except BaseException as exc:
             outcome, reason = "failed", f"{type(exc).__name__}: {exc}"
             truth = {}
@@ -341,16 +406,19 @@ class Runner3D:
                             unreachable_targets=m.unreachable_targets,
                             abandoned_targets=m.abandoned_targets, rewards=m.rewards,
                             navigation_failures=m.navigation_failures)
-            client.close()
-            if self.server is not None:
-                self.server.stop()
+            if self.external_client is None:
+                client.close()
+                if self.server is not None:
+                    self.server.stop()
         m = self.controller.metrics
         per_min = m.chests_opened / (final_time / 60.0) if final_time > 0 else None
         return Result3D(self.mode, self.seed, self.episode, outcome, reason, session.id, final_time,
                         ticks, m, m.chests_opened, per_min, truth,
                         self.evaluator.summary() if self.evaluator else None,
                         time.process_time() - cpu0, time.perf_counter() - wall0,
-                        1000.0 * client.round_trip_seconds / max(1, client.requests), self.backend)
+                        1000.0 * client.round_trip_seconds / max(1, client.requests), self.backend,
+                        self.supervisor.summary() if self.supervisor is not None else None,
+                        comm_failure)
 
     def _truth(self, client: BridgeClient, priors: list[SpawnPrior3D]) -> dict[str, Any]:
         """Final ground truth via the privileged channel (evaluation only)."""

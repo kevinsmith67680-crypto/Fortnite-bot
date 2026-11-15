@@ -102,5 +102,44 @@
     "spawn_prior_strength": 4.0,
     "exploration_weight": 0.15,
     "cluster_weight": 0.25
+  },
+  "supervisor": {
+    "enabled": true,
+    "mode": "enforce",
+    "max_state_seconds": 30,
+    "max_recovery_attempts": 3,
+    "max_interventions": 30,
+    "loop_detection_window": 12,
+    "loop_repetitions": 3,
+    "max_no_progress_seconds": 90,
+    "stationary_seconds": 6,
+    "max_goal_plans": 8,
+    "max_interaction_failures": 3,
+    "max_invalid_observations": 5,
+    "inference_budget_ms": 20
+  },
+  "planning": {
+    "strategy": "short_horizon",
+    "planning_horizon": 3,
+    "beam_width": 5,
+    "maximum_candidates": 20,
+    "planning_budget_ms": 15,
+    "exploration_weight": 0.15,
+    "recovery_weight": 0.005,
+    "detour_factor": 1.25
+  },
+  "performance": {
+    "adaptive_vision": true,
+    "vision_profile": "efficient",
+    "skip_unchanged_frames": true,
+    "max_tracking_objects": 100,
+    "metrics_interval_seconds": 2
+  },
+  "endurance": {
+    "default_episodes": 100,
+    "max_ticks_per_episode": 100000,
+    "save_checkpoint_every": 10,
+    "max_reset_attempts": 3,
+    "reset_timeout_seconds": 30
   }
 }

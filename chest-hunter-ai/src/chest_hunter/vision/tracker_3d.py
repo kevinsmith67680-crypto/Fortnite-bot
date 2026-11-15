@@ -206,6 +206,15 @@ class Tracker3D:
         if age > self.memory_seconds:
             self._expire(t)
 
+    def discard_stale(self, timestamp: float, older_than: float) -> int:
+        """Expire every track not seen for more than ``older_than`` seconds (Phase 6
+        supervisor: stale tracks are dropped before the agent re-observes). Returns how many
+        were expired."""
+        stale = [t for t in self.tracks if timestamp - t.last_seen > older_than]
+        for t in stale:
+            self._expire(t)
+        return len(stale)
+
     def _expire(self, t: Track3D) -> None:
         t.state = TrackState3D.EXPIRED
         del self._tracks[t.track_id]

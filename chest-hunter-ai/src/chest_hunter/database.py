@@ -283,8 +283,20 @@ _SCHEMA_V4: tuple[str, ...] = (
     """,
 )
 
+# Version 5 (Phase 6): experience partitions. Route statistics depend on the environment
+# version, the agent version and the simulation configuration as well as the layout, so each
+# record carries a partition key ("env=...;agent=...;config=..."; '' for older records,
+# which are used only on request). Additive: existing rows and queries keep working.
+_SCHEMA_V5: tuple[str, ...] = (
+    "ALTER TABLE route_memory ADD COLUMN partition_key TEXT NOT NULL DEFAULT ''",
+    """
+    CREATE INDEX idx_route_memory_partition
+        ON route_memory (map_id, layout_version, partition_key)
+    """,
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
-    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3), (4, _SCHEMA_V4))
+    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3), (4, _SCHEMA_V4), (5, _SCHEMA_V5))
 """Ordered ``(version, statements)`` pairs. Append new versions; never edit old ones."""
 
 SCHEMA_VERSION: int = MIGRATIONS[-1][0]

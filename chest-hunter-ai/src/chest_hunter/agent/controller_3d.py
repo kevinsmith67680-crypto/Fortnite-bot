@@ -40,6 +40,7 @@ from chest_hunter.navigation.navigation_3d import (
     PathFollower,
     ScanPlanner,
 )
+from chest_hunter.runtime.profiler import NULL_PROFILER
 from chest_hunter.unreal_bridge.action_adapter import ActionCommand, look_towards, move_towards
 from chest_hunter.unreal_bridge.client import StepResult
 from chest_hunter.unreal_bridge.observation_adapter import Observation3D, Telemetry
@@ -120,6 +121,36 @@ class Agent3DConfig:
     max_lookbacks: int = 2
     max_rescans: int = 1
     uncertain_sigma_m: float = 1.0
+    #: Phase 6 adaptive computation: request no frame while nothing can have changed (the
+    #: agent stood still and kept its camera still since the last analysed frame), except in
+    #: aligning/interacting/verifying, and at least one frame per ``max_frame_skip_s``.
+    skip_unchanged_frames: bool = False
+    max_frame_skip_s: float = 1.0
+
+
+#: Phase 6 visual-processing profiles: analyses per simulated second while travelling far
+#: from the goal, searching/approaching, aligning-interacting-verifying, and otherwise.
+VISION_PROFILES: dict[str, dict[str, float]] = {
+    "phase5": {"rate_travel": 3.0, "rate_search": 8.0, "rate_verify": 10.0, "rate_idle": 2.0},
+    "efficient": {"rate_travel": 2.0, "rate_search": 6.0, "rate_verify": 10.0,
+                  "rate_idle": 1.0},
+    "dense": {"rate_travel": 5.0, "rate_search": 10.0, "rate_verify": 10.0, "rate_idle": 5.0},
+}
+
+
+def apply_vision_profile(config: Agent3DConfig, profile: str, *,
+                         skip_unchanged: bool | None = None) -> Agent3DConfig:
+    """``config`` with the perception rates of a named profile (see VISION_PROFILES)."""
+    if profile not in VISION_PROFILES:
+        raise ValueError(f"vision profile must be one of {', '.join(VISION_PROFILES)}")
+    from dataclasses import replace
+
+    rates = VISION_PROFILES[profile]
+    out = replace(config, rate_travel=rates["rate_travel"], rate_search=rates["rate_search"],
+                  rate_verify=rates["rate_verify"], rate_idle=rates["rate_idle"])
+    if skip_unchanged is not None:
+        out = replace(out, skip_unchanged_frames=skip_unchanged)
+    return out
 
 
 @dataclass(slots=True)
@@ -154,6 +185,8 @@ class Metrics3D:
     recovery_reasons: dict[str, int] = field(default_factory=dict)
     interaction_attempts: int = 0
     credited_by_notification: int = 0
+    frames_skipped_unchanged: int = 0
+    routes_started: int = 0
     recovery_log: RecoveryLog = field(default_factory=RecoveryLog)
 
     @property
@@ -233,13 +266,26 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._rescans: dict[object, int] = {}
         self._approach_losses: dict[object, int] = {}
         self._uncertain_checks: dict[object, int] = {}
+        #: Phase 6: component profiler (runtime.profiler); the null profiler costs nothing.
+        self.profiler: Any = NULL_PROFILER
+        self._analysed_pose: tuple[float, ...] | None = None
         self._handlers = {
-            S.OBSERVING: self._observe, S.SCANNING: self._scanning, S.EXPLORING: self._explore,
-            S.TARGET_DETECTED: self._target_detected, S.PLANNING_ROUTE: self._plan_route,
+            S.OBSERVING: self._observe, S.SCANNING: self._scanning,
+            S.EXPLORING: lambda: self._profiled("route_selection", self._explore),
+            S.TARGET_DETECTED: lambda: self._profiled("route_selection", self._target_detected),
+            S.PLANNING_ROUTE: self._plan_route,
             S.NAVIGATING: self._navigate, S.APPROACHING: self._approach, S.ALIGNING: self._align,
             S.INTERACTING: self._interact, S.VERIFYING_OPEN: self._verify_open,
             S.RECOVERING: self._recover,
         }
+
+    def set_profiler(self, profiler: Any) -> None:
+        self.profiler = profiler
+        self.navigator.profiler = profiler
+
+    def _profiled(self, name: str, handler: Callable[[], Agent3DState]) -> Agent3DState:
+        with self.profiler.section(name):
+            return handler()
 
     # -- runner interface ----------------------------------------------------------------------
 
@@ -272,7 +318,30 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             rate = self.cfg.rate_search if self._near_goal(10.0) else self.cfg.rate_travel
         else:
             rate = self.cfg.rate_idle
-        return self.now + self.step_seconds - self._last_analysis >= 1.0 / rate - 1e-6
+        due = self.now + self.step_seconds - self._last_analysis >= 1.0 / rate - 1e-6
+        if due and self.cfg.skip_unchanged_frames and self._unchanged_view():
+            self.metrics.frames_skipped_unchanged += 1
+            return False
+        return due
+
+    def _unchanged_view(self) -> bool:
+        """Phase 6: the next frame would show what the last analysed one showed (agent and
+        camera still, no command to move or look, no opening in progress)."""
+        if self._analysed_pose is None or self.telemetry is None \
+                or self.state in (S.ALIGNING, S.INTERACTING, S.VERIFYING_OPEN) \
+                or self.now - self._last_analysis >= self.cfg.max_frame_skip_s \
+                or self._maneuver_until > self.now:
+            return False
+        a = self.action
+        if abs(a.move_forward) + abs(a.move_right) + abs(a.look_yaw) + abs(a.look_pitch) > 1e-6 \
+                or a.jump or a.interact:
+            return False
+        return _pose_close(self._pose_now(), self._analysed_pose)
+
+    def _pose_now(self) -> tuple[float, ...]:
+        assert self.telemetry is not None
+        x, y, z = self.telemetry.odometry.position
+        return (x, y, z, self.telemetry.camera.yaw_deg, self.telemetry.camera.pitch_deg)
 
     def on_step(self, result: StepResult) -> None:
         tel = result.telemetry
@@ -298,11 +367,17 @@ class VisualAgent3D(StateMachine[Agent3DState]):
     def perceive(self, obs: Observation3D) -> None:
         started = time.perf_counter()
         self.obs = obs
-        mask = self.world.self_mask(obs)
-        hsv_classes = segment_classes(_hsv(obs.frame))
-        dets = self.detector.detect(obs.frame, obs.sim_time, exclude=mask,
-                                    camera_pitch_deg=obs.camera.pitch_deg, fy=obs.intrinsics.fy)
-        update = self.world.integrate(obs, dets, hsv_classes, self._clear_line)
+        prof = self.profiler
+        with prof.section("preprocessing"):
+            mask = self.world.self_mask(obs)
+            hsv_classes = segment_classes(_hsv(obs.frame))
+        with prof.section("chest_detection"):
+            # The detector reuses this segmentation (it used to compute the same one again).
+            dets = self.detector.detect(obs.frame, obs.sim_time, exclude=mask,
+                                        camera_pitch_deg=obs.camera.pitch_deg,
+                                        fy=obs.intrinsics.fy, classes=hsv_classes)
+        with prof.section("tracking_localisation"):
+            update = self.world.integrate(obs, dets, hsv_classes, self._clear_line)
         self.classes = hsv_classes
         self.last_detections = dets
         self.last_estimates = update.estimates
@@ -312,8 +387,11 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         if targets - self._known_targets:
             self._new_target = True
         self._known_targets |= targets
-        self.cues = detect_cues(obs.frame, self._target_bbox())
+        with prof.section("interaction_cues"):
+            self.cues = detect_cues(obs.frame, self._target_bbox())
         self._late_verification()
+        if self.telemetry is not None:
+            self._analysed_pose = self._pose_now()
         elapsed = time.perf_counter() - started
         self.metrics.analyses += 1
         self.metrics.detections += len(dets)
@@ -524,6 +602,101 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._enter()
         self._transition(S.EXPLORING, reason)
 
+    # -- Phase 6 supervisor interventions ----------------------------------------------------
+    # Each returns True when it was applicable and applied. They only use transitions of
+    # the table (EXPLORING is reachable from every non-terminal state), never end an
+    # interaction's late verification (an opening already held for may still be confirmed
+    # visually) and never touch simulator state.
+
+    def _drop_goal(self, *, failure: str, status: PriorStatus3D | None) -> None:
+        goal = self.goal
+        if goal is not None:
+            self._route_end(False, failure)
+            if status is not None and goal.location_id is not None:
+                prior = self.world.priors.get(goal.location_id)
+                if prior is not None and not prior.resolved:
+                    prior.status = status
+                    self.metrics.abandoned_targets += 1
+        self.goal = None
+        self.follower = None
+        self._approach_goal = None
+        self._approach_path = None
+        self._verify = {"opened": 0, "closed": 0, "reward": 0}
+        self._hold_started = -1.0
+        self._maneuver_until = -1.0
+
+    def supervisor_replan(self, reason: str) -> bool:
+        """Recalculate the route to the current goal (navigation cache cleared)."""
+        if self.goal is None or self.state not in (S.NAVIGATING, S.APPROACHING):
+            return False
+        self._route_end(False, "path_blocked")
+        self.follower = None
+        self._approach_goal = None
+        self._approach_path = None
+        if isinstance(self.navigator, NavMeshNavigator):
+            self.navigator.clear_cache()
+        self._enter()
+        self._transition(S.PLANNING_ROUTE, f"supervisor: {reason}")
+        return True
+
+    def supervisor_abandon_target(self, reason: str, *, failed: bool = False) -> bool:
+        """Give up the current goal for this episode and select another target."""
+        if self.goal is None or self.is_terminal() or self.state is S.INITIALIZING:
+            return False
+        self._drop_goal(failure="abandoned",
+                        status=PriorStatus3D.FAILED if failed else PriorStatus3D.ABANDONED)
+        self._enter()
+        self._transition(S.EXPLORING, f"supervisor: {reason}")
+        return True
+
+    def supervisor_relocalise(self, reason: str, *, stale_seconds: float = 2.0) -> bool:
+        """Discard stale tracks and re-observe with a full look-around (the goal, if any,
+        is dropped without being abandoned: it may be selected again)."""
+        if self.is_terminal() or self.state is S.INITIALIZING:
+            return False
+        dropped = self.world.tracker.discard_stale(self.now, stale_seconds)
+        self._known_targets = {t.track_id for t in self.world.chest_targets()}
+        self._drop_goal(failure="relocalise", status=None)
+        self._scan = ScanPlanner.full_turn(self._cam_yaw, self.cfg.scan_step_deg)
+        self._scan_pitch = None
+        self._after_observe = S.SCANNING
+        self.metrics.scans += 1
+        self._enter()
+        detail = f"supervisor: {reason} ({dropped} stale track(s) dropped)"
+        if S.OBSERVING not in TRANSITIONS_3D[self.state]:
+            self._transition(S.EXPLORING, detail)
+        self._transition(S.OBSERVING, detail)
+        return True
+
+    def supervisor_unstick(self, reason: str, *, attempt: int = 1) -> bool:
+        """Move a short distance in a direction the agent's own back-off does not use (its
+        retrace bearing turned by 90, 180 or 270 degrees), then re-observe."""
+        if self.is_terminal() or self.state is S.INITIALIZING or self.telemetry is None:
+            return False
+        self._maneuver_bearing = (self._retrace_bearing() + 90.0 * (1 + (attempt - 1) % 3)) \
+            % 360.0
+        self._maneuver_until = self.now + 1.0
+        self.follower = None
+        self._approach_goal = None
+        self._approach_path = None
+        self._after_observe = S.PLANNING_ROUTE if self.goal is not None else S.EXPLORING
+        self._enter()
+        detail = f"supervisor: {reason} (unstick towards {self._maneuver_bearing:.0f} deg)"
+        if S.OBSERVING not in TRANSITIONS_3D[self.state]:
+            self._transition(S.EXPLORING, detail)
+            self._after_observe = S.EXPLORING
+        self._transition(S.OBSERVING, detail)
+        return True
+
+    def supervisor_redirect(self, reason: str) -> bool:
+        """Leave the current state for EXPLORING (goal dropped, not abandoned)."""
+        if self.is_terminal() or self.state is S.INITIALIZING or self.state is S.EXPLORING:
+            return False
+        self._drop_goal(failure="redirect", status=None)
+        self._enter()
+        self._transition(S.EXPLORING, f"supervisor: {reason}")
+        return True
+
     # -- state handlers -------------------------------------------------------------------------
 
     def _observe(self) -> Agent3DState | None:
@@ -704,6 +877,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self._after_observe = S.EXPLORING
             return self._go(S.OBSERVING)
         self._off_mesh_waits = 0
+        self.metrics.routes_started += 1
         self.follower = PathFollower(plan.waypoints, arrive_radius=0.7)
         self.follower.start(self.now)
         if self.planner is not None:
@@ -1059,6 +1233,11 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         if interaction:
             return self._go(S.ALIGNING)
         return S.PLANNING_ROUTE
+
+
+def _pose_close(a: tuple[float, ...], b: tuple[float, ...]) -> bool:
+    return math.dist(a[:3], b[:3]) <= 0.05 and abs(angle_difference_deg(a[3], b[3])) <= 0.5 \
+        and abs(a[4] - b[4]) <= 0.5
 
 
 def _hsv(frame: np.ndarray) -> np.ndarray:

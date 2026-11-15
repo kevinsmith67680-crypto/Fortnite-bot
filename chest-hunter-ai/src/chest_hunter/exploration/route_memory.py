@@ -73,10 +73,16 @@ class RouteMemory:
     """Route statistics for one map and layout version (loaded once per episode)."""
 
     def __init__(self, db: DatabaseManager | None, map_id: str, layout_version: str | None,
-                 *, max_sessions: int = 30) -> None:
+                 *, max_sessions: int = 30, partition_key: str | None = None,
+                 include_legacy: bool = False) -> None:
         self.db = db
         self.map_id = map_id
         self.layout_version = layout_version or ""
+        #: Phase 6 experience partition (environment / agent / configuration). ``None`` reads
+        #: every record of the layout (Phase 5 behaviour); a key reads only that partition,
+        #: plus records without one when ``include_legacy``.
+        self.partition_key = partition_key
+        self.include_legacy = include_legacy
         self.pending: list[RouteAttempt] = []
         self._pairs: dict[tuple[str, str], _Stats] = {}
         self._dest: dict[str, _Stats] = {}
@@ -93,8 +99,10 @@ class RouteMemory:
                    actual_seconds, success, session_id
             FROM route_memory
             WHERE map_id = ? AND layout_version = ? AND invalidated = 0
+              AND (? IS NULL OR partition_key = ? OR (? = 1 AND partition_key = ''))
             ORDER BY id
-            """, (self.map_id, self.layout_version))
+            """, (self.map_id, self.layout_version, self.partition_key, self.partition_key,
+                  int(self.include_legacy)))
         sessions = sorted({r["session_id"] for r in rows if r["session_id"] is not None})
         recent = sessions[-max_sessions:]
         age = {s: len(recent) - 1 - i for i, s in enumerate(recent)}
@@ -180,13 +188,14 @@ class RouteMemory:
                     INSERT INTO route_memory (map_id, layout_version, session_id, start_region,
                         dest_region, chest_location_id, estimated_length, estimated_seconds,
                         actual_seconds, success, failure_kind, recoveries, chest_opened,
-                        created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        created_at, partition_key)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (self.map_id, self.layout_version, session_id, a.start_region,
                           a.dest_region, a.location_id, round(a.estimated_length, 3),
                           round(a.estimated_seconds, 3), round(a.actual_seconds, 3),
                           int(bool(a.success)), a.failure_kind, a.recoveries,
-                          None if a.chest_opened is None else int(a.chest_opened), now))
+                          None if a.chest_opened is None else int(a.chest_opened), now,
+                          self.partition_key or ""))
         self.pending = []
         return len(done)
 

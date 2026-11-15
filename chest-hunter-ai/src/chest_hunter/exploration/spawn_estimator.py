@@ -92,7 +92,8 @@ def information_gain(alpha: float, beta: float) -> tuple[float, float]:
 class SpawnEstimator:
     def __init__(self, db: DatabaseManager, *, prior: str = "configured",
                  prior_strength: float = 4.0, statuses: tuple[str, ...] = ("completed",),
-                 include_unversioned: bool = True) -> None:
+                 include_unversioned: bool = True,
+                 environment_version: str | None = None) -> None:
         if prior not in PRIORS:
             raise ValueError(f"prior must be one of {', '.join(PRIORS)}")
         if prior_strength <= 0:
@@ -102,6 +103,9 @@ class SpawnEstimator:
         self.prior_strength = prior_strength
         self.statuses = statuses
         self.include_unversioned = include_unversioned
+        #: Phase 6 partition: only sessions run in this environment version (sessions
+        #: without one follow ``include_unversioned``). None = no environment filter.
+        self.environment_version = environment_version
 
     def _prior(self, p0: float) -> tuple[float, float]:
         if self.prior == "uniform":
@@ -117,7 +121,8 @@ class SpawnEstimator:
             f"""
             SELECT o.chest_location_id AS loc, o.session_id AS sess,
                    MAX(o.chest_present) AS present,
-                   json_extract(r.parameters_json, '$.layout_hash') AS layout
+                   json_extract(r.parameters_json, '$.layout_hash') AS layout,
+                   json_extract(r.parameters_json, '$.partition.environment_version') AS env
             FROM chest_observations o
             JOIN simulation_sessions s ON s.id = o.session_id
             JOIN chest_locations c ON c.id = o.chest_location_id
@@ -133,6 +138,12 @@ class SpawnEstimator:
                     continue
             elif layout_version is not None and layout != layout_version:
                 continue
+            if self.environment_version is not None:
+                env = row["env"]
+                if env is None and not self.include_unversioned:
+                    continue
+                if env is not None and env != self.environment_version:
+                    continue
             c = counts.setdefault(int(row["loc"]), [0, 0, 0])
             c[0 if row["present"] else 1] += 1
             c[2] += 1

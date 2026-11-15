@@ -228,6 +228,61 @@ class LearningSettings:
 
 
 @dataclass(frozen=True)
+class SupervisorSettings:
+    """Phase 6: reliability supervisor (simulated seconds unless stated otherwise)."""
+
+    enabled: bool = True
+    mode: str = "enforce"
+    max_state_seconds: float = 30.0
+    max_recovery_attempts: int = 3
+    max_interventions: int = 30
+    loop_detection_window: int = 12
+    loop_repetitions: int = 3
+    max_no_progress_seconds: float = 90.0
+    stationary_seconds: float = 6.0
+    max_goal_plans: int = 8
+    max_interaction_failures: int = 3
+    max_invalid_observations: int = 5
+    inference_budget_ms: float = 20.0       # wall clock (infrastructure)
+
+
+@dataclass(frozen=True)
+class PlanningSettings:
+    """Phase 6: chest-search planning."""
+
+    strategy: str = "short_horizon"
+    planning_horizon: int = 3
+    beam_width: int = 5
+    maximum_candidates: int = 20
+    planning_budget_ms: float = 15.0        # wall clock
+    exploration_weight: float = 0.15
+    recovery_weight: float = 0.005
+    detour_factor: float = 1.25
+
+
+@dataclass(frozen=True)
+class PerformanceSettings:
+    """Phase 6: adaptive computation and resource monitoring."""
+
+    adaptive_vision: bool = True
+    vision_profile: str = "efficient"
+    skip_unchanged_frames: bool = True
+    max_tracking_objects: int = 100
+    metrics_interval_seconds: float = 2.0   # wall clock
+
+
+@dataclass(frozen=True)
+class EnduranceSettings:
+    """Phase 6: repeated-episode (endurance) runs."""
+
+    default_episodes: int = 100
+    max_ticks_per_episode: int = 100000
+    save_checkpoint_every: int = 10
+    max_reset_attempts: int = 3
+    reset_timeout_seconds: float = 30.0     # wall clock
+
+
+@dataclass(frozen=True)
 class LoggingSettings:
     level: str
 
@@ -250,6 +305,10 @@ class Settings:
     unreal_bridge: UnrealBridgeSettings = field(default_factory=UnrealBridgeSettings)
     simulation_3d: Simulation3DSettings = field(default_factory=Simulation3DSettings)
     learning: LearningSettings = field(default_factory=LearningSettings)
+    supervisor: SupervisorSettings = field(default_factory=SupervisorSettings)
+    planning: PlanningSettings = field(default_factory=PlanningSettings)
+    performance: PerformanceSettings = field(default_factory=PerformanceSettings)
+    endurance: EnduranceSettings = field(default_factory=EnduranceSettings)
 
     def template_dir(self) -> Path:
         """Absolute directory of the perception templates."""
@@ -482,6 +541,49 @@ _LEARNING_FIELDS: tuple[tuple[str, Any, Parser], ...] = (
     ("cluster_weight", 0.25, _float_range(0.0, 10.0)),
 )
 
+_SUPERVISOR_FIELDS: Final = (
+    ("enabled", True, _boolean),
+    ("mode", "enforce", _choice("enforce", "monitor")),
+    ("max_state_seconds", 30.0, _float_range(1.0, 3600.0)),
+    ("max_recovery_attempts", 3, _int_range(1, 20)),
+    ("max_interventions", 30, _int_range(1, 1000)),
+    ("loop_detection_window", 12, _int_range(4, 200)),
+    ("loop_repetitions", 3, _int_range(2, 50)),
+    ("max_no_progress_seconds", 90.0, _float_range(5.0, 36000.0)),
+    ("stationary_seconds", 6.0, _float_range(1.0, 600.0)),
+    ("max_goal_plans", 8, _int_range(1, 1000)),
+    ("max_interaction_failures", 3, _int_range(1, 100)),
+    ("max_invalid_observations", 5, _int_range(1, 1000)),
+    ("inference_budget_ms", 20.0, _float_range(0.1, 10000.0)),
+)
+
+_PLANNING_FIELDS: Final = (
+    ("strategy", "short_horizon", _choice("greedy", "short_horizon")),
+    ("planning_horizon", 3, _int_range(1, 5)),
+    ("beam_width", 5, _int_range(1, 50)),
+    ("maximum_candidates", 20, _int_range(1, 200)),
+    ("planning_budget_ms", 15.0, _float_range(0.1, 10000.0)),
+    ("exploration_weight", 0.15, _float_range(0.0, 10.0)),
+    ("recovery_weight", 0.005, _float_range(0.0, 10.0)),
+    ("detour_factor", 1.25, _float_range(1.0, 5.0)),
+)
+
+_PERFORMANCE_FIELDS: Final = (
+    ("adaptive_vision", True, _boolean),
+    ("vision_profile", "efficient", _choice("phase5", "efficient", "dense")),
+    ("skip_unchanged_frames", True, _boolean),
+    ("max_tracking_objects", 100, _int_range(1, 10_000)),
+    ("metrics_interval_seconds", 2.0, _float_range(0.1, 3600.0)),
+)
+
+_ENDURANCE_FIELDS: Final = (
+    ("default_episodes", 100, _int_range(1, 1_000_000)),
+    ("max_ticks_per_episode", 100000, _int_range(100, 10_000_000)),
+    ("save_checkpoint_every", 10, _int_range(1, 100_000)),
+    ("max_reset_attempts", 3, _int_range(1, 100)),
+    ("reset_timeout_seconds", 30.0, _float_range(0.5, 3600.0)),
+)
+
 SUPPORTED_FRAME_SIZES: Final = ((320, 180), (480, 270), (640, 360), (800, 450))
 
 FIELD_UNITS: Final[dict[str, str]] = {
@@ -613,6 +715,10 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
     bridge_section = _section(data, "unreal_bridge", required=False)
     sim3d_section = _section(data, "simulation_3d", required=False)
     learning_section = _section(data, "learning", required=False)
+    supervisor_section = _section(data, "supervisor", required=False)
+    planning_section = _section(data, "planning", required=False)
+    performance_section = _section(data, "performance", required=False)
+    endurance_section = _section(data, "endurance", required=False)
 
     db_values = _parse_fields("database", database, (("path", _REQUIRED, lambda n, v: v),))
     db_path = db_values["path"]
@@ -683,6 +789,14 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
         simulation_3d=simulation_3d,
         learning=LearningSettings(**_parse_fields("learning", learning_section,
                                                   _LEARNING_FIELDS)),
+        supervisor=SupervisorSettings(**_parse_fields("supervisor", supervisor_section,
+                                                      _SUPERVISOR_FIELDS)),
+        planning=PlanningSettings(**_parse_fields("planning", planning_section,
+                                                  _PLANNING_FIELDS)),
+        performance=PerformanceSettings(**_parse_fields("performance", performance_section,
+                                                        _PERFORMANCE_FIELDS)),
+        endurance=EnduranceSettings(**_parse_fields("endurance", endurance_section,
+                                                    _ENDURANCE_FIELDS)),
     )
 
 

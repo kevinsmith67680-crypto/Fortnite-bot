@@ -486,8 +486,11 @@ def build_parser() -> argparse.ArgumentParser:
                       help="open the Tkinter debug dashboard (camera feed with overlays, map)")
     sub.set_defaults(render_debug=False)
     from chest_hunter.cli_learning import add_simulate_options, register
+    from chest_hunter.cli_phase6 import add_phase6_simulate_options
+    from chest_hunter.cli_phase6 import register as register_phase6
 
     add_simulate_options(sub)
+    add_phase6_simulate_options(sub)
 
     sub = add("benchmark-3d", "Oracle vs hybrid visual vs visual-navigation on paired 3D episodes "
                               "(reference arena).", _cmd_benchmark_3d)
@@ -513,6 +516,7 @@ def build_parser() -> argparse.ArgumentParser:
                           "research_arena_3d.json")
 
     register(add)                                        # Phase 5 learning commands
+    register_phase6(add)                                 # Phase 6 reliability commands
     return parser
 
 
@@ -936,6 +940,10 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
     from chest_hunter.cli_learning import simulate_extras
 
     extras = simulate_extras(ctx, args, args.map or c3.default_map) if mode != "oracle" else {}
+    if mode != "oracle":
+        from chest_hunter.cli_phase6 import phase6_extras
+
+        extras = phase6_extras(ctx, args, args.map or c3.default_map, extras)
     runner = Runner3D.from_settings(
         ctx.db, settings, mode=mode, seed=seed, episode=args.episode, backend=backend,
         host=args.host, port=args.port, width=args.observation_width,
@@ -951,7 +959,8 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
             if lp is not None and lp.synthetic_training_data else ""
         print(f"Policy: {runner.policy}"
               + (f" (model {lp.version}, {lp.backend}{synthetic})" if lp is not None else "")
-              + ("; adaptive planning" if runner.planner is not None else ""))
+              + (f"; planner {type(runner.planner).__name__}" if runner.planner is not None
+                 else ""))
     print(f"3D episode on {runner.map_id} using {where}: {mode} agent, seed {seed}, episode "
           f"{args.episode}, {runner.width}x{runner.height} observations, max {runner.max_ticks} "
           f"ticks{' (debug dashboard)' if dashboard else ''} ...")
@@ -989,7 +998,24 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
                                           f"{st['fallbacks'] or 'none'}"))
     if m.credited_by_notification or m.recovery_log.attempts:
         rows.append(("Recovery classes", str(m.recovery_log.to_dict())))
+    if m.frames_skipped_unchanged:
+        rows.append(("Frames skipped (unchanged view)", str(m.frames_skipped_unchanged)))
+    if result.supervisor is not None:
+        s = result.supervisor
+        rows.append(("Supervisor", f"{s['interventions_total']} intervention(s) "
+                                   f"{s['interventions'] or ''}; detections "
+                                   f"{s['detections'] or 'none'}"
+                                   + (f"; aborted: {s['aborted']}" if s["aborted"] else "")))
+    if runner.planner is not None and hasattr(runner.planner, "stats"):
+        ps = runner.planner.stats.to_dict()
+        rows.append(("Planner", f"{runner.planner.config.strategy}: {ps['decisions']} "
+                                f"decision(s), {ps['latency_mean_ms']} ms mean"))
     print(format_key_values(rows))
+    if runner.profiler is not None:
+        from chest_hunter.runtime.profiler import format_report
+
+        print("Processing time per component (wall clock; CPU = agent's own thread):")
+        print(format_report(runner.profiler.report()))
     if result.truth:
         t = result.truth
         print("Ground truth (evaluation only; the visual agent never saw it)")

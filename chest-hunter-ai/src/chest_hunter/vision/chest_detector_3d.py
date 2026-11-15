@@ -135,17 +135,20 @@ class ChestDetector3D:
     def detect(self, frame: np.ndarray, timestamp: float, *,
                exclude: tuple[int, int, int, int] | None = None,
                camera_pitch_deg: float | None = None,
-               fy: float | None = None) -> list[Detection3D]:
+               fy: float | None = None, classes: np.ndarray | None = None) -> list[Detection3D]:
         """Detect chests. ``camera_pitch_deg`` and ``fy`` (from the observation) let the
-        hybrid method compare candidates only with views from a similar elevation."""
+        hybrid method compare candidates only with views from a similar elevation.
+        ``classes`` is the frame's colour segmentation (:func:`segment_classes` of the
+        blurred HSV frame) when the caller already computed it; it is not computed twice."""
         started = time.perf_counter()
         if self.method == "template":
             dets = self._detect_template(frame, timestamp, exclude)
         else:
-            # A light blur stabilises hue against sensor noise (shaded gold must not
-            # flicker into the lid's brown range).
-            hsv = cv2.cvtColor(cv2.GaussianBlur(frame, (3, 3), 0), cv2.COLOR_BGR2HSV)
-            classes = segment_classes(hsv)
+            if classes is None:
+                # A light blur stabilises hue against sensor noise (shaded gold must not
+                # flicker into the lid's brown range).
+                hsv = cv2.cvtColor(cv2.GaussianBlur(frame, (3, 3), 0), cv2.COLOR_BGR2HSV)
+                classes = segment_classes(hsv)
             # ``exclude`` (the agent's own body) is not blanked: its colours never fall in
             # the chest classes, and a chest right next to the agent must stay visible.
             # Candidates touching it are only marked partial.
