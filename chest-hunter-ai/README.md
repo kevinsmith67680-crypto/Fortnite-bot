@@ -13,6 +13,7 @@ opened per minute.**
 | 4. 3D agent and Unreal Engine 5 integration | Python side done and tested; **Unreal project prepared but not compiled or run** | Localhost bridge protocol, client and protocol-identical reference server; 3D reference arena (capsule physics, spring-arm camera, perspective renderer, NavMesh-style graph); perspective chest detection, distance estimation, 3D tracking; NavMesh-hybrid and NavMesh-free navigation; 14-state closed-loop controller; UE5 C++ project sources; 50-episode benchmark (section 15) |
 | 5. Imitation learning, adaptive exploration, generalisation | Done on the Python reference arena; **no human demonstrations recorded, Unreal untested** | Demonstration recorder (teleoperation + synthetic scripted), dataset pipeline, NumPy behaviour cloning, ONNX FP32/INT8 export and CPU inference, policy selector with safety layer, Bayesian spawn estimates, route memory, adaptive planner, classified recovery, procedural maps, paired policy and generalisation benchmarks (section 16) |
 | 6. Reliability, planning and optimisation | Done on the Python reference arena; **Unreal untested** | Episode supervisor with state specifications, loop detection and bounded escalation; short-horizon planning; adaptive computation; learned-policy monitors and reliability calibration; partitioned experience; endurance runs with checkpoints; resource monitor and profiler; operations panel; paired benchmark (section 17) |
+| 7. Generalisation, self-improving exploration, deployment readiness | Done on the Python reference arena; **Unreal untested** | Procedural environment families with held-out shift variants, active frontier exploration without spawn points, information-aware camera search, uncertainty thresholds, versioned exploration memory and strategy bandit, failure injection and robustness benchmark, generalisation benchmark, startup checks, pinned runtime, JSON logs (section 18) |
 
 > The simulator is entirely self-contained. The project never talks to a game
 > client, game service or network. It never reads or writes game memory or
@@ -759,7 +760,7 @@ oldest) is evicted.
   steps behind a dead zone, so it only coarsely follows the agent. The
   agent's exact position, heading, chests and walls all come from pixels.
   Estimating the camera pose from images alone (visual odometry or
-  landmarks) is a next step (section 23). Tests check the round trip and
+  landmarks) is a next step (section 24). Tests check the round trip and
   that the transform is not an identity.
 * **Filter.** The pose is predicted from the agent's own velocity commands
   (dead reckoning) and corrected with each visual fix by exponential
@@ -1001,7 +1002,7 @@ What the numbers say:
   * Each one was the Blue House attic/basement pair, 0.28 cells apart: the
     chest is opened, but the spot it was credited to had already been judged
     empty, so the opening is not recorded (reproduced and traced for episode
-    0, and consistent with the limitation in section 22).
+    0, and consistent with the limitation in section 23).
   * Openings were **never over-reported** in any mode or map.
 * **Cost.**
   * Perception averaged 3.2-4.0 ms per analysed frame, at 6-8 analyses per
@@ -1770,7 +1771,110 @@ metrics interval) use wall-clock time.
 
 RESULTS_LIMITATIONS
 
-## 18. Running the tests
+## 18. Phase 7: generalisation, self-improving exploration and deployment readiness
+
+Phase 7 runs the agent on 3D environments it has never seen and does **not** tell it where
+chests can appear. The agent explores frontiers, recognises chests visually and opens them,
+and recovers from injected failures. The Python runtime is packaged so it can be checked and
+reproduced. Everything was measured on the Python reference arena; **Unreal Engine was not
+available**, so the Unreal side of these features is unverified (see
+`docs/phase7_generalization_and_deployment.md`, section 14).
+
+### 18.1 Commands
+
+```bash
+# Deployment checks, then one episode on a held-out procedural map, with no spawn points
+python -m chest_hunter check-runtime
+python -m chest_hunter simulate-3d --agent hybrid --exploration active --map procedural --seed 42 \
+    --backend reference --observation-width 320 --observation-height 180
+
+# The same with an injected failure (robustness test)
+python -m chest_hunter simulate-3d --exploration active --map procedural --seed 42 \
+    --inject-fault localisation_drift --fault-seed 0
+
+# Train the exploration memory (training maps and training seeds only)
+python -m chest_hunter train-exploration --episodes 160 --seed 1 --workers 4
+
+# Benchmarks
+python -m chest_hunter benchmark-generalization --episodes 100 --held-out-maps \
+    --workers 4 --output benchmark_results/phase7
+python -m chest_hunter benchmark-exploration --episodes 20 --workers 4 \
+    --output benchmark_results/phase7/strategies
+python -m chest_hunter benchmark-robustness --episodes 100 --failure-injection \
+    --workers 4 --output benchmark_results/robustness
+python -m chest_hunter acceptance-phase7 --episodes 10 --workers 4
+python -m chest_hunter profile-agent --episodes 20 --map procedural --exploration active \
+    --observation-width 320 --observation-height 180 --max-ticks 6000 \
+    --report benchmark_results/resource_profile.json
+
+# Structured logs
+python -m chest_hunter --log-format json simulate-3d --exploration active --map procedural
+```
+
+* `benchmark-generalization` without `--held-out-maps` keeps its Phase 5 behaviour.
+* `--map procedural` picks the held-out layout `p7_<family>_test_<seed mod 1000>` (family =
+  seed mod 4). Use `--map-category` / `--map-split` to choose others, or give any map id,
+  such as `p7_complex_test_000_unfamiliar`.
+
+### 18.2 What was added
+
+* **Procedural environment families** `open`, `indoor`, `mixed` and `complex`. They have:
+  * deterministic seeds and disjoint train/test seed ranges;
+  * validated starts and navigable regions;
+  * flagged unreachable chests;
+  * a stored generator version.
+  Six shift variants (obstacles, lighting, chest appearance, start, elevation, combined) and
+  the `unfamiliar` acceptance variant are all evaluation-only.
+* **Active exploration** without spawn points:
+  * a coverage map from walkability raycasts and the camera's view wedge;
+  * frontier blocks scored `S = (λg G + λc C) / (T + ε) − λr R` under five strategies;
+  * event-driven and budgeted (20 ms, at most 4 path queries per selection);
+  * information-aware camera sweeps in one direction;
+  * looking at the most promising sector while travelling.
+* **Uncertainty-aware decisions.** Approach / inspect / ignore thresholds on detector score,
+  hits and position sigma; the score is never treated as a probability. Odometry-jump
+  detection with a localisation confidence, and relocalisation by the supervisor.
+* **Memory.**
+  * Bounded episode memory: coverage cells, candidates, tracks.
+  * A persistent, versioned **exploration memory** of category-level statistics, plus a
+    Thompson-sampling **strategy bandit**. It is updated only between training episodes on
+    training maps and is read-only in evaluation.
+* **Robustness.** Ten controlled failure kinds, a robustness benchmark with paired fault-free
+  baselines, a blank-band frame check, and a recovery budget that grows with the chests found.
+* **Deployment.**
+  * `requirements-lock.txt` (verified in fresh Python 3.11 and 3.12 venvs).
+  * `config_version: 7`.
+  * `check-runtime` startup checks with remedies.
+  * `--log-format json`.
+  * Graceful SIGTERM handling.
+  * Model, agent and generator versions in every benchmark row.
+* **Resource report.** `profile-agent --report` measures the Python decision pipeline and the
+  simulator separately.
+* **Dashboard.** A coverage map and frontier target, plus a panel with detection confidence,
+  localisation confidence, world-model uncertainty, recent recovery events, versions, map
+  complexity, chests per minute, latency, memory and the latest generalisation gap.
+
+### 18.3 Configuration
+
+New `exploration` section and `config_version` (both optional; a file without them reads
+as version 0 with these defaults):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `config_version` | 7 | configuration format; newer versions are refused |
+| `exploration.mode` | `spawn_points` | or `active` (no spawn points; Phase 7) |
+| `exploration.strategy` | `memory` | the trained memory's choice per map family, or a fixed strategy |
+| `exploration.memory_path` | `training/exploration_memory_v1.json` | persistent exploration memory (read-only in evaluation) |
+| `exploration.approach_confidence`, `approach_hits`, `inspect_confidence` | 0.55, 2, 0.35 | uncertainty thresholds for discovered chests |
+| `exploration.benchmark_max_ticks` | 6000 | Phase 7 benchmark episode length (200 simulated seconds) |
+| `exploration.benchmark_observation_width`, `_height` | 320, 180 | Phase 7 benchmark resolution |
+
+### 18.4 Results
+
+RESULTS_P7_README
+
+
+## 19. Running the tests
 
 ```bash
 python -m unittest discover -s tests -v                # every phase (standard library only)
@@ -1864,7 +1968,7 @@ The Unreal C++ code is not built by these
 tests (see section 15); `tests/test_unreal_sources.py` compiles only the shared
 SplitMix64/UnitRoll functions with the host C++ compiler.
 
-## 19. Example output
+## 20. Example output
 
 ```text
 $ python -m chest_hunter simulate --map research_arena_01 --strategy weighted --seed 42 --headless
@@ -1900,7 +2004,7 @@ the episode itself takes about 0.05 s. Running
 `simulate --render --strategy weighted --seed 42` gives exactly the same
 result in the GUI: 4,120 ticks, 25 opened, 10.92 chests/min.
 
-## 20. Programmatic use
+## 21. Programmatic use
 
 ```python
 from chest_hunter.agent import SimulationRunner
@@ -1928,7 +2032,7 @@ optionally `evaluate=True` to measure perception against ground truth:
 loops. `runner.env.add_obstacle(...)` changes the map at runtime; cached
 paths are invalidated automatically.
 
-## 21. Troubleshooting
+## 22. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -1954,7 +2058,7 @@ paths are invalidated automatically.
 | `argument --config: ...` with `train-policy` | The training configuration option is `--train-config` (`--config` selects the settings file) |
 | Human demonstrations: `need Tkinter and a display` | Run on a desktop session (or `xvfb-run` for testing) |
 
-## 22. Known limitations
+## 23. Known limitations
 
 * **2D only.** `z` is ignored, so stacked chests share a grid position. They
   are visited one after the other without moving.
@@ -2006,7 +2110,7 @@ Phase 3:
   sprites. There are no textures, shadows, perspective or motion blur, and
   the templates match the rendering exactly.
 
-## 23. Recommended next steps
+## 24. Recommended next steps
 
 1. **Tour optimisation for full sweeps.** For example, nearest-neighbour
    plus 2-opt over the distance oracle, since full-sweep throughput is

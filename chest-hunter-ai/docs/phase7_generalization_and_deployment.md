@@ -270,7 +270,41 @@ discovery rates feed `C`.
 No new neural network was added. Heavyweight reinforcement learning is not justified by
 these results (section 11).
 
-RESULTS_TRAINING
+**Training run** (`train-exploration --episodes 160 --seed 1 --workers 4`).
+
+* Layouts `p7_<family>_train_000..039`, with the 4 families in rotation: 40 episodes per
+  family.
+* 6000 ticks (200 simulated seconds) per episode, 320×180, Phase 6 hybrid policy and
+  supervisor.
+* 857 s of wall clock. No errors.
+* Mean reward 1.54 chests per simulated minute (95 % CI 1.43–1.65).
+
+Posterior mean reward per arm (chests per simulated minute, ± posterior sd; n = training
+episodes):
+
+| Family | nearest_frontier | max_information | chest_prior | cluster | risk_adjusted | Bandit choice |
+|---|---|---|---|---|---|---|
+| open | 1.00 ± 0.40 (3) | **1.89 ± 0.24 (10)** | 1.68 ± 0.27 (8) | 1.81 ± 0.21 (13) | 1.77 ± 0.30 (6) | max_information |
+| indoor | 0.74 ± 0.36 (4) | **1.06 ± 0.21 (13)** | 0.68 ± 0.36 (4) | 1.01 ± 0.27 (8) | 1.01 ± 0.23 (11) | max_information |
+| mixed | 1.51 ± 0.27 (8) | **1.61 ± 0.27 (8)** | 1.51 ± 0.28 (7) | 1.58 ± 0.23 (11) | 1.43 ± 0.30 (6) | max_information |
+| complex | 1.79 ± 0.21 (14) | 1.51 ± 0.30 (6) | 0.95 ± 0.57 (1) | 0.95 ± 0.57 (1) | **1.87 ± 0.18 (18)** | risk_adjusted |
+
+How to read this:
+
+* **The arms are close.** Apart from the clearly weak ones (nearest_frontier on open and
+  indoor maps, chest_prior on indoor maps), the posterior intervals overlap. The bandit's
+  choice is a *best current estimate*, not a demonstrated difference. Section 15 tests it
+  against the fixed strategies on held-out maps.
+* **Learned category statistics.**
+  * Chests per newly seen cell in *elevated* regions: 0.24 (open), 0.04 (indoor),
+    0.09 (mixed), 0.06 (complex).
+  * In enclosed and open regions: 0.004–0.016.
+  * Raised platforms hold far more chests per cell. This feeds `C` for the strategies that
+    use it.
+  * Travel speed 4.8–5.1 m/s; interaction success 0.92–0.96; scan gain 7–19 cells per scan.
+  * Recovery success varies by failure class. It is 0.53–0.94 for blocked paths, 0.6–0.89 for
+    failed interactions, 0.17–0.24 for alignment failures (mostly misdetections that are
+    rightly given up), and 0 for unreachable targets (given up by design).
 
 ## 8. Generalisation test methodology
 
