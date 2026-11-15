@@ -81,7 +81,11 @@ that does and does not prove.
 | F3 | P2 | **The Unreal arena builder ignores `surface_value`.** The appearance shift is only partly reproducible in Unreal. | open (C++ cannot be built here) |
 | F1 | P3 | **Two controller handlers caught every exception silently.** | **fixed** (`BridgeError` only, counted) |
 | F15 | P1 | **Chest-appearance shift defeats detection.** Precision and recall collapse when chest colours leave the trained range (section F, K). | open: needs a perception change (section O) |
-| F16 | P2 | **Opened/unopened chest confusion in single frames.** <<OPENED_CONFUSION>> (section F). | mitigated by F11's look-back; detector unchanged |
+| F16 | P2 | **Opened/unopened chest confusion in single frames.** <<OPENED_CONFUSION>> (section F). | mitigated by F11's look-back and F20; detector unchanged |
+| F17 | P1 for long episodes | **False loop alarms in active exploration.** The frontier → scan → frontier cycle of an exploring agent read as a transition loop: 489 detections and 380 interventions in 100 fault-free 150 s episodes, and a 600 s acceptance episode aborted on the intervention budget. | **fixed**: new coverage clears the loop window. Same 100 episodes after: 152 detections, 143 interventions, unchanged throughput; no acceptance episode aborted |
+| F18 | P2 | **Exact replay not guaranteed.** Two decisions depend on wall-clock time: the 20 ms frontier-selection budget and the hybrid selector's 20 ms inference timeout. One acceptance episode played twice on the same seed gave 10 and 11 chests. | open: needs work-based limits for lock-step research runs (section O) |
+| F19 | P1 (introduced by the F14 fix) | **Phantom openings after a reattribution.** The interaction's own spawn point stayed "unverified" and was credited again when the agent aligned on it and saw the neighbouring opened chest. 1–4 over-reported openings per 40 episodes in every spawn-point configuration. | **fixed**: the 5 affected episodes replay with reported = true |
+| F20 | P1 | **False success on mixed visual evidence.** A failed (injected) interaction was credited on two "opened" looks against two "closed" ones, with no opening notification. 1 in 200 robustness episodes. | **fixed**: vision-only credit needs unanimous looks |
 
 The full log, with reproduction steps, is `benchmark_results/phase8/failures.json` plus
 section N.
