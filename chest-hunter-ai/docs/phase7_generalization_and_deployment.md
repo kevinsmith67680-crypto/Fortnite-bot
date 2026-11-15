@@ -418,7 +418,7 @@ Optimisations in place:
 | reduced debug rendering | headless by default; the dashboard is optional |
 | batched database writes | route statistics flushed once per episode |
 | adaptive perception rate | vision profiles and unchanged-frame skipping (Phase 6) |
-| adaptive image resolution | **not implemented** as per-state switching; the resolution is a deployment setting (benchmarks use 320×180), measured in section 12 |
+| adaptive image resolution | **not implemented** as per-state switching; the resolution is a deployment setting (benchmarks use 320×180), measured below |
 | region-of-interest processing | **not implemented**: the full-frame segmentation also feeds the empty-spawn votes; see section 13 |
 
 RESULTS_PROFILE

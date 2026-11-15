@@ -34,3 +34,11 @@ training/datasets/*/
 training/*.db
 training/*.db-journal
 training/checkpoints/*/policy_best.npz
+
+# Long benchmark runs: row journals, resume checkpoints and working databases.
+# Summaries, reports and per-episode CSVs are committed instead.
+benchmark_results/**/rows.partial.jsonl
+benchmark_results/**/checkpoint.json
+benchmark_results/**/checkpoint.json.bak
+benchmark_results/**/*.db
+benchmark_results/phase8/db_work/

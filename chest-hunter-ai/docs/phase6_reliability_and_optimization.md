@@ -15,7 +15,7 @@ panel and a paired benchmark. The baseline it starts from is recorded in
 | Adaptive computation (vision profiles, unchanged-frame skipping, caches, bounded tracking) | **Verified** (`tests/test_adaptive_compute.py`); benchmarked |
 | Learned-policy monitors and reliability calibration | **Verified** (`tests/test_reliability.py`, `tests/test_phase6_workflow.py`); calibration measured on held-out synthetic demonstrations |
 | Experience partitions and per-episode experience records | **Verified** (schema migrations 5 and 6, filters, summaries) |
-| Endurance runs, checkpoints, resume, interruption, reset failures | **Verified** (`tests/test_endurance.py`); long runs in section 10 |
+| Endurance runs, checkpoints, resume, interruption, reset failures | **Verified** (`tests/test_endurance.py`); long runs in section 12.2 |
 | Resource monitor, profiler, operations panel | **Verified** (the panel under Xvfb) |
 | All of the above against **Unreal Engine** | **Not verified.** Unreal is not installed (audit, section 5). Everything ran on the Python reference arena, which speaks the same bridge protocol. |
 | GPU utilisation, Unreal frame time | **Not measured** (no GPU, no Unreal). The resource monitor reports them as unavailable. |
@@ -110,7 +110,8 @@ Limits:
 * At most `max_interventions` (30) per episode; then the episode is aborted.
 * After an intervention, the same incident is ignored for a 3 s cooldown.
 * The no-progress ladder is the backstop for everything else. That keeps the supervisor from
-  ending episodes the agent would finish on its own; an early version did, see section 12.
+  ending episodes the agent would finish on its own (an early version did). In the benchmark
+  the supervised configuration aborted no episode (section 12.1).
 
 **Monitor mode** (`supervisor.mode = "monitor"`) detects and logs, with the action it would
 have taken, but changes nothing. With the supervisor in monitor mode, Phase 5 benchmark
@@ -371,3 +372,207 @@ Samples are bounded (20,000 per component; seeded reservoir sampling beyond that
 ranks components by total time and gives mean, median, p95, maximum and CPU totals.
 
 Results are in section 12.
+
+## 12. Results
+
+All results come from the **Python reference arena**, not Unreal Engine. CPU and wall
+seconds are real time; throughput is per simulated minute.
+
+### 12.1 Benchmark: five configurations × 100 paired episodes (`benchmark_results/phase6/benchmark/`)
+
+**Run.**
+
+```bash
+python -m chest_hunter benchmark-phase6 --episodes 100 --seed 42 --workers 4 \
+    --model training/checkpoints/bc_synthetic_v1 --experience-db training/experience.db \
+    --output-dir benchmark_results/phase6/benchmark
+```
+
+* `research_arena_3d` at 640×360, spawn points given. An episode ends when every spawn point
+  is resolved, or at 18,000 ticks (600 simulated seconds).
+* Five configurations on the same 100 seeds (paired), 500 episodes, 0 errors. 2 h 13 min of
+  wall clock with 4 workers, on a machine shared with other benchmarks.
+* **Code version.** The run started at commit `d0612c3`, with the Phase 8 fixes F11–F20. The
+  F21 fix was committed while it ran. F21 changes only active exploration, and these
+  configurations never create an explorer (the runner builds one only when exploration is
+  requested). The results therefore hold for the final code.
+
+| Configuration | Chests / min [95 % CI] | Completed | Failed | Reachable opened | Interaction success | Navigation failure rate | Agent CPU s / ep | Process CPU s / ep | Peak RSS (MiB) |
+|---|---|---|---|---|---|---|---|---|---|
+| phase4_deterministic (baseline) | **4.568 [4.474, 4.662]** | 100 | 0 | 85.6 % | 0.999 | 0.005 | 7.3 | 41.4 | 197 |
+| phase5_hybrid | 3.442 [3.334, 3.549] | 99 | 0 | 79.8 % | 0.989 | 0.072 | 11.4 | 54.2 | 197 |
+| phase6_hybrid_supervised | 3.447 [3.351, 3.544] | 100 | 0 | 79.7 % | 0.989 | 0.073 | 11.7 | 54.3 | 198 |
+| phase6_hybrid_planning | 3.368 [3.268, 3.468] | 100 | 0 | 80.1 % | 0.989 | 0.071 | 11.8 | 55.0 | 198 |
+| phase6_hybrid_optimised | 2.797 [2.711, 2.882] | 99 | **1** | 72.6 % | 0.985 | 0.095 | 11.1 | 49.6 | 198 |
+
+The configurations add one component at a time:
+
+* **supervised:** the hybrid plus the reliability supervisor and selector monitors;
+* **planning:** plus short-horizon planning and classified recovery;
+* **optimised:** plus adaptive computation (the `efficient` vision profile and
+  unchanged-frame skipping).
+
+The one `phase5_hybrid` episode not completed reached the 600 s limit; it is not a failure.
+
+**Paired differences, each step against the previous one:**
+
+| Step | Throughput difference [95 % CI] | Better / worse / tied | Agent CPU s per episode |
+|---|---|---|---|
+| hybrid vs deterministic | **−1.127 [−1.241, −1.012]** (−24.7 %) | 1 / 99 / 0 | +4.13 [+3.69, +4.57] |
+| + supervisor | +0.006 [−0.041, +0.053] | 11 / 16 / 73 | +0.28 [−0.09, +0.64] |
+| + short-horizon planning and classified recovery | −0.079 [−0.188, +0.029] | 39 / 61 / 0 | +0.12 [−0.21, +0.45] |
+| + adaptive computation | **−0.572 [−0.703, −0.440]** (−17 %) | 18 / 82 / 0 | **−0.64 [−1.07, −0.20]** |
+
+Other measurements:
+
+| | deterministic | hybrid | supervised | planning | optimised |
+|---|---|---|---|---|---|
+| Over-reported openings (500 episodes in total) | 0 | 0 | 0 | 0 | 0 |
+| Analysed frames per episode | 1,492 | 1,978 | 1,953 | 1,971 | 1,744 (+57 skipped) |
+| Perception ms per analysed frame | 6.07 | 6.23 | 6.12 | 6.16 | 6.28 |
+| Learned share of decisions | – | 22.7 % | 22.9 % | 22.0 % | (same model) |
+| Inference ms, mean / p95 | – | 0.95 / 1.31 | 0.95 / 1.37 | 0.94 / 1.37 | 0.98 / – |
+| Planning ms per decision (mean) | – | – | – | 0.47 | 0.47 |
+| Supervisor detections / interventions / aborts | – | – | 17 / 32 / 0 | 28 / 39 / 0 | 30 / 55 / 1 |
+| Travel per episode (m) | 828 | 884 | 888 | 942 | 957 |
+
+**What the benchmark shows.**
+
+* **No Phase 6 component improves throughput in fault-free episodes.**
+  * The supervisor is neutral (73 of 100 pairs identical). Its value lies in faulted
+    episodes, measured in the Phase 7 robustness benchmark and the Phase 8 audit.
+  * Short-horizon planning changes no measurable outcome and adds 54 m of travel per
+    episode. It is cheap: 0.47 ms per decision.
+  * Adaptive computation saves 5 % of agent CPU and 10 % of process CPU (−5.4 s
+    [−6.9, −3.9] per episode). It costs 17 % of throughput and produced the benchmark's only
+    failed episode. **It should not be a default.** Use it only where the CPU budget is the
+    binding limit.
+* **The Phase 4 deterministic controller remains the best configuration:** 4.57 chests per
+  minute, 85.6 % of reachable chests, 100 of 100 episodes completed. This agrees with
+  Phase 5 (−23.9 % for the hybrid there, −24.7 % here).
+* **Crediting is exact in all 500 episodes:** 0 over-reported openings after the Phase 8
+  fixes F19 and F20.
+
+**The failed episode (finding F22, fixed after this run).**
+
+* `phase6_hybrid_optimised`, episode 57, was aborted by the supervisor at 558.6 s after
+  90 s without progress. It replays exactly.
+* **Cause.** The agent stood off the NavMesh on a raised spot (4 m up) and had not walked
+  anywhere it could retrace. Each unstick manoeuvre therefore went straight behind the
+  camera, into the same obstacle: 19 manoeuvres, all at the same bearing, and the agent
+  never moved.
+* **Fix.** Without a walked trail, each further manoeuvre now turns by a quarter turn. The
+  first attempt and every trail-based manoeuvre are unchanged.
+* **After the fix** the episode completes at 387.8 s with 17 chests (the row above: 15
+  chests, aborted at 558.6 s).
+* **Effect on the table.** The table was measured before the fix. This was the only failed
+  episode in 500, and the fix changes behaviour only from a second trail-less manoeuvre in a
+  row. Replacing the one row would raise the `optimised` mean by 0.01 chests per minute; no
+  conclusion changes.
+* Regression tests: `test_phase8_audit.test_f22_*`.
+
+### 12.2 Endurance runs (`benchmark_results/phase6/endurance_{100,500,1000}`)
+
+**Runs.**
+
+```bash
+python -m chest_hunter endurance-test --episodes N --max-ticks-per-episode 1500 \
+    --output benchmark_results/phase6/endurance_N        # N = 100, 500, 1000
+```
+
+* Default endurance configuration: deterministic policy, short-horizon planner, supervisor
+  on, adaptive compute on, 320×180, `research_arena_3d`, seed 42.
+* 1500 ticks (50 simulated seconds) per episode, one reference server and one bridge
+  connection for the whole run.
+* All three runs started together from commit `e1124bd`, before the Phase 8 fixes. They are
+  separate runs, not one run read at three points.
+* Each finished in one session: no interruption, no resume.
+
+| Metric | 100 episodes | 500 episodes | 1000 episodes |
+|---|---|---|---|
+| Episodes completed | 100 / 100 | 500 / 500 | 1000 / 1000 |
+| Outcomes | 100 tick limit | 500 tick limit | 1000 tick limit |
+| Failed episodes / communication failures / failed resets | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| Supervisor interventions / aborts | 1 / 0 | 8 / 0 | 16 / 0 |
+| Recovery success rate | 0.886 | 0.853 | 0.868 |
+| Openings (ground truth) / over-reported | 432 / 0 | 2214 / 0 | 4472 / 0 |
+| Chests per simulated minute [95 % CI] | 5.18 [4.96, 5.41] | 5.31 [5.22, 5.41] | 5.37 [5.30, 5.44] |
+| CPU seconds per episode (mean) | 4.63 | 4.51 | 4.38 |
+| RSS first / after warm-up / last / max (MB) | 97.0 / 101.7 / 102.1 / 107.0 | 97.3 / 102.3 / 105.3 / 109.1 | 97.0 / 103.0 / 110.3 / 110.6 |
+| RSS growth after warm-up (MB per 100 episodes) | 1.36 | 0.54 | 0.47 |
+| Live Python objects growth (per 100 episodes) | 325 | 198 | 206 |
+| Open file descriptors / threads (min–max) | 9–9 / 3–3 | 9–9 / 3–3 | 9–9 / 3–3 |
+| Previous agent released | 99 / 99 | 499 / 499 | 999 / 999 |
+| Memory bounded (< 2 MB per 100 episodes) | yes | yes | yes |
+| Wall clock | 34 min | 2 h 35 min | 3 h 13 min (3 runs in parallel) |
+
+What the runs show:
+
+* **1,000 consecutive episodes on one server connection: no failure, no communication
+  error, no failed reset, no supervisor abort.**
+* **Memory is bounded.** RSS grows by about 0.5 MB per 100 episodes after warm-up, and
+  13 MB in total over 1,000 episodes. That is under the 2 MB-per-100 criterion, but not
+  zero: about 200 live Python objects per 100 episodes accumulate. Their source was not
+  identified. At this rate, adding 100 MB would take about 20,000 episodes. No episode's
+  agent survived garbage collection.
+* **File descriptors and threads are constant**, so no handle or thread leaks.
+* **Throughput is stable across the run** (the three runs share their first 100 episodes;
+  the means agree within their intervals).
+* **What this does not show:**
+  * Unreal: these are Python reference arena runs.
+  * Long episodes: 50 simulated seconds each; long episodes appear in the Phase 7
+    acceptance run, up to 600 s.
+  * Active exploration: the endurance configuration uses spawn points.
+
+### 12.3 Profiling and resource use
+
+**From the benchmark (640×360, 100 episodes per configuration):**
+
+* **Agent CPU** (the decision pipeline's own thread) is 0.027 s per simulated second for the
+  deterministic controller and 0.034–0.035 s for the hybrid configurations. That is about
+  3 % of one core in real time.
+  * The learned policy is the difference: 0.95 ms per inference (p95 1.3–1.4 ms) on about
+    a fifth of the decisions, plus its feature extraction.
+  * Short-horizon planning costs 0.47 ms per decision on average and is negligible.
+* **Perception** costs 6.1–6.3 ms per analysed frame at 640×360 (preprocessing, detection,
+  tracking and interaction cues).
+* **Process CPU** is 41–55 s per episode (267–373 simulated seconds). Most of it is the
+  Python reference arena's software renderer and physics, which stand in for Unreal and
+  say nothing about Unreal's cost.
+* **Peak memory** is 197–198 MiB per benchmark worker, including ONNX Runtime and the
+  reference arena.
+
+**Component profile** (`benchmark_results/phase8/resource_profile.json`: Phase 8 audit,
+final code, 3 held-out maps, active exploration, deterministic policy, one process):
+
+{{P6_RESOURCE_TABLE}}
+
+Per component at 320×180 and 5 analysed frames per second (mean / p95 ms):
+
+{{P6_COMPONENTS}}
+
+* **Route and frontier selection** are the most expensive single calls (about 20 ms
+  each). They run only at decision points: roughly once every 5 simulated seconds.
+* **Database writes** are negligible: 0.1 ms, a few per episode.
+* **Not measured:** GPU load, Unreal frame time and Unreal memory. There is no GPU and no
+  Unreal installation. The resource monitor reports them as unavailable rather than
+  estimating them.
+
+### 12.4 Limitations
+
+* **Reference arena only.** Every result in this section comes from the Python mock of the
+  Unreal research server. None of it is evidence about Unreal.
+* **One map** for the five-configuration benchmark (`research_arena_3d`). Held-out maps are
+  covered by Phases 7 and 8.
+* **The supervisor's value is in faults,** not clean episodes. It is neutral here; the
+  Phase 7 robustness benchmark and the Phase 8 audit measure it under injected faults.
+* **Adaptive computation costs throughput** (−17 %) for 5 % less agent CPU. Use it only
+  where CPU is the binding constraint.
+* **Wall-clock budgets.** The 15 ms planning budget and the 20 ms inference budget are wall
+  clock. Exact replay of a lock-step research episode is therefore not guaranteed under CPU
+  load (Phase 8 finding F18).
+* **Endurance episodes are short** (50 simulated seconds) and use spawn points. About 200
+  live Python objects per 100 episodes accumulate; their source was not identified.
+* **Defects found after these runs.** The benchmark ran with the Phase 8 fixes up to F20.
+  F22 (above) was found in this benchmark and fixed afterwards. The endurance runs predate
+  all Phase 8 fixes; none of those fixes concerns resource use.

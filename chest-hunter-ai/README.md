@@ -1731,7 +1731,32 @@ python -m chest_hunter calibrate-policy --output benchmark_results/phase6/reliab
 
 ### 17.3 Benchmark
 
-RESULTS_BENCHMARK
+`benchmark-phase6 --episodes 100 --seed 42 --workers 4 --model training/checkpoints/bc_synthetic_v1 --experience-db training/experience.db`.
+
+* `research_arena_3d` at 640×360, spawn points given, up to 600 simulated seconds per
+  episode.
+* Five configurations on the same 100 seeds (paired), 500 episodes, 0 errors.
+* Code: Phase 8 fixes up to F20. The F21 fix, committed during the run, does not touch these
+  configurations.
+* Full results: `docs/phase6_reliability_and_optimization.md`, section 12.1.
+
+| Configuration | Chests / min [95 % CI] | Paired step vs previous row [95 % CI] | Completed / failed | Agent CPU s / episode |
+|---|---|---|---|---|
+| phase4_deterministic | **4.568 [4.474, 4.662]** | baseline | 100 / 0 | 7.3 |
+| phase5_hybrid | 3.442 [3.334, 3.549] | −1.127 [−1.241, −1.012] | 99 / 0 (one hit the time limit) | 11.4 |
+| + supervisor | 3.447 [3.351, 3.544] | +0.006 [−0.041, +0.053] | 100 / 0 | 11.7 |
+| + short-horizon planning | 3.368 [3.268, 3.468] | −0.079 [−0.188, +0.029] | 100 / 0 | 11.8 |
+| + adaptive computation | 2.797 [2.711, 2.882] | **−0.572 [−0.703, −0.440]** | 99 / 1 | 11.1 |
+
+* **No Phase 6 component improves throughput in fault-free episodes.**
+  * The supervisor is neutral here; its value is under injected faults (Phases 7 and 8).
+  * Planning makes no measurable difference.
+  * Adaptive computation saves 5 % of agent CPU but costs 17 % of throughput.
+* **The Phase 4 deterministic controller remains the best configuration.**
+* **0 over-reported openings** in 500 episodes.
+* **The one failed episode** was a stuck agent that repeated its unstick manoeuvre in a
+  blocked direction (finding F22). It was fixed afterwards; the replayed episode now
+  completes.
 
 ### 17.4 Endurance runs
 
@@ -1784,7 +1809,15 @@ metrics interval) use wall-clock time.
 
 ### 17.7 Phase 6 limitations
 
-RESULTS_LIMITATIONS
+* **Reference arena only.** Nothing in Phase 6 has run against Unreal Engine; GPU load and
+  Unreal frame time are not measured.
+* **No throughput gain from the Phase 6 additions** in fault-free episodes (17.3). Adaptive
+  computation costs throughput and should be used only where CPU is the binding limit.
+* **Wall-clock budgets** for planning (15 ms) and inference (20 ms) make exact replay under
+  CPU load not guaranteed (Phase 8 finding F18).
+* **Endurance runs** use 50-second episodes with spawn points. A slow growth of about 200
+  live Python objects per 100 episodes was not traced to its source.
+* **Benchmark scope:** one map. Generalisation to held-out maps is measured in Phases 7 and 8.
 
 ## 18. Phase 7: generalisation, self-improving exploration and deployment readiness
 
@@ -1959,6 +1992,7 @@ and names their source.
 | F19 | after an F14 reattribution the original spawn point was credited a second time (1–4 phantom openings per 40 episodes) | both ids leave the unverified set |
 | F20 | a failed interaction was credited on mixed visual evidence without the opening notification | vision-only credit needs unanimous looks |
 | F21 | exploration was declared complete after the first scan when no ray crossed the start room's doorway (18 of 800 Phase 7 episodes ended at 3.9 s) | one denser ray fan before giving up; a mid-episode case remains (1 map in 100) |
+| F22 | stuck off the NavMesh with no walked trail, the agent repeated its unstick manoeuvre in the same blocked direction until the supervisor aborted the episode (the one failed episode of the Phase 6 benchmark) | each further trail-less manoeuvre turns by a quarter turn |
 
 Open: **F18**. Decisions depend on two wall-clock limits, so exact replay of an episode is not
 guaranteed under CPU load. **F15**. Chest colours outside the trained range defeat detection.
