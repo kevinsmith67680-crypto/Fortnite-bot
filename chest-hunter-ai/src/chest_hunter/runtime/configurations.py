@@ -162,7 +162,11 @@ def partition(*, map_id: str, env_overrides: dict[str, Any] | None, setup: Agent
     sim = config_hash({"observation": [width, height], "fov_deg": fov_deg,
                        "decision_ticks": decision_ticks, "planner": setup.planner,
                        "adaptive_compute": setup.adaptive_compute,
-                       "smart_recovery": setup.smart_recovery})
+                       "smart_recovery": setup.smart_recovery,
+                       # the supervisor and the selector monitors change behaviour too: their
+                       # episodes must not share a partition with unsupervised ones
+                       "supervisor": setup.supervisor,
+                       "selector_monitors": setup.selector_monitors})
     env = environment_version(map_id, env_overrides)
     return {"map_id": map_id, "environment_version": env, "agent_version": agent,
             "simulation_config": sim, "key": f"env={env};agent={agent};config={sim}"}

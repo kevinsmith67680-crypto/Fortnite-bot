@@ -84,6 +84,9 @@ class FaultPlan:
     start_s: float
     duration_s: float
     intensity: float
+    #: start only once the agent is in this state (e.g. ``VERIFYING_OPEN``), at or after
+    #: ``start_s``; ``None``: at ``start_s``
+    trigger_state: str | None = None
 
     @classmethod
     def random(cls, kind: str, seed: int) -> FaultPlan:
@@ -251,7 +254,10 @@ class FaultInjector:
                 self._counters_detect = self._counters()
             if self._progress_window is None and now >= end + RECOVERY_WINDOW_S:
                 self._progress_window = self._progress()
-        if self.injection is None and now >= plan.start_s and not self.finished:
+        if self.injection is None and now >= plan.start_s and not self.finished and (
+                plan.trigger_state is None
+                or getattr(getattr(self._agent(), "state", None), "name", None)
+                == plan.trigger_state):
             self._start(now)
         inj = self.injection
         if inj is not None and not self.finished and plan.kind == "unexpected_obstacle":

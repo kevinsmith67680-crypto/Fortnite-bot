@@ -1,0 +1,1259 @@
+{
+ "format": "chest-hunter-arena/1",
+ "map_id": "p7_indoor_test_000",
+ "units": "metres",
+ "axes": "X north, Y east, Z up (Unreal axes); yaw degrees from +X towards +Y",
+ "bounds": [
+  0.0,
+  0.0,
+  64.0,
+  64.0
+ ],
+ "start": {
+  "position": [
+   13.76,
+   14.15,
+   0.02
+  ],
+  "yaw_deg": 210.0
+ },
+ "chest": {
+  "width": 0.9,
+  "depth": 0.6,
+  "body_height": 0.5,
+  "lid_height": 0.15
+ },
+ "colours_bgr": {
+  "sky": [
+   235,
+   206,
+   150
+  ],
+  "grass": [
+   70,
+   150,
+   80
+  ],
+  "concrete": [
+   150,
+   150,
+   152
+  ],
+  "asphalt": [
+   95,
+   95,
+   100
+  ],
+  "warehouse_wall": [
+   140,
+   120,
+   104
+  ],
+  "house_wall": [
+   196,
+   196,
+   204
+  ],
+  "outpost_wall": [
+   112,
+   116,
+   122
+  ],
+  "interior_floor": [
+   150,
+   138,
+   128
+  ],
+  "ceiling": [
+   205,
+   205,
+   210
+  ],
+  "stairs": [
+   160,
+   160,
+   166
+  ],
+  "railing": [
+   62,
+   62,
+   66
+  ],
+  "crate": [
+   72,
+   104,
+   82
+  ],
+  "container_red": [
+   48,
+   48,
+   176
+  ],
+  "container_blue": [
+   164,
+   92,
+   46
+  ],
+  "container_teal": [
+   128,
+   134,
+   44
+  ],
+  "container_sealed": [
+   90,
+   90,
+   150
+  ],
+  "water": [
+   170,
+   112,
+   40
+  ],
+  "pier": [
+   110,
+   120,
+   128
+  ],
+  "trunk": [
+   62,
+   70,
+   78
+  ],
+  "canopy": [
+   44,
+   112,
+   52
+  ],
+  "rock": [
+   126,
+   126,
+   132
+  ],
+  "sandbag": [
+   132,
+   158,
+   170
+  ],
+  "tent": [
+   70,
+   112,
+   100
+  ],
+  "fence": [
+   120,
+   124,
+   128
+  ],
+  "post": [
+   80,
+   80,
+   84
+  ],
+  "decoy_gold": [
+   24,
+   197,
+   245
+  ],
+  "decoy_hay": [
+   70,
+   175,
+   215
+  ],
+  "chest_body": [
+   24,
+   197,
+   245
+  ],
+  "chest_lid": [
+   20,
+   72,
+   120
+  ],
+  "chest_latch": [
+   40,
+   40,
+   44
+  ],
+  "chest_inside": [
+   160,
+   210,
+   230
+  ],
+  "chest_open_body": [
+   30,
+   150,
+   200
+  ],
+  "agent_body": [
+   246,
+   130,
+   59
+  ],
+  "agent_head": [
+   150,
+   180,
+   220
+  ],
+  "agent_visor": [
+   255,
+   255,
+   255
+  ],
+  "prompt": [
+   255,
+   255,
+   255
+  ],
+  "prompt_text": [
+   20,
+   20,
+   20
+  ],
+  "progress_fill": [
+   94,
+   197,
+   34
+  ],
+  "progress_frame": [
+   255,
+   255,
+   255
+  ],
+  "reward": [
+   238,
+   211,
+   34
+  ]
+ },
+ "regions": {
+  "Complex": [
+   4.0,
+   4.0,
+   60.0,
+   60.0
+  ]
+ },
+ "boxes": [
+  {
+   "min": [
+    0.0,
+    0.0,
+    -0.2
+   ],
+   "max": [
+    64.0,
+    64.0,
+    0.0
+   ],
+   "kind": "ground",
+   "colour": "grass",
+   "blocks": true,
+   "walkable": true,
+   "name": ""
+  },
+  {
+   "min": [
+    0.0,
+    -0.4,
+    0.0
+   ],
+   "max": [
+    64.0,
+    0.0,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    0.0,
+    64.0,
+    0.0
+   ],
+   "max": [
+    64.0,
+    64.4,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    -0.4,
+    0.0,
+    0.0
+   ],
+   "max": [
+    0.0,
+    64.0,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    64.0,
+    0.0,
+    0.0
+   ],
+   "max": [
+    64.4,
+    64.0,
+    1.6
+   ],
+   "kind": "fence",
+   "colour": "fence",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    4.0,
+    4.0,
+    0.0
+   ],
+   "max": [
+    4.3,
+    60.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    4.0,
+    0.0
+   ],
+   "max": [
+    60.0,
+    26.47963997229013,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    26.47963997229013,
+    2.4
+   ],
+   "max": [
+    60.0,
+    27.99847190816297,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    59.7,
+    27.99847190816297,
+    0.0
+   ],
+   "max": [
+    60.0,
+    60.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    4.3,
+    4.0,
+    0.0
+   ],
+   "max": [
+    46.5612098574971,
+    4.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    46.5612098574971,
+    4.0,
+    2.4
+   ],
+   "max": [
+    48.005493620331386,
+    4.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    48.005493620331386,
+    4.0,
+    0.0
+   ],
+   "max": [
+    59.7,
+    4.3,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    4.3,
+    59.7,
+    0.0
+   ],
+   "max": [
+    17.382567930945616,
+    60.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    17.382567930945616,
+    59.7,
+    2.4
+   ],
+   "max": [
+    19.35421542602042,
+    60.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    19.35421542602042,
+    59.7,
+    0.0
+   ],
+   "max": [
+    59.7,
+    60.0,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    4.3,
+    4.3,
+    0.0
+   ],
+   "max": [
+    59.7,
+    59.7,
+    0.02
+   ],
+   "kind": "floor",
+   "colour": "interior_floor",
+   "blocks": false,
+   "walkable": true,
+   "name": "complex floor"
+  },
+  {
+   "min": [
+    22.566666666666666,
+    4.3,
+    0.0
+   ],
+   "max": [
+    22.766666666666666,
+    10.264498822317574,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    22.566666666666666,
+    10.264498822317574,
+    2.4
+   ],
+   "max": [
+    22.766666666666666,
+    11.764498822317574,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    22.566666666666666,
+    11.764498822317574,
+    0.0
+   ],
+   "max": [
+    22.766666666666666,
+    27.43096076603869,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    22.566666666666666,
+    27.43096076603869,
+    2.4
+   ],
+   "max": [
+    22.766666666666666,
+    28.93096076603869,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    22.566666666666666,
+    28.93096076603869,
+    0.0
+   ],
+   "max": [
+    22.766666666666666,
+    44.288508627241164,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    22.566666666666666,
+    44.288508627241164,
+    2.4
+   ],
+   "max": [
+    22.766666666666666,
+    45.788508627241164,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    22.566666666666666,
+    45.788508627241164,
+    0.0
+   ],
+   "max": [
+    22.766666666666666,
+    59.7,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    4.3,
+    0.0
+   ],
+   "max": [
+    41.43333333333334,
+    4.82539459846331,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    4.82539459846331,
+    2.4
+   ],
+   "max": [
+    41.43333333333334,
+    6.32539459846331,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    6.32539459846331,
+    0.0
+   ],
+   "max": [
+    41.43333333333334,
+    26.097551588184537,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    26.097551588184537,
+    2.4
+   ],
+   "max": [
+    41.43333333333334,
+    27.597551588184537,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    27.597551588184537,
+    0.0
+   ],
+   "max": [
+    41.43333333333334,
+    45.806298793328274,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    45.806298793328274,
+    2.4
+   ],
+   "max": [
+    41.43333333333334,
+    47.306298793328274,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    41.233333333333334,
+    47.306298793328274,
+    0.0
+   ],
+   "max": [
+    41.43333333333334,
+    59.7,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    4.3,
+    22.566666666666666,
+    0.0
+   ],
+   "max": [
+    6.253830398496081,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    6.253830398496081,
+    22.566666666666666,
+    2.4
+   ],
+   "max": [
+    7.753830398496081,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    7.753830398496081,
+    22.566666666666666,
+    0.0
+   ],
+   "max": [
+    34.97470635255763,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    34.97470635255763,
+    22.566666666666666,
+    2.4
+   ],
+   "max": [
+    36.47470635255763,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    36.47470635255763,
+    22.566666666666666,
+    0.0
+   ],
+   "max": [
+    44.82251720701276,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    44.82251720701276,
+    22.566666666666666,
+    2.4
+   ],
+   "max": [
+    46.32251720701276,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    46.32251720701276,
+    22.566666666666666,
+    0.0
+   ],
+   "max": [
+    59.7,
+    22.766666666666666,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    4.3,
+    41.233333333333334,
+    0.0
+   ],
+   "max": [
+    15.796181844728295,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    15.796181844728295,
+    41.233333333333334,
+    2.4
+   ],
+   "max": [
+    17.296181844728295,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    17.296181844728295,
+    41.233333333333334,
+    0.0
+   ],
+   "max": [
+    35.15852170601627,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    35.15852170601627,
+    41.233333333333334,
+    2.4
+   ],
+   "max": [
+    36.65852170601627,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    36.65852170601627,
+    41.233333333333334,
+    0.0
+   ],
+   "max": [
+    57.40533783958738,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    57.40533783958738,
+    41.233333333333334,
+    2.4
+   ],
+   "max": [
+    58.90533783958738,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    58.90533783958738,
+    41.233333333333334,
+    0.0
+   ],
+   "max": [
+    59.7,
+    41.43333333333334,
+    3.2
+   ],
+   "kind": "wall",
+   "colour": "warehouse_wall",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    17.441978971403262,
+    49.366288303529466,
+    0.02
+   ],
+   "max": [
+    18.641978971403265,
+    50.56628830352947,
+    1.4
+   ],
+   "kind": "crate",
+   "colour": "crate",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    52.400648124650864,
+    19.14391029042762,
+    0.02
+   ],
+   "max": [
+    53.60064812465087,
+    20.343910290427623,
+    1.4
+   ],
+   "kind": "crate",
+   "colour": "crate",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  },
+  {
+   "min": [
+    50.80520007714173,
+    30.297562261498204,
+    0.02
+   ],
+   "max": [
+    52.00520007714173,
+    31.497562261498206,
+    1.0
+   ],
+   "kind": "crate",
+   "colour": "crate",
+   "blocks": true,
+   "walkable": false,
+   "name": ""
+  }
+ ],
+ "spawn_points": [
+  {
+   "region": "Room 1",
+   "name": "Corner 1",
+   "x": 21.37,
+   "y": 5.0,
+   "z": 0.02,
+   "yaw_deg": 90.0,
+   "probability": 0.25,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 1 - Corner 1"
+  },
+  {
+   "region": "Room 1",
+   "name": "Corner 2",
+   "x": 5.0,
+   "y": 5.3,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.78,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 1 - Corner 2"
+  },
+  {
+   "region": "Room 2",
+   "name": "Corner 1",
+   "x": 21.67,
+   "y": 40.03,
+   "z": 0.02,
+   "yaw_deg": 180.0,
+   "probability": 0.42,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 2 - Corner 1"
+  },
+  {
+   "region": "Room 2",
+   "name": "Corner 2",
+   "x": 5.0,
+   "y": 23.97,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.32,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 2 - Corner 2"
+  },
+  {
+   "region": "Room 3",
+   "name": "Corner 1",
+   "x": 5.3,
+   "y": 59.0,
+   "z": 0.02,
+   "yaw_deg": 270.0,
+   "probability": 0.57,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 3 - Corner 1"
+  },
+  {
+   "region": "Room 3",
+   "name": "Corner 2",
+   "x": 5.0,
+   "y": 42.63,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.74,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 3 - Corner 2"
+  },
+  {
+   "region": "Room 4",
+   "name": "Corner 1",
+   "x": 40.33,
+   "y": 21.37,
+   "z": 0.02,
+   "yaw_deg": 180.0,
+   "probability": 0.7,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 4 - Corner 1"
+  },
+  {
+   "region": "Room 5",
+   "name": "Corner 1",
+   "x": 40.03,
+   "y": 23.67,
+   "z": 0.02,
+   "yaw_deg": 90.0,
+   "probability": 0.84,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 5 - Corner 1"
+  },
+  {
+   "region": "Room 6",
+   "name": "Corner 1",
+   "x": 23.67,
+   "y": 42.63,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.31,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 6 - Corner 1"
+  },
+  {
+   "region": "Room 7",
+   "name": "Corner 1",
+   "x": 42.63,
+   "y": 21.67,
+   "z": 0.02,
+   "yaw_deg": 270.0,
+   "probability": 0.75,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 7 - Corner 1"
+  },
+  {
+   "region": "Room 7",
+   "name": "Corner 2",
+   "x": 42.33,
+   "y": 5.3,
+   "z": 0.02,
+   "yaw_deg": 0.0,
+   "probability": 0.59,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 7 - Corner 2"
+  },
+  {
+   "region": "Room 8",
+   "name": "Corner 1",
+   "x": 42.63,
+   "y": 40.33,
+   "z": 0.02,
+   "yaw_deg": 270.0,
+   "probability": 0.78,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 8 - Corner 1"
+  },
+  {
+   "region": "Room 9",
+   "name": "Corner 1",
+   "x": 59.0,
+   "y": 58.7,
+   "z": 0.02,
+   "yaw_deg": 180.0,
+   "probability": 0.35,
+   "tags": [
+    "inside",
+    "room"
+   ],
+   "reachable": true,
+   "location_name": "Room 9 - Corner 1"
+  }
+ ],
+ "appearance": {
+  "lighting": 0.957,
+  "chest_value": 1.054,
+  "chest_hue_shift": 0.916,
+  "surface_value": 1.051
+ },
+ "generator": {
+  "generator_version": "7.0",
+  "category": "indoor",
+  "split": "test",
+  "index": 0,
+  "variant": "",
+  "settings": {
+   "size": 64.0,
+   "complexity": 0.6,
+   "chest_density": 1.0,
+   "unreachable_fraction": 0.1,
+   "min_reachable": 0.8
+  },
+  "settings_hash": "afe80fe7e635",
+  "rooms": 9,
+  "attempt": 0,
+  "reachable_area_m2": 3530.5,
+  "reachable_spawns": 13
+ }
+}

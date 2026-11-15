@@ -181,22 +181,28 @@ class Runs(unittest.TestCase):
         ep1 = [r["st"] for r in rows if r["ep"] == 1]
         self.assertEqual(ep1, ["aborted", "completed"])     # never two successful records
 
-    def test_resume_aborts_sessions_left_running_by_a_crash(self) -> None:
+    def test_a_completed_session_whose_result_was_lost_is_superseded(self) -> None:
+        # Crash window: the episode's session completed but the process was killed before
+        # its result line and checkpoint were written. Finished sessions are immutable in
+        # the database (trigger), so the run must not try to re-mark them aborted (Phase 8
+        # audit defect F9: that raised "session has already finished" on every resume).
         self._run(config(episodes=1))
-        from chest_hunter.database import DatabaseManager
-
-        db = DatabaseManager(self.dir / "endurance.db")
-        with db.transaction() as conn:                       # what a killed process leaves
-            conn.execute("UPDATE simulation_sessions SET status = 'running', ended_at = NULL")
-        db.close()
-        # the crashed episode's result line was never written: drop it from the results
-        records, _ = read_results(self.dir / "episodes.jsonl")
         (self.dir / "episodes.jsonl").write_text("")
         (self.dir / "checkpoint.json").unlink()
         (self.dir / "checkpoint.json.bak").unlink(missing_ok=True)
-        del records
         summary = self._run(config(episodes=1), resume=False)
-        self.assertIn("marked aborted", " ".join(summary["warnings"]))
+        self.assertIn("marked superseded", " ".join(summary["warnings"]))
+        summary = self._run(config(episodes=2), resume=True)    # no duplicate-record error
+        from chest_hunter.database import DatabaseManager
+
+        db = DatabaseManager(self.dir / "endurance.db")
+        self.addCleanup(db.close)
+        rows = db.query_all("SELECT r.episode AS ep, s.status AS st, s.notes AS notes "
+                            "FROM simulation_runs r JOIN simulation_sessions s "
+                            "ON s.id = r.session_id ORDER BY s.id")
+        ep0 = [(r["st"], str(r["notes"]).startswith("superseded:")) for r in rows
+               if r["ep"] == 0]
+        self.assertEqual(ep0, [("completed", True), ("completed", False)])
 
     def test_an_environment_that_cannot_be_reset_stops_the_run(self) -> None:
         cfg = config(episodes=3, max_reset_attempts=2)

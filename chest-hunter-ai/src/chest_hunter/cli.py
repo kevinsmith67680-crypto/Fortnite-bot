@@ -28,7 +28,12 @@ from chest_hunter.chest_repository import (
 from chest_hunter.config import Settings, load_config
 from chest_hunter.database import SCHEMA_VERSION, DatabaseManager
 from chest_hunter.demo_data import DEMO_CHESTS, seed_demo_chests
-from chest_hunter.exceptions import ChestHunterError, DatabaseError, RecordNotFoundError
+from chest_hunter.exceptions import (
+    ChestHunterError,
+    DatabaseError,
+    RecordNotFoundError,
+    ValidationError,
+)
 from chest_hunter.logging_config import VALID_LEVELS, configure_logging
 from chest_hunter.models import STRATEGY_NAMES, ChestLocation, SessionStatus, SimulationSession
 from chest_hunter.run_repository import RunRepository
@@ -522,7 +527,11 @@ def build_parser() -> argparse.ArgumentParser:
               _cmd_export_arena_3d)
     sub.add_argument("--output", metavar="PATH",
                      help="default: unreal/ChestHunterResearch/Content/ResearchData/"
-                          "research_arena_3d.json")
+                          "<map id>.json (with several --map: a directory)")
+    sub.add_argument("--map", action="append", metavar="MAP_ID",
+                     help="layout to export (repeatable): research_arena_3d (default), a Phase 5 "
+                          "proc_<split>_NNN or a Phase 7 p7_<category>_<split>_NNN[_<variant>] "
+                          "map")
 
     register(add)                                        # Phase 5 learning commands
     register_phase6(add)                                 # Phase 6 reliability commands
@@ -1080,15 +1089,25 @@ def _cmd_benchmark_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
 
 
 def _cmd_export_arena_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
-    from chest_hunter.simulation3d.arena import arena_to_json, build_research_arena_3d
+    from chest_hunter.simulation3d.arena import ARENA_3D_ID, arena_to_json
+    from chest_hunter.simulation3d.environment3d import cached_arena
 
-    output = Path(args.output).expanduser().resolve() if args.output else (
-        ctx.settings.base_dir / "unreal" / "ChestHunterResearch" / "Content" / "ResearchData"
-        / "research_arena_3d.json")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    arena = build_research_arena_3d()
-    output.write_text(arena_to_json(arena) + "\n", encoding="utf-8")
-    print(f"Wrote {len(arena.boxes)} boxes and {len(arena.spawns)} spawn points to {output}")
+    maps = args.map or [ARENA_3D_ID]
+    default_dir = ctx.settings.base_dir / "unreal" / "ChestHunterResearch" / "Content" \
+        / "ResearchData"
+    for map_id in maps:
+        try:
+            arena = cached_arena(map_id)[0]
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+        if args.output and len(maps) == 1 and args.output.endswith(".json"):
+            output = Path(args.output).expanduser().resolve()
+        else:
+            folder = Path(args.output).expanduser().resolve() if args.output else default_dir
+            output = folder / f"{map_id}.json"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(arena_to_json(arena) + "\n", encoding="utf-8")
+        print(f"Wrote {len(arena.boxes)} boxes and {len(arena.spawns)} spawn points to {output}")
     return EXIT_OK
 
 
@@ -1192,7 +1211,9 @@ _COMMANDS_WITHOUT_DATABASE = frozenset({"init-db", "export-arena-3d", "record-de
                                         "benchmark-policies", "benchmark-generalization",
                                         "benchmark-robustness", "benchmark-exploration",
                                         "train-exploration", "check-runtime",
-                                        "acceptance-phase7"})
+                                        "acceptance-phase7", "profile-agent",
+                                        "benchmark-phase6", "endurance-test",
+                                        "calibrate-policy", "audit-system"})
 
 
 def _require_database(db: DatabaseManager) -> None:

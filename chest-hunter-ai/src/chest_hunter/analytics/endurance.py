@@ -74,6 +74,10 @@ logger = logging.getLogger(__name__)
 DONE_OUTCOMES = ("completed", "tick_limit", "failed")
 
 
+#: notes prefix of a completed session whose result was lost (its episode was replayed)
+SUPERSEDED = "superseded:"
+
+
 @dataclass(frozen=True, slots=True)
 class EnduranceConfig:
     episodes: int = 100
@@ -204,11 +208,12 @@ class EnduranceRunner:
         try:
             db.initialize()
             rows = db.query_all(
-                "SELECT r.episode AS ep, s.status AS status, s.id AS sid "
+                "SELECT r.episode AS ep, s.status AS status, s.id AS sid, "
+                "COALESCE(s.notes, '') AS notes "
                 "FROM simulation_runs r JOIN simulation_sessions s ON s.id = r.session_id")
             ok: dict[int, int] = {}
             for r in rows:
-                if r["status"] == "completed":
+                if r["status"] == "completed" and not str(r["notes"]).startswith(SUPERSEDED):
                     ok[int(r["ep"])] = ok.get(int(r["ep"]), 0) + 1
             dup = sorted(e for e, n in ok.items() if n > 1)
             if dup:
@@ -218,19 +223,32 @@ class EnduranceRunner:
             if beyond:
                 self.warnings.append(f"database has completed sessions for episodes {beyond} "
                                      "without results on disk; those episodes are played again "
-                                     "and their old sessions marked aborted")
-            stale = [int(r["sid"]) for r in rows if r["status"] == "running"
-                     or (r["status"] == "completed" and int(r["ep"]) >= next_episode)]
-            if stale:
+                                     "and their old sessions marked superseded")
+            running = [int(r["sid"]) for r in rows if r["status"] == "running"]
+            # Finished sessions are immutable (database trigger) apart from their notes: a
+            # completed session whose result line was lost is marked superseded in its notes
+            # and no longer counts as the episode's successful record.
+            lost = [int(r["sid"]) for r in rows if r["status"] == "completed"
+                    and int(r["ep"]) >= next_episode
+                    and not str(r["notes"]).startswith(SUPERSEDED)]
+            if running or lost:
                 from chest_hunter.models import utc_now
 
                 with db.transaction() as conn:
-                    for sid in stale:
+                    for sid in running:
                         conn.execute("UPDATE simulation_sessions SET status = 'aborted', "
                                      "ended_at = COALESCE(ended_at, ?) WHERE id = ?",
                                      (utc_now().isoformat(), sid))
-                self.warnings.append(f"{len(stale)} session(s) of interrupted episodes marked "
-                                     "aborted")
+                    for sid in lost:
+                        conn.execute("UPDATE simulation_sessions SET notes = ? || "
+                                     "COALESCE(' ' || notes, '') WHERE id = ?",
+                                     (SUPERSEDED + " (result lost; episode replayed)", sid))
+                if running:
+                    self.warnings.append(f"{len(running)} session(s) of interrupted episodes "
+                                         "marked aborted")
+                if lost:
+                    self.warnings.append(f"{len(lost)} completed session(s) without results "
+                                         "on disk marked superseded")
         finally:
             db.close()
 
