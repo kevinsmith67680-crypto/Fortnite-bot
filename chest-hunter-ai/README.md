@@ -1340,6 +1340,8 @@ from the `learning` configuration section (`deterministic`).
   reliable chest clusters.
 * **Classified recovery:** seven failure classes, each with a bounded strategy. One of
   these confirms an opening that the agent was notified about but did not see clearly.
+  A chest lost during the approach gets at most one rescan per spawn point, keyed by spawn
+  point rather than by track, because a re-detected chest gets a new track id.
 * **Schema version 4** (migration 4) adds the two tables. Existing data is kept (tested).
 
 ### 16.4 Policy benchmark (research arena, 100 paired episodes)

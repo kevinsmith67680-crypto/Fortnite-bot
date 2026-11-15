@@ -305,7 +305,13 @@ one of seven classes, each with a bounded strategy:
 * `target_unreachable`;
 * `model_inference_failure`.
 
-Each class has a budget, and recovery outcomes are recorded per class.
+Each class has a budget, and recovery outcomes are recorded per class. A chest lost
+during the approach gets at most one rescan per spawn point (`max_rescans`), and none once
+the `target_lost` budget is spent. After that, the agent explores on, as in Phase 4. The
+limit is per spawn point rather than per track: a chest that keeps dropping out of tracking
+is re-detected under a new track id each time. Before this rule, one chest on an unseen
+procedural map was lost 100 times in a row, and the episode failed on the global recovery
+budget (section 13.4).
 
 ## 11. Bayesian spawn estimation
 
