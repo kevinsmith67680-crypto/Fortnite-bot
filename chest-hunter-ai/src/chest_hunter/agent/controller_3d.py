@@ -231,6 +231,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._lookbacks: dict[object, int] = {}
         self._last_notification_reward = False
         self._rescans: dict[object, int] = {}
+        self._approach_losses: dict[object, int] = {}
         self._uncertain_checks: dict[object, int] = {}
         self._handlers = {
             S.OBSERVING: self._observe, S.SCANNING: self._scanning, S.EXPLORING: self._explore,
@@ -755,7 +756,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         track = self.world.tracker.get(goal.track_id or -1)
         if track is None:
             self.metrics.targets_lost += 1
-            if self.cfg.smart_recovery:
+            if self._may_rescan_lost_approach(goal):
                 self.recovery_reason = "target_lost"
                 return S.RECOVERING
             return S.EXPLORING
@@ -902,6 +903,24 @@ class VisualAgent3D(StateMachine[Agent3DState]):
     def _route_end(self, success: bool, kind: str | None = None) -> None:
         if self.planner is not None:
             self.planner.route_finished(self.now, success=success, failure_kind=kind)
+
+    def _may_rescan_lost_approach(self, goal: Goal3D) -> bool:
+        """Smart recovery: a chest lost during the approach gets a bounded rescan.
+
+        The limit is per spawn point, not per track: a chest that keeps dropping out of
+        tracking is re-detected under a new track id every time, so a per-track limit never
+        triggers (seen on an unseen procedural map, where one chest was lost 100 times in a
+        row and the episode failed on the global recovery budget). Beyond the limit, or once
+        the ``target_lost`` class budget is spent, the Phase 4 behaviour applies: explore on.
+        """
+        if not self.cfg.smart_recovery or not self.metrics.recovery_log.can_use("target_lost"):
+            return False
+        key = ("lost", goal.location_id) if goal.location_id is not None \
+            else self._target_key(goal)
+        if self._approach_losses.get(key, 0) >= self.cfg.max_rescans:
+            return False
+        self._approach_losses[key] = self._approach_losses.get(key, 0) + 1
+        return True
 
     def _smart_target_lost(self, goal: Goal3D) -> bool:
         """Search near the last reliable estimate of a lost chest (bounded)."""

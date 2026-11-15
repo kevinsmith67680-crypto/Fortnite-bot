@@ -6,7 +6,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass
 
-from chest_hunter.agent.controller_3d import Agent3DConfig
+from chest_hunter.agent.controller_3d import Agent3DConfig, Agent3DState, Goal3D, VisualAgent3D
 from chest_hunter.agent.recovery_3d import FAILURE_CLASSES, RecoveryLog, classify
 from chest_hunter.agent.runner_3d import Runner3D, _layout_hash
 from chest_hunter.database import DatabaseManager
@@ -126,6 +126,49 @@ class RecoveryClasses(unittest.TestCase):
         for _ in range(20):
             log.use("interaction_failure")
         self.assertFalse(log.can_use("interaction_failure"))
+
+
+class LostDuringApproach(unittest.TestCase):
+    """A chest that keeps dropping out of tracking during the approach is re-detected
+    under a new track id each time. The rescan limit must hold per spawn point, otherwise
+    the agent loops until the episode's global recovery budget fails it (this happened on
+    an unseen procedural map before the limit was keyed by location)."""
+
+    def _agent(self, smart: bool) -> VisualAgent3D:
+        db = DatabaseManager(":memory:")
+        db.initialize()
+        self.addCleanup(db.close)
+        seed_arena_3d(db)
+        runner = Runner3D.from_settings(db, settings(), mode="hybrid", seed=7,
+                                        backend="reference", max_ticks=10,
+                                        config=Agent3DConfig(smart_recovery=smart))
+        runner.run()                                       # builds the agent (10 ticks)
+        agent = runner.controller
+        assert isinstance(agent, VisualAgent3D)
+        return agent
+
+    def _lose(self, agent: VisualAgent3D, location_id: int, track_id: int) -> Agent3DState:
+        agent.goal = Goal3D("chest", (10.0, 10.0, 0.0), location_id, track_id=track_id)
+        result = agent._approach()
+        assert result is not None
+        return result
+
+    def test_rescan_limit_is_per_spawn_point_not_per_track(self) -> None:
+        agent = self._agent(smart=True)
+        self.assertEqual(self._lose(agent, 1, 90001), Agent3DState.RECOVERING)
+        for track in range(90002, 90020):                  # same chest, new track ids
+            self.assertEqual(self._lose(agent, 1, track), Agent3DState.EXPLORING)
+        self.assertEqual(self._lose(agent, 2, 90100), Agent3DState.RECOVERING)
+
+    def test_class_budget_ends_rescans(self) -> None:
+        agent = self._agent(smart=True)
+        while agent.metrics.recovery_log.can_use("target_lost"):
+            agent.metrics.recovery_log.use("target_lost")
+        self.assertEqual(self._lose(agent, 3, 90200), Agent3DState.EXPLORING)
+
+    def test_phase4_behaviour_without_smart_recovery(self) -> None:
+        agent = self._agent(smart=False)
+        self.assertEqual(self._lose(agent, 1, 90001), Agent3DState.EXPLORING)
 
 
 @dataclass
