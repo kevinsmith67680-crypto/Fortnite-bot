@@ -1993,6 +1993,7 @@ and names their source.
 | F20 | a failed interaction was credited on mixed visual evidence without the opening notification | vision-only credit needs unanimous looks |
 | F21 | exploration was declared complete after the first scan when no ray crossed the start room's doorway (18 of 800 Phase 7 episodes ended at 3.9 s) | one denser ray fan before giving up; a mid-episode case remains (1 map in 100) |
 | F22 | stuck off the NavMesh with no walked trail, the agent repeated its unstick manoeuvre in the same blocked direction until the supervisor aborted the episode (the one failed episode of the Phase 6 benchmark) | each further trail-less manoeuvre turns by a quarter turn |
+| F23 | an `audit-system` re-run resumed the comparison row journals of an earlier run and reported rows played by older code | resume only when the recorded source tree matches the current, unmodified source |
 
 Open: **F18**. Decisions depend on two wall-clock limits, so exact replay of an episode is not
 guaranteed under CPU load. **F15**. Chest colours outside the trained range defeat detection.

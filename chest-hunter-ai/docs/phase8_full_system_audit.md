@@ -58,15 +58,17 @@ Unreal Engine, and a result from it is not evidence about Unreal.
 * perception on Unreal-rendered frames;
 * the learned policy's value with real demonstrations.
 
-**Defects.** 22 findings: 17 defects (section D) and five informational notes (F4–F6, F10,
+**Defects.** 23 findings: 18 defects (section D) and five informational notes (F4–F6, F10,
 F13: Unreal static facts, scan results, the first test run and the loop trace).
 
-* **Fixed, each reproduced first and guarded by a regression test:** 13, of which 6 were P1
+* **Fixed, each reproduced first and guarded by a regression test:** 14, of which 6 were P1
   (F2, F11, F17, F19, F20, F21).
   * Five behaviour defects (F17, F19, F20, F21 and F22) passed the full unit-test suite.
     They were found only by checking every credited opening, early ending and failed episode
     in the benchmarks against the simulator.
   * F19 was introduced by this audit's own F14 fix, and was caught the same way.
+  * F23 was in the audit tool itself: a re-run silently reported rows played by older
+    code. It was caught because two sections finished in 0.1 s instead of minutes.
 * **Open:**
   * chest-appearance sensitivity of detection (F15, P1);
   * opened/closed confusion in single frames (F16, mitigated);
@@ -153,6 +155,7 @@ that does and does not prove.
 | F20 | P1 | **False success on mixed visual evidence.** A failed (injected) interaction was credited on two "opened" looks against two "closed" ones, with no opening notification. 1 in 200 robustness episodes. | **fixed**: vision-only credit needs unanimous looks |
 | F21 | P1 | **Premature "exploration complete".** When no ray of the 16-ray walkability fan crossed the start room's doorway, the first frontier search after the initial scan found no candidate and the episode ended after 3.9 s with no chest. 18 of 800 Phase 7 generalisation episodes (all indoor) and one resource-profile episode were affected. | **fixed**: one denser 64-ray fan per place before concluding; the reproduced episode now runs to the time limit. One mid-episode case remains (`p7_indoor_test_018`, 77 s, 12.5 % coverage; section O) |
 | F22 | P2 | **Off-mesh unstick manoeuvre repeated in a blocked direction.** With no walked trail to retrace, every manoeuvre went straight behind the camera. On a raised spot that direction was blocked, and the agent stood still until the supervisor aborted the episode (Phase 6 benchmark, `phase6_hybrid_optimised` episode 57: 19 manoeuvres at one bearing; the only failed episode in 500). | **fixed**: each further trail-less manoeuvre turns by a quarter turn; the episode now completes at 387.8 s. Found after the first final audit run; the audit was re-run on the fixed code |
+| F23 | P2 (audit tool) | **An audit re-run reused comparison rows from older code.** `audit-system` always resumed the policy and planner row journals in its output directory. Re-run after F22, it finished those sections in 0.1 s and reported 320 rows played by the code before the fix as its own. | **fixed**: a journal is resumed only when the recorded git tree of `src/` matches the current, unmodified source. The audit was then re-run from scratch |
 
 Each defect's reproduction (episode, seed and map) is named in its regression test
 (section N). `failures.json` logs the audit's own evaluation errors; it is empty in the final
@@ -716,6 +719,7 @@ after numbers in section D.
 | F20 | `test_f20_mixed_visual_evidence_alone_does_not_credit_an_opening` (p7_open_test_019, episode 76) |
 | F21 | `test_f21_a_closed_looking_start_room_does_not_end_the_episode` (p7_indoor_test_001, episode 5; fails before the fix), `test_f21_the_dense_fan_is_tried_once_per_place` |
 | F22 | `test_f22_off_mesh_manoeuvres_without_a_trail_change_direction`, `test_f22_the_stuck_phase6_episode_completes` (Phase 6 benchmark, episode 57; needs the local experience database, skipped without it; both fail before the fix) |
+| F23 | `test_f23_comparison_rows_from_other_code_are_not_reused` |
 
 **Lessons from the test record.**
 
