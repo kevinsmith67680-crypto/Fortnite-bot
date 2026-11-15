@@ -145,10 +145,14 @@ class Audit:
             s, self.out / "db_work")) if self.verify_db else None
         _write_json(self.out / "database_integrity.json", database if database is not None
                     else {"status": "NOT REQUESTED"})
-        inventory = self._inventory(scan, unreal)
+        from chest_hunter.audit.components import assess_components
+
+        components = assess_components({"inter": inter})
+        inventory = self._inventory(scan, unreal, components)
         _write_json(self.out / "component_inventory.json", inventory)
-        summary = self._summary(trace=trace, leak=leak, security=security, vision=vision,
-                                nav=nav, inter=inter, policies=policies, planners=planners,
+        summary = self._summary(components, trace=trace, leak=leak, security=security,
+                                vision=vision, nav=nav, inter=inter, policies=policies,
+                                planners=planners,
                                 endurance=endurance, general=general, robustness=robustness,
                                 resources=resources, database=database, unreal=unreal,
                                 scan=scan)
@@ -295,17 +299,16 @@ class Audit:
 
     # -- inventory and summary ---------------------------------------------------------------------
 
-    def _inventory(self, scan: Any, unreal: Any) -> dict[str, Any]:
-        from chest_hunter.audit.components import COMPONENTS
-
+    def _inventory(self, scan: Any, unreal: Any, components: list[dict[str, Any]]
+                   ) -> dict[str, Any]:
         return {"commit": _git_commit(self.root), "python": sys.version.split()[0],
                 "static_scan": {k: (scan or {}).get(k) for k in ("files", "lines", "counts")},
                 "static_findings": (scan or {}).get("findings"),
                 "modules": (scan or {}).get("modules"),
-                "components": COMPONENTS, "unreal": unreal}
+                "components": components, "unreal": unreal}
 
-    def _summary(self, **parts: Any) -> dict[str, Any]:
-        from chest_hunter.audit.components import COMPONENTS, readiness
+    def _summary(self, components: list[dict[str, Any]], **parts: Any) -> dict[str, Any]:
+        from chest_hunter.audit.components import readiness
 
         return {"commit": _git_commit(self.root),
                 "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -313,7 +316,7 @@ class Audit:
                                "research server). Unreal Engine was not available: every "
                                "Unreal-side component is UNVERIFIED.",
                 "sections": self.sections,
-                "components": COMPONENTS,
+                "components": components,
                 "readiness": readiness(parts),
                 "key_metrics": _key_metrics(parts)}
 

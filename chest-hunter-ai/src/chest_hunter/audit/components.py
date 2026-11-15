@@ -24,7 +24,7 @@ from typing import Any
 COMPONENTS: list[dict[str, Any]] = [
     {"id": 1, "name": "SQLite data infrastructure", "status": "VERIFIED",
      "evidence": ["database_integrity.json", "tests/test_database.py"],
-     "observed": "schema 6, triggers and constraints refuse invalid values, migration from "
+     "observed": "schema 7, triggers and constraints refuse invalid values, migration from "
                  "v1 keeps data, two concurrent writer processes, integrity_check ok",
      "limitations": "single-file SQLite; no network database",
      "fixes": []},
@@ -36,9 +36,10 @@ COMPONENTS: list[dict[str, Any]] = [
      "evidence": ["database_integrity.json", "tests/test_session_repository.py"],
      "observed": "sessions finish with ended_at; interrupted episodes end aborted; finished "
                  "sessions immutable",
-     "limitations": "active-exploration openings are not persisted (F12); endurance resume "
+     "limitations": "3D sessions only in the reference arena; active-exploration openings "
+                    "were not persisted (F12, fixed: discovered_openings); endurance resume "
                     "after a lost result line failed (F9, fixed)",
-     "fixes": ["F9 (fixed)", "F12"]},
+     "fixes": ["F9 (fixed)", "F12 (fixed)"]},
     {"id": 4, "name": "2D navigation (A*)", "status": "VERIFIED",
      "evidence": ["tests/test_astar.py", "tests/test_route_planner.py"],
      "observed": "optimality against Dijkstra, blocked goals, determinism", "limitations": "",
@@ -105,11 +106,14 @@ COMPONENTS: list[dict[str, Any]] = [
      "observed": "simulator interaction rules (range, facing, absent, opened, interrupted, "
                  "duplicate) all as specified; agent interaction attempts",
      "limitations": "Unreal interaction validation never ran", "fixes": []},
-    {"id": 18, "name": "Visual interaction verification", "status": "BROKEN",
+    {"id": 18, "name": "Visual interaction verification", "status": "UNVERIFIED",
      "evidence": ["interaction_metrics.json (false failures)", "failures.json F11"],
-     "observed": "real openings judged closed in every look; the agent re-aligns on an "
-                 "opened chest and marks it failed",
-     "limitations": "", "fixes": ["F11"]},
+     "observed": "status set from the measured false-success / false-failure rates "
+                 "(assess_components)",
+     "limitations": "as found: real openings judged closed in every look, the agent "
+                    "re-aligned on an opened chest and marked it failed (F11, fixed); the "
+                    "single-frame opened/unopened classifier is unchanged (F16)",
+     "fixes": ["F11 (fixed)", "F14 (fixed)"]},
     {"id": 19, "name": "Imitation-learning pipeline", "status": "PARTIALLY VERIFIED",
      "evidence": ["tests/test_learned_policy.py", "training/datasets"],
      "observed": "dataset, splits, NumPy training, ONNX export and parity tests",
@@ -124,7 +128,9 @@ COMPONENTS: list[dict[str, Any]] = [
     {"id": 22, "name": "Reliability supervisor", "status": "PARTIALLY VERIFIED",
      "evidence": ["benchmark_results/robustness", "tests/test_supervisor.py"],
      "observed": "ten injected fault kinds, detection and bounded recovery",
-     "limitations": "mock environment; Unreal timeouts never exercised", "fixes": []},
+     "limitations": "mock environment; Unreal timeouts never exercised; loop detector "
+                    "false alarms in active exploration (F17, fixed; residual detections "
+                    "remain in long episodes)", "fixes": ["F17 (fixed)"]},
     {"id": 23, "name": "Endurance execution", "status": "PARTIALLY VERIFIED",
      "evidence": ["endurance_results.csv"],
      "observed": "100 / 500 / 1000-episode runs against one long-lived reference server",
@@ -148,6 +154,31 @@ WEIGHTS: dict[str, float] = {
     "Reliability": 0.10, "Performance efficiency": 0.10, "Generalisation": 0.05,
     "Data integrity": 0.05, "Testing and documentation": 0.05,
 }
+
+
+def assess_components(parts: dict[str, Any]) -> list[dict[str, Any]]:
+    """The inventory with the statuses that depend on this run's measurements filled in.
+
+    Visual interaction verification (18) is BROKEN when the clean agent cross-check shows a
+    false success or more than 5 % false failures, PARTIALLY VERIFIED otherwise (the
+    reference arena is a mock), and UNVERIFIED when the cross-check did not run.
+    """
+    out = [dict(c) for c in COMPONENTS]
+    clean = ((parts.get("inter") or {}).get("agent_crosscheck") or {}).get(
+        "per_scenario", {}).get("clean", {})
+    fsr, ffr = clean.get("false_success_rate"), clean.get("false_failure_rate")
+    for c in out:
+        if c["id"] != 18:
+            continue
+        if fsr is None or ffr is None:
+            c["status"] = "UNVERIFIED"
+            c["observed"] = "agent cross-check not run"
+        else:
+            ok = fsr == 0 and ffr <= 0.05
+            c["status"] = "PARTIALLY VERIFIED" if ok else "BROKEN"
+            c["observed"] = (f"clean episodes: false-success rate {fsr:.3f}, false-failure "
+                             f"rate {ffr:.3f} against the simulator's opening log")
+    return out
 
 
 def readiness(parts: dict[str, Any]) -> dict[str, Any]:

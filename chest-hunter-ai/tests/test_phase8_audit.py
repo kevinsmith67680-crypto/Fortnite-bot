@@ -85,7 +85,6 @@ class DefectRegressions(unittest.TestCase):
             finally:
                 db.close()
 
-
     def test_f17_exploration_progress_clears_the_loop_window(self) -> None:
         # p7_indoor_test_007, evaluation seed, episode 29: 11 false "transition loop"
         # detections and 6 interventions in 150 fault-free seconds before the fix.
@@ -176,6 +175,22 @@ class AuditTools(unittest.TestCase):
         perfect["inter"]["agent_crosscheck"]["per_scenario"]["clean"]["false_failure_rate"] \
             = 0.2
         self.assertEqual(readiness(perfect)["verdict"], "NOT READY")
+
+    def test_verification_status_follows_the_measurement(self) -> None:
+        from chest_hunter.audit.components import assess_components
+
+        def status(inter: dict[str, Any]) -> str:
+            return next(c["status"] for c in assess_components({"inter": inter})
+                        if c["id"] == 18)
+
+        def clean(fsr: float, ffr: float) -> dict[str, Any]:
+            return {"agent_crosscheck": {"per_scenario": {"clean": {
+                "false_success_rate": fsr, "false_failure_rate": ffr}}}}
+
+        self.assertEqual(status({}), "UNVERIFIED")
+        self.assertEqual(status(clean(0.0, 0.0)), "PARTIALLY VERIFIED")
+        self.assertEqual(status(clean(0.0, 0.06)), "BROKEN")
+        self.assertEqual(status(clean(0.01, 0.0)), "BROKEN")
 
     def test_vision_harness_on_a_small_dataset(self) -> None:
         from chest_hunter.audit.vision_eval import evaluate
