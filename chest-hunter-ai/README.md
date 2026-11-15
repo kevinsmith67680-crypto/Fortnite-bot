@@ -12,6 +12,7 @@ opened per minute.**
 | 3. Computer vision and visual navigation | Done | Simulated camera, OpenCV chest/obstacle/prompt detection, object tracking, visual localisation, occupancy mapping, frontier exploration, closed-loop interaction with visual verification, debug overlays, oracle-vs-visual benchmark |
 | 4. 3D agent and Unreal Engine 5 integration | Python side done and tested; **Unreal project prepared but not compiled or run** | Localhost bridge protocol, client and protocol-identical reference server; 3D reference arena (capsule physics, spring-arm camera, perspective renderer, NavMesh-style graph); perspective chest detection, distance estimation, 3D tracking; NavMesh-hybrid and NavMesh-free navigation; 14-state closed-loop controller; UE5 C++ project sources; 50-episode benchmark (section 15) |
 | 5. Imitation learning, adaptive exploration, generalisation | Done on the Python reference arena; **no human demonstrations recorded, Unreal untested** | Demonstration recorder (teleoperation + synthetic scripted), dataset pipeline, NumPy behaviour cloning, ONNX FP32/INT8 export and CPU inference, policy selector with safety layer, Bayesian spawn estimates, route memory, adaptive planner, classified recovery, procedural maps, paired policy and generalisation benchmarks (section 16) |
+| 6. Reliability, planning and optimisation | Done on the Python reference arena; **Unreal untested** | Episode supervisor with state specifications, loop detection and bounded escalation; short-horizon planning; adaptive computation; learned-policy monitors and reliability calibration; partitioned experience; endurance runs with checkpoints; resource monitor and profiler; operations panel; paired benchmark (section 17) |
 
 > The simulator is entirely self-contained. The project never talks to a game
 > client, game service or network. It never reads or writes game memory or
@@ -61,6 +62,14 @@ python -m chest_hunter benchmark-3d --episodes 50 --seed 42 --workers 3
 python -m chest_hunter simulate-3d --backend reference --policy hybrid \
     --model training/checkpoints/bc_synthetic_v1 --adaptive-planning --smart-recovery --seed 42
 python -m chest_hunter benchmark-policies --episodes 100 --workers 4
+
+# Phase 6: supervisor, short-horizon planning, adaptive computation; endurance and profiling
+python -m chest_hunter simulate-3d --backend reference --agent hybrid --planner short-horizon \
+    --supervisor enabled --adaptive-compute --seed 42
+python -m chest_hunter endurance-test --episodes 100 --planner short-horizon \
+    --output benchmark_results/endurance
+python -m chest_hunter profile-agent --episodes 20 --output benchmark_results/profiling
+python -m chest_hunter benchmark-phase6 --episodes 100 --seed 42 --workers 4
 
 python -m unittest discover -s tests -v
 ```
@@ -343,6 +352,12 @@ Overrides: `--config PATH` or `CHEST_HUNTER_CONFIG`, `--db PATH`,
 `--log-level LEVEL`, `CHEST_HUNTER_HOME`. Relative paths resolve against the
 project root, never the current directory.
 
+The later sections are optional too and documented with their phases:
+
+* `unreal_bridge`, `simulation_3d`: Phase 4 (`docs/phase4_3d_architecture.md`);
+* `learning`: Phase 5 (`docs/phase5_learning_architecture.md`);
+* `supervisor`, `planning`, `performance`, `endurance`: Phase 6 (section 17.6).
+
 ## 8. The simulator
 
 * **World mapping.** Each enabled chest location from SQLite is placed at
@@ -436,10 +451,12 @@ The plan is recalculated after every observation. The strategy, seed,
 episode and all parameters are stored in `simulation_runs` for every
 session.
 
-## 11. Database structure (schema version 4)
+## 11. Database structure (schema version 6)
 
 Phase 4 added migration 3 (`reward_received`, `navigation_failures`;
 section 15.7) and Phase 5 migration 4 (`spawn_estimates`, `route_memory`; section 16.3).
+Phase 6 added migration 5 (`route_memory.partition_key`) and migration 6
+(`episode_experience`), both additive (section 17).
 The rest of this section describes migrations 1 and 2.
 
 Phase 1 tables are unchanged. Migration 2 adds one table and
@@ -742,7 +759,7 @@ oldest) is evicted.
   steps behind a dead zone, so it only coarsely follows the agent. The
   agent's exact position, heading, chests and walls all come from pixels.
   Estimating the camera pose from images alone (visual odometry or
-  landmarks) is a next step (section 22). Tests check the round trip and
+  landmarks) is a next step (section 23). Tests check the round trip and
   that the transform is not an identity.
 * **Filter.** The pose is predicted from the agent's own velocity commands
   (dead reckoning) and corrected with each visual fix by exponential
@@ -984,7 +1001,7 @@ What the numbers say:
   * Each one was the Blue House attic/basement pair, 0.28 cells apart: the
     chest is opened, but the spot it was credited to had already been judged
     empty, so the opening is not recorded (reproduced and traced for episode
-    0, and consistent with the limitation in section 21).
+    0, and consistent with the limitation in section 22).
   * Openings were **never over-reported** in any mode or map.
 * **Cost.**
   * Perception averaged 3.2-4.0 ms per analysed frame, at 6-8 analyses per
@@ -1628,7 +1645,132 @@ after the fix).
   reference arena, on one CPU core per worker. They say nothing about speed in Unreal, in a
   real game, or with GPU rendering.
 
-## 17. Running the tests
+## 17. Phase 6: reliability, planning and computational optimisation
+
+Phase 6 makes the agent supervise itself during long autonomous runs, plan short sequences of
+targets, spend less computation where it can, and report what it does. The baseline it
+starts from is recorded in `docs/phase6_baseline_audit.md`; the design is in
+`docs/phase6_reliability_and_optimization.md`. **Everything below ran on the Python
+reference arena. Unreal Engine is not installed here, so nothing was verified against
+Unreal.**
+
+### 17.1 Commands
+
+```bash
+# One episode with the supervisor, short-horizon planning and adaptive computation
+# (--agent selects the 3D mode; --policy deterministic|learned|hybrid selects the controller)
+python -m chest_hunter simulate-3d --backend reference --agent hybrid --planner short-horizon \
+    --supervisor enabled --adaptive-compute --seed 42 --profile
+
+# Many consecutive episodes against one environment, with checkpoints
+python -m chest_hunter endurance-test --episodes 500 --policy hybrid --planner short-horizon \
+    --output benchmark_results/endurance            # --resume continues; Ctrl-C stops safely
+python -m chest_hunter endurance-test --episodes 100 --dashboard --output runs/demo   # panel
+
+# Processing time per component, optionally comparing vision profiles
+python -m chest_hunter profile-agent --episodes 20 --vision-profiles phase5,efficient \
+    --output benchmark_results/profiling
+
+# Paired benchmark of the Phase 4, Phase 5 and Phase 6 configurations
+python -m chest_hunter benchmark-phase6 --episodes 100 --seed 42 --workers 4
+
+# How well the learned policy's confidence predicts reliable commands (held-out episodes)
+python -m chest_hunter calibrate-policy --output benchmark_results/phase6/reliability
+```
+
+### 17.2 What was added
+
+* **Supervisor** (`runtime/supervisor.py`). It watches every decision step for:
+  * time in a state beyond its measured limit;
+  * a stuck agent;
+  * repeated state cycles;
+  * a spawn point planned for again and again;
+  * repeated interaction failures;
+  * no progress;
+  * refused transitions;
+  * invalid commands, frames or telemetry;
+  * model failures and slow inference;
+  * a lost connection.
+
+  Each detection becomes a structured event. The response follows a bounded escalation
+  ladder: replan → abandon target → unstick → relocalise → deterministic fallback → abort.
+  No intervention is repeated for the same incident, there are per-incident and
+  per-episode limits, and a monitor-only mode is available.
+* **State specifications** (`runtime/state_spec.py`): for every agent state, its entry
+  conditions, permitted commands, exits, maximum duration (at least twice the longest
+  measured visit) and recovery transition. Invalid transitions are refused and logged
+  instead of crashing the episode.
+* **Planning** (`exploration/advanced_planner.py`): S = (p q + λ I) / (T + ε) − μ R,
+  greedy or short-horizon beam search over 2–3 targets. Work is bounded, there is a 15 ms
+  budget per search level, and ties are deterministic.
+* **Adaptive computation:**
+  * vision profiles (`phase5`, `efficient`, `dense`);
+  * skipping frames when nothing can have changed;
+  * the detector reuses the agent's colour segmentation instead of computing it again;
+  * bounded caches and tracks;
+  * one ONNX session per process.
+* **Learned-policy monitors:** oscillation, failed interaction holds, logged policy switches.
+  Reliability calibration of the hybrid gate is measured; the calibrated gate is opt-in.
+* **Experience partitions** by environment version, agent version and simulation
+  configuration (migration 5), and one `episode_experience` row per episode (migration 6).
+* **Endurance runs:**
+  * one research server and connection for the whole run, with a reset between episodes;
+  * a new agent for every episode, with a check that the previous one was released;
+  * atomic, checksummed checkpoints, with resume;
+  * graceful stopping on SIGINT/SIGTERM;
+  * bounded environment resets.
+* **Monitoring:** a resource monitor (process vs system CPU and memory; GPU and Unreal
+  frame time reported as unavailable) and a component profiler (latency and own-thread CPU
+  time; mean, median, p95, max).
+* **Operations panel** (Tk, optional). It shows the episode, state, policy, target, chests,
+  rate, coverage, recoveries, supervisor warnings, frame rate, CPU, memory, inference latency
+  and recent transitions. Its controls are start, pause, resume, stop safely, select policy,
+  route strategy and vision profile, and export metrics.
+
+### 17.3 Benchmark
+
+RESULTS_BENCHMARK
+
+### 17.4 Endurance runs
+
+RESULTS_ENDURANCE
+
+### 17.5 Profiling and resource use
+
+RESULTS_PROFILING
+
+### 17.6 Configuration
+
+New optional sections in `config/settings.json`, all validated. Simulation-state limits use
+simulated seconds; infrastructure limits (inference budget, planning budget, resets,
+metrics interval) use wall-clock time.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `supervisor.enabled`, `mode` | true, `enforce` | `monitor` detects and logs without acting |
+| `supervisor.max_state_seconds` | 30 | limit for states without their own (per-state limits in the Phase 6 doc) |
+| `supervisor.max_recovery_attempts` | 3 | interventions per incident |
+| `supervisor.max_interventions` | 30 | per episode; then the episode is aborted |
+| `supervisor.loop_detection_window`, `loop_repetitions` | 12, 3 | recent states examined; repetitions of a cycle |
+| `supervisor.max_no_progress_seconds` | 90 | simulated seconds without an opening, resolution, reached target or new detection |
+| `supervisor.stationary_seconds` | 6 | movement requested but no displacement |
+| `supervisor.max_goal_plans`, `max_interaction_failures`, `max_invalid_observations` | 8, 3, 5 | per spawn point / in a row |
+| `supervisor.inference_budget_ms` | 20 | p95 of the last 50 inferences (wall clock) |
+| `planning.strategy` | `short_horizon` | or `greedy` (used when a Phase 6 planner is selected) |
+| `planning.planning_horizon`, `beam_width`, `maximum_candidates` | 3, 5, 20 | search bounds |
+| `planning.planning_budget_ms` | 15 | wall clock per search level |
+| `planning.exploration_weight`, `recovery_weight`, `detour_factor` | 0.15, 0.005, 1.25 | λ, μ, straight-line detour |
+| `performance.adaptive_vision`, `vision_profile`, `skip_unchanged_frames` | true, `efficient`, true | used by `--adaptive-compute` |
+| `performance.max_tracking_objects` | 100 | tracker bound |
+| `performance.metrics_interval_seconds` | 2 | resource samples (wall clock) |
+| `endurance.default_episodes`, `max_ticks_per_episode`, `save_checkpoint_every` | 100, 100000, 10 | endurance defaults |
+| `endurance.max_reset_attempts`, `reset_timeout_seconds` | 3, 30 | environment resets before a run stops |
+
+### 17.7 Phase 6 limitations
+
+RESULTS_LIMITATIONS
+
+## 18. Running the tests
 
 ```bash
 python -m unittest discover -s tests -v                # every phase (standard library only)
@@ -1722,7 +1864,7 @@ The Unreal C++ code is not built by these
 tests (see section 15); `tests/test_unreal_sources.py` compiles only the shared
 SplitMix64/UnitRoll functions with the host C++ compiler.
 
-## 18. Example output
+## 19. Example output
 
 ```text
 $ python -m chest_hunter simulate --map research_arena_01 --strategy weighted --seed 42 --headless
@@ -1758,7 +1900,7 @@ the episode itself takes about 0.05 s. Running
 `simulate --render --strategy weighted --seed 42` gives exactly the same
 result in the GUI: 4,120 ticks, 25 opened, 10.92 chests/min.
 
-## 19. Programmatic use
+## 20. Programmatic use
 
 ```python
 from chest_hunter.agent import SimulationRunner
@@ -1786,7 +1928,7 @@ optionally `evaluate=True` to measure perception against ground truth:
 loops. `runner.env.add_obstacle(...)` changes the map at runtime; cached
 paths are invalidated automatically.
 
-## 20. Troubleshooting
+## 21. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -1812,7 +1954,7 @@ paths are invalidated automatically.
 | `argument --config: ...` with `train-policy` | The training configuration option is `--train-config` (`--config` selects the settings file) |
 | Human demonstrations: `need Tkinter and a display` | Run on a desktop session (or `xvfb-run` for testing) |
 
-## 21. Known limitations
+## 22. Known limitations
 
 * **2D only.** `z` is ignored, so stacked chests share a grid position. They
   are visited one after the other without moving.
@@ -1864,7 +2006,7 @@ Phase 3:
   sprites. There are no textures, shadows, perspective or motion blur, and
   the templates match the rendering exactly.
 
-## 22. Recommended next steps
+## 23. Recommended next steps
 
 1. **Tour optimisation for full sweeps.** For example, nearest-neighbour
    plus 2-opt over the distance oracle, since full-sweep throughput is
