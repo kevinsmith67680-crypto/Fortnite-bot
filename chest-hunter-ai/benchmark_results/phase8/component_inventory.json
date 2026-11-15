@@ -1,9 +1,9 @@
 {
- "commit": "d0612c3",
+ "commit": "a172d90",
  "python": "3.13.18",
  "static_scan": {
   "files": 214,
-  "lines": 51563,
+  "lines": 51784,
   "counts": {
    "marker": 1,
    "growth_candidate": 58,
@@ -26,47 +26,47 @@
   },
   {
    "kind": "stub",
-   "where": "src/chest_hunter/agent/controller_3d.py:203",
+   "where": "src/chest_hunter/agent/controller_3d.py:206",
    "detail": "__call__"
   },
   {
    "kind": "constant_return",
-   "where": "src/chest_hunter/agent/controller_3d.py:1526",
+   "where": "src/chest_hunter/agent/controller_3d.py:1563",
    "detail": "wants_observation -> False"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:263",
+   "where": "src/chest_hunter/agent/controller_3d.py:266",
    "detail": "VisualAgent3D._attempts"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:264",
+   "where": "src/chest_hunter/agent/controller_3d.py:267",
    "detail": "VisualAgent3D._align_failures"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:279",
+   "where": "src/chest_hunter/agent/controller_3d.py:283",
    "detail": "VisualAgent3D._plan_failures"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:284",
+   "where": "src/chest_hunter/agent/controller_3d.py:288",
    "detail": "VisualAgent3D._lookbacks"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:286",
+   "where": "src/chest_hunter/agent/controller_3d.py:290",
    "detail": "VisualAgent3D._rescans"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:287",
+   "where": "src/chest_hunter/agent/controller_3d.py:291",
    "detail": "VisualAgent3D._approach_losses"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/agent/controller_3d.py:288",
+   "where": "src/chest_hunter/agent/controller_3d.py:292",
    "detail": "VisualAgent3D._uncertain_checks"
   },
   {
@@ -231,17 +231,17 @@
   },
   {
    "kind": "broad_except:recorded",
-   "where": "src/chest_hunter/audit/system.py:82",
+   "where": "src/chest_hunter/audit/system.py:95",
    "detail": "Exception"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/audit/system.py:72",
+   "where": "src/chest_hunter/audit/system.py:85",
    "detail": "Audit.sections"
   },
   {
    "kind": "growth_candidate",
-   "where": "src/chest_hunter/audit/system.py:73",
+   "where": "src/chest_hunter/audit/system.py:86",
    "detail": "Audit.failures"
   },
   {
@@ -564,7 +564,7 @@
   "chest_hunter.agent.controller_3d": {
    "file": "src/chest_hunter/agent/controller_3d.py",
    "imported": true,
-   "lines": 1615
+   "lines": 1652
   },
   "chest_hunter.agent.dashboard_3d": {
    "file": "src/chest_hunter/agent/dashboard_3d.py",
@@ -749,7 +749,7 @@
   "chest_hunter.audit.system": {
    "file": "src/chest_hunter/audit/system.py",
    "imported": true,
-   "lines": 365
+   "lines": 387
   },
   "chest_hunter.audit.unreal_static": {
    "file": "src/chest_hunter/audit/unreal_static.py",
@@ -814,7 +814,7 @@
   "chest_hunter.exploration.active": {
    "file": "src/chest_hunter/exploration/active.py",
    "imported": true,
-   "lines": 598
+   "lines": 621
   },
   "chest_hunter.exploration.adaptive_planner": {
    "file": "src/chest_hunter/exploration/adaptive_planner.py",
@@ -1609,7 +1609,7 @@
     "test_server_is_loopback_only_and_has_no_remote_execution (tests.test_unreal_sources.TestSecurityProperties.test_server_is_loopback_only_and_has_no_remote_execution) ... ok"
    ],
    "summary": [
-    "Ran 11 tests in 0.087s",
+    "Ran 11 tests in 0.076s",
     "OK"
    ]
   },

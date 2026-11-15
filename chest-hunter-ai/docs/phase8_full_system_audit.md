@@ -5,7 +5,8 @@ executed test, an observed run or a measured benchmark, with the artifact named.
 
 * **Audit artifacts:** `benchmark_results/phase8/`, produced by
   `python -m chest_hunter audit-system --episodes 40 --held-out-maps --profile-resources
-  --verify-database --workers 4`.
+  --verify-database --workers 4` on the final code (source of commit `e88d8cc`; the summary
+  records `a172d90`, a documentation-only commit on top of it).
 * **Reused benchmarks:** `benchmark_results/phase7/` (generalisation),
   `benchmark_results/robustness/`, `benchmark_results/phase7/acceptance/` and
   `benchmark_results/phase6/endurance_*`.
@@ -76,7 +77,13 @@ F13: Unreal static facts, scan results, the first test run and the loop trace).
   * the Unreal builder ignores `surface_value` (F3);
   * one residual early ending in 100 maps (F21 residual).
 
-**Tests.** {{TESTS_A}} Ruff and `mypy --strict` are clean.
+**Tests** (final code, commit `e88d8cc`; section N):
+
+* Python 3.13: 784 tests pass, 7 GUI tests skipped without a display.
+* Clean Python 3.12 environment built from `requirements-lock.txt`, under a virtual display:
+  784 pass, none skipped.
+* Ruff and `mypy --strict` are clean.
+* At the start of the audit the suite had 4 failures and 1 error (F7–F9).
 
 **Simplicity.** No component added after Phase 4 improves throughput over the deterministic
 nearest-target controller in this environment (section M). That covers the learned policy,
@@ -427,9 +434,9 @@ Configuration: phase6_deterministic_supervised, research_arena_3d, spawn points;
 
 | configuration | episodes | throughput (chests / sim min) [95 % CI] | reachable opened % | navigation success | interaction success (pooled) | travel m | agent CPU s / sim s | inference ms | frontier selection ms | failed | over-reported |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| audit_policy_deterministic | 40 | 3.844 [3.512, 4.177] | 76.1 | 0.996 | 0.993 | 364.3 | 0.0106 | n/a | n/a | 0 | 0 |
-| audit_policy_learned | 40 | 1.241 [1.083, 1.399] | 46.1 | 0.749 | 0.926 | 387.1 | 0.0157 | 0.659 | n/a | 0 | 0 |
-| audit_policy_hybrid | 40 | 3.389 [3.097, 3.681] | 74.1 | 0.982 | 0.993 | 366.8 | 0.0125 | 0.675 | n/a | 0 | 0 |
+| audit_policy_deterministic | 40 | 3.844 [3.512, 4.177] | 76.1 | 0.996 | 0.993 | 364.3 | 0.0114 | n/a | n/a | 0 | 0 |
+| audit_policy_learned | 40 | 1.241 [1.083, 1.399] | 46.1 | 0.749 | 0.926 | 387.1 | 0.0172 | 0.729 | n/a | 0 | 0 |
+| audit_policy_hybrid | 40 | 3.389 [3.097, 3.681] | 74.1 | 0.982 | 0.993 | 366.8 | 0.0135 | 0.729 | n/a | 0 | 0 |
 
 Paired differences against the deterministic controller (throughput, chests per simulated
 minute):
@@ -462,11 +469,11 @@ selectors:
 
 | configuration | episodes | throughput (chests / sim min) [95 % CI] | reachable opened % | navigation success | interaction success (pooled) | travel m | agent CPU s / sim s | inference ms | frontier selection ms | failed | over-reported |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| audit_planner_nearest | 40 | 3.844 [3.512, 4.177] | 76.1 | 0.996 | 0.993 | 364.3 | 0.0109 | n/a | n/a | 0 | 0 |
-| audit_planner_adaptive | 40 | 3.651 [3.347, 3.954] | 76.7 | 0.996 | 0.984 | 386.2 | 0.0109 | n/a | n/a | 0 | 0 |
-| audit_planner_greedy | 40 | 3.828 [3.490, 4.166] | 77.0 | 0.996 | 0.997 | 364.6 | 0.0109 | n/a | n/a | 0 | 0 |
-| audit_planner_short_horizon | 40 | 3.554 [3.205, 3.902] | 74.8 | 0.999 | 0.993 | 397.2 | 0.0108 | n/a | n/a | 0 | 0 |
-| audit_planner_frontier | 40 | 1.702 [1.497, 1.908] | 59.9 | 0.998 | 0.966 | 518.8 | 0.0129 | n/a | 15.140 | 0 | 0 |
+| audit_planner_nearest | 40 | 3.844 [3.512, 4.177] | 76.1 | 0.996 | 0.993 | 364.3 | 0.0111 | n/a | n/a | 0 | 0 |
+| audit_planner_adaptive | 40 | 3.651 [3.347, 3.954] | 76.7 | 0.996 | 0.984 | 386.2 | 0.0111 | n/a | n/a | 0 | 0 |
+| audit_planner_greedy | 40 | 3.828 [3.490, 4.166] | 77.0 | 0.996 | 0.997 | 364.6 | 0.0111 | n/a | n/a | 0 | 0 |
+| audit_planner_short_horizon | 40 | 3.554 [3.205, 3.902] | 74.8 | 0.999 | 0.993 | 397.2 | 0.0111 | n/a | n/a | 0 | 0 |
+| audit_planner_frontier | 40 | 1.702 [1.497, 1.908] | 59.9 | 0.998 | 0.966 | 519.1 | 0.0132 | n/a | 15.429 | 0 | 0 |
 
 Paired differences against nearest:
 
@@ -475,7 +482,7 @@ Paired differences against nearest:
 | greedy | −0.02 [−0.16, +0.12] | 8 / 13 / 19 | +0.3 [−5.3, +5.9] |
 | adaptive | −0.19 [−0.43, +0.04] | 15 / 19 / 6 | **+21.9 [+9.0, +34.9]** |
 | short-horizon | −0.29 [−0.59, +0.00] | 14 / 24 / 2 | **+32.9 [+17.4, +48.4]** |
-| frontier (no spawn points) | **−2.14 [−2.45, −1.83]** | 0 / 40 / 0 | **+154.5 [+111.1, +198.0]** |
+| frontier (no spawn points) | **−2.14 [−2.45, −1.83]** | 0 / 40 / 0 | **+154.8 [+111.3, +198.3]** |
 
 * **The simplest planner is the best.** No planner beats nearest-target selection.
   * Greedy is indistinguishable from it.
@@ -493,7 +500,10 @@ Paired differences against nearest:
 
 * 100 faulted episodes on held-out layouts, ten kinds × 10, each with a fault-free twin;
 * the Phase 7 agent, 150 s per episode;
-* full table in the Phase 7 document, section 15.2.
+* full table in the Phase 7 document, section 15.2;
+* run at commit `3ad12f3`, before F22. F22 can change an episode only from a second
+  trail-less off-mesh manoeuvre in a row, and no episode of this run or of the acceptance run
+  failed, so none was stuck that way.
 
 | | Result (commit `3ad12f3`) |
 |---|---|
@@ -524,7 +534,7 @@ No fault kind costs measurable throughput: every paired interval includes 0, wit
 | endurance_100 | reused | 100 / 100 | {"tick_limit": 100} | 0 | 0 | 1 / 0 | 0.886 | 0 | 5.184 | 4.63 | 97.0 / 102.1 / 107.0 | 1.360 | [3, 3] | [9, 9] | True |
 | endurance_1000 | reused | 1000 / 1000 | {"tick_limit": 1000} | 0 | 0 | 16 / 0 | 0.868 | 0 | 5.366 | 4.38 | 97.0 / 110.2 / 110.6 | 0.466 | [3, 3] | [9, 9] | True |
 | endurance_500 | reused | 500 / 500 | {"tick_limit": 500} | 0 | 0 | 8 / 0 | 0.853 | 0 | 5.314 | 4.51 | 97.3 / 105.3 / 109.1 | 0.535 | [3, 3] | [9, 9] | True |
-| level1_smoke_10 | this audit | 10 / 10 | {"tick_limit": 10} | 0 | 0 | 1 / 0 | 0.531 | 0 | 5.040 | 3.93 | 230.5 / 239.2 / 239.2 | 0.200 | [3, 3] | [11, 11] |  |
+| level1_smoke_10 | this audit | 10 / 10 | {"tick_limit": 10} | 0 | 0 | 1 / 0 | 0.531 | 0 | 5.040 | 4.31 | 231.1 / 238.7 / 238.7 | 0.000 | [3, 3] | [11, 11] |  |
 
 * 1,600 episodes in three runs, each run on one long-lived server connection: no failed
   episode, communication failure or abort.
@@ -574,17 +584,17 @@ No fault kind costs measurable throughput: every paired interval includes 0, wit
 
 | configuration | episodes | sim s | wall s | pipeline CPU s / sim s (share of one core in real time) | pipeline CPU ms / analysed frame | frames analysed | bridge client CPU s | simulator CPU s | RSS first / last / max (MB) |
 |---|---|---|---|---|---|---|---|---|---|
-| 320x180_5fps | 3 | 600.0 | 35.8 | 0.0095 | 1.906 | 3000 | 1.88 | 26.91 | 246.7 / 260.2 / 260.2 |
-| 480x270_5fps | 3 | 600.0 | 42.8 | 0.0157 | 3.136 | 3000 | 2.15 | 29.83 | 266.1 / 270.1 / 270.1 |
-| 640x360_10fps | 3 | 600.0 | 82.1 | 0.0330 | 4.394 | 4500 | 3.22 | 57.28 | 291.3 / 315.7 / 315.7 |
-| 320x180_adaptive | 3 | 600.0 | 31.2 | 0.0087 | 2.029 | 2580 | 1.88 | 22.88 | 316.5 / 317.0 / 317.0 |
+| 320x180_5fps | 3 | 600.0 | 36.7 | 0.0097 | 1.938 | 3000 | 1.95 | 27.67 | 247.0 / 260.0 / 260.0 |
+| 480x270_5fps | 3 | 600.0 | 45.2 | 0.0168 | 3.370 | 3000 | 2.32 | 31.38 | 265.8 / 269.9 / 269.9 |
+| 640x360_10fps | 3 | 600.0 | 86.1 | 0.0348 | 4.636 | 4500 | 3.42 | 59.79 | 288.8 / 307.9 / 307.9 |
+| 320x180_adaptive | 3 | 600.0 | 32.0 | 0.0092 | 2.147 | 2580 | 2.01 | 22.99 | 313.8 / 314.1 / 314.1 |
 
 * **Python decision pipeline:** the agent's thread uses about 1 % of one core per simulated
-  second at 320×180 (1.9 ms per analysed frame), 1.6 % at 480×270 and 3.3 % at 640×360 and
-  10 fps (4.4 ms per frame).
+  second at 320×180 (1.9 ms per analysed frame), 1.7 % at 480×270 and 3.5 % at 640×360 and
+  10 fps (4.6 ms per frame).
 * **Simulator:** most of the process CPU is the reference arena's software renderer and
   physics. It stands in for Unreal and says nothing about Unreal's cost.
-* **Adaptive profile:** it analysed 2,580 frames instead of 3,000 and used 8 % less pipeline CPU per simulated second (0.0087 vs 0.0095). Its CPU per analysed frame is higher (2.03 ms) only because the work done on every tick is divided by fewer frames. In these three episodes it opened fewer chests (1.1 vs 1.5 per minute on average). Three episodes cannot measure that cost, so the saving should not be assumed to be free. The other configurations were within 0.2 chests per minute of each other on the same three maps
+* **Adaptive profile:** it analysed 2,580 frames instead of 3,000 and used 5 % less pipeline CPU per simulated second (0.0092 vs 0.0097). Its CPU per analysed frame is higher (2.15 ms) only because the work done on every tick is divided by fewer frames. In these three episodes it opened fewer chests (1.1 vs 1.5 per minute on average). Three episodes cannot measure that cost, so the saving should not be assumed to be free. The other configurations were within 0.2 chests per minute of each other on the same three maps
 * **Memory:** the RSS values are those of the audit process after many earlier sections.
   They are not an agent's footprint; that is 97–110 MB in the endurance runs and at most
   146.5 MB per acceptance worker.
@@ -605,7 +615,7 @@ targeted checks): 13 of 14 checks pass.
 | no recorded opening that did not happen | True | [] |
 | every true opening recorded | False | {"missing": 1, "true_openings": 39} |
 | session statistics equal raw observation rows | True | [] |
-| an interrupted episode's session ends aborted | True | {"status": "aborted", "ended_at": "2026-11-15T20:14:59.253287+00:00"} |
+| an interrupted episode's session ends aborted | True | {"status": "aborted", "ended_at": "2026-11-15T21:18:48.482838+00:00"} |
 | active-exploration openings reach the database | True | {"discovered_opening_rows": 4, "credited": 4, "true_openings": 4} |
 | invalid values are refused | True | {"probability 1.5": "ValidationError", "NaN coordinate": "ValidationError", "empty map id": "ValidationError", "negative |
 | migration from schema 1 keeps data | True | {"schema": 7, "rows": 1} |
@@ -692,7 +702,9 @@ Measured value against complexity, component by component:
 | `3ad12f3` code (run at `e076232`) | 3.13.18 | **779 OK**, 7 skipped (GUI, no display), 680 s |
 | `3ad12f3` code (run at `56f2345`) | 3.12.3, clean venv + Xvfb | **779 OK, 0 skipped**, 726 s |
 | `107d52b` (with the F1 and F2 regression tests) | 3.13.18 | **781 OK**, 7 skipped (GUI, no display), 528 s |
-{{TESTS_FINAL_ROW}}
+| `5431410` (F22 and its regression tests) | 3.13.18 | **783 OK**, 7 skipped (GUI, no display), 610 s |
+| **Final code** (`e88d8cc`, F23 and its regression test) | 3.13.18 | **784 OK**, 7 skipped (GUI, no display), 583 s |
+| **Final code** (`e88d8cc`) | 3.12.3, clean venv + Xvfb | **784 OK, 0 skipped**, 591 s |
 
 Static checks on the final code:
 

@@ -124,13 +124,13 @@
    },
    "agent_cpu_per_sim_second": {
     "n": 40,
-    "mean": 0.0108,
-    "median": 0.0106,
-    "std": 0.0015,
-    "ci_low": 0.0103,
-    "ci_high": 0.0113,
-    "min": 0.0074,
-    "max": 0.0144
+    "mean": 0.0114,
+    "median": 0.0113,
+    "std": 0.0016,
+    "ci_low": 0.0109,
+    "ci_high": 0.0119,
+    "min": 0.0083,
+    "max": 0.0154
    },
    "frontier_selection_ms_mean": {
     "n": 0,
@@ -154,13 +154,13 @@
    },
    "peak_rss_mb": {
     "n": 40,
-    "mean": 263.8875,
-    "median": 258.25,
-    "std": 37.8055,
-    "ci_low": 251.7967,
-    "ci_high": 275.9783,
-    "min": 202.8,
-    "max": 331.9
+    "mean": 259.6025,
+    "median": 253.2,
+    "std": 37.2963,
+    "ci_low": 247.6746,
+    "ci_high": 271.5304,
+    "min": 191.9,
+    "max": 339.8
    },
    "sim_seconds": {
     "n": 40,
@@ -174,13 +174,13 @@
    },
    "wall_seconds": {
     "n": 40,
-    "mean": 9.602,
-    "median": 7.675,
-    "std": 4.6714,
-    "ci_low": 8.108,
-    "ci_high": 11.096,
-    "min": 3.7,
-    "max": 19.93
+    "mean": 10.289,
+    "median": 8.225,
+    "std": 5.1153,
+    "ci_low": 8.6531,
+    "ci_high": 11.9249,
+    "min": 3.55,
+    "max": 21.68
    },
    "detection_precision_pooled": 0.9345,
    "detection_recall_pooled": 0.874,
@@ -321,13 +321,13 @@
    },
    "agent_cpu_per_sim_second": {
     "n": 40,
-    "mean": 0.0161,
-    "median": 0.0161,
-    "std": 0.0017,
-    "ci_low": 0.0156,
-    "ci_high": 0.0166,
-    "min": 0.0133,
-    "max": 0.021
+    "mean": 0.0172,
+    "median": 0.0172,
+    "std": 0.0019,
+    "ci_low": 0.0165,
+    "ci_high": 0.0178,
+    "min": 0.0137,
+    "max": 0.0238
    },
    "frontier_selection_ms_mean": {
     "n": 0,
@@ -341,23 +341,23 @@
    },
    "inference_mean_ms": {
     "n": 40,
-    "mean": 0.6808,
-    "median": 0.678,
-    "std": 0.0248,
-    "ci_low": 0.6729,
-    "ci_high": 0.6888,
-    "min": 0.6446,
-    "max": 0.7695
+    "mean": 0.7286,
+    "median": 0.725,
+    "std": 0.0315,
+    "ci_low": 0.7185,
+    "ci_high": 0.7387,
+    "min": 0.6734,
+    "max": 0.7959
    },
    "peak_rss_mb": {
     "n": 40,
-    "mean": 267.165,
-    "median": 257.7,
-    "std": 38.8155,
-    "ci_low": 254.7512,
-    "ci_high": 279.5788,
-    "min": 215.7,
-    "max": 343.0
+    "mean": 262.14,
+    "median": 254.2,
+    "std": 36.5462,
+    "ci_low": 250.4519,
+    "ci_high": 273.8281,
+    "min": 204.9,
+    "max": 329.4
    },
    "sim_seconds": {
     "n": 40,
@@ -371,13 +371,13 @@
    },
    "wall_seconds": {
     "n": 40,
-    "mean": 16.1035,
-    "median": 15.645,
-    "std": 2.9364,
-    "ci_low": 15.1644,
-    "ci_high": 17.0426,
-    "min": 8.95,
-    "max": 22.09
+    "mean": 17.222,
+    "median": 16.61,
+    "std": 3.2654,
+    "ci_low": 16.1777,
+    "ci_high": 18.2663,
+    "min": 9.5,
+    "max": 24.05
    },
    "detection_precision_pooled": 0.929,
    "detection_recall_pooled": 0.8652,
@@ -518,13 +518,13 @@
    },
    "agent_cpu_per_sim_second": {
     "n": 40,
-    "mean": 0.0126,
-    "median": 0.0125,
-    "std": 0.0022,
-    "ci_low": 0.0119,
-    "ci_high": 0.0133,
-    "min": 0.0089,
-    "max": 0.0168
+    "mean": 0.0135,
+    "median": 0.0132,
+    "std": 0.0023,
+    "ci_low": 0.0127,
+    "ci_high": 0.0142,
+    "min": 0.0098,
+    "max": 0.0185
    },
    "frontier_selection_ms_mean": {
     "n": 0,
@@ -538,23 +538,23 @@
    },
    "inference_mean_ms": {
     "n": 40,
-    "mean": 0.6869,
-    "median": 0.6832,
-    "std": 0.0338,
-    "ci_low": 0.6761,
-    "ci_high": 0.6977,
-    "min": 0.6284,
-    "max": 0.7778
+    "mean": 0.7289,
+    "median": 0.7247,
+    "std": 0.0444,
+    "ci_low": 0.7147,
+    "ci_high": 0.7431,
+    "min": 0.6596,
+    "max": 0.8162
    },
    "peak_rss_mb": {
     "n": 40,
-    "mean": 267.4075,
-    "median": 262.45,
-    "std": 35.4867,
-    "ci_low": 256.0583,
-    "ci_high": 278.7567,
-    "min": 217.6,
-    "max": 332.2
+    "mean": 261.5325,
+    "median": 252.15,
+    "std": 36.3442,
+    "ci_low": 249.9091,
+    "ci_high": 273.1559,
+    "min": 208.8,
+    "max": 324.4
    },
    "sim_seconds": {
     "n": 40,
@@ -568,13 +568,13 @@
    },
    "wall_seconds": {
     "n": 40,
-    "mean": 10.6602,
-    "median": 9.005,
-    "std": 5.4224,
-    "ci_low": 8.9261,
-    "ci_high": 12.3944,
-    "min": 4.02,
-    "max": 21.13
+    "mean": 11.4153,
+    "median": 9.43,
+    "std": 5.8376,
+    "ci_low": 9.5483,
+    "ci_high": 13.2822,
+    "min": 3.42,
+    "max": 22.36
    },
    "detection_precision_pooled": 0.9491,
    "detection_recall_pooled": 0.8835,
@@ -733,6 +733,6 @@
   180
  ],
  "workers": 4,
- "wall_seconds": 370.3,
+ "wall_seconds": 395.2,
  "errors": []
 }

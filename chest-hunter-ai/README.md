@@ -1778,7 +1778,28 @@ python -m chest_hunter calibrate-policy --output benchmark_results/phase6/reliab
 
 ### 17.5 Profiling and resource use
 
-RESULTS_PROFILING
+Python decision pipeline, measured by the Phase 8 audit's resource profile (final code, 3
+held-out maps per configuration, active exploration, deterministic policy, one process):
+
+| configuration | episodes | sim s | wall s | pipeline CPU s / sim s (share of one core in real time) | pipeline CPU ms / analysed frame | frames analysed | bridge client CPU s | simulator CPU s | RSS first / last / max (MB) |
+|---|---|---|---|---|---|---|---|---|---|
+| 320x180_5fps | 3 | 600.0 | 36.7 | 0.0097 | 1.938 | 3000 | 1.95 | 27.67 | 247.0 / 260.0 / 260.0 |
+| 480x270_5fps | 3 | 600.0 | 45.2 | 0.0168 | 3.370 | 3000 | 2.32 | 31.38 | 265.8 / 269.9 / 269.9 |
+| 640x360_10fps | 3 | 600.0 | 86.1 | 0.0348 | 4.636 | 4500 | 3.42 | 59.79 | 288.8 / 307.9 / 307.9 |
+| 320x180_adaptive | 3 | 600.0 | 32.0 | 0.0092 | 2.147 | 2580 | 2.01 | 22.99 | 313.8 / 314.1 / 314.1 |
+
+* **The agent's own thread** uses about 1 % of one core per simulated second at 320×180 and
+  5 analysed frames per second, and 3.5 % at 640×360 and 10 fps.
+* **In the Phase 6 benchmark** (640×360, spawn points) agent CPU is 0.027 s per simulated
+  second for the deterministic controller and 0.034–0.035 s for the hybrid configurations.
+  Learned inference costs 0.95 ms (p95 1.3–1.4 ms) and short-horizon planning 0.47 ms per
+  decision.
+* **Most process CPU is the Python reference arena** (physics and software renderer). It
+  stands in for Unreal and says nothing about Unreal's cost.
+* **Memory:** 97–110 MB for an endurance agent; 197–198 MiB peak per Phase 6 benchmark worker,
+  including ONNX Runtime and the reference arena.
+* **Not measured:** GPU load, Unreal frame time and Unreal memory (no GPU, no Unreal).
+* Details: `docs/phase6_reliability_and_optimization.md`, section 12.3.
 
 ### 17.6 Configuration
 

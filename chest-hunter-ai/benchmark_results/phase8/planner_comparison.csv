@@ -1,6 +1,6 @@
 configuration,episodes,throughput_truth_per_min_mean,percent_reachable_opened_mean,navigation_success_rate_mean,interaction_success_rate_mean,travel_distance_m_mean,agent_cpu_per_sim_second_mean,inference_mean_ms_mean,frontier_selection_ms_mean_mean,throughput_ci_low,throughput_ci_high,interaction_success_pooled,failed_episodes,over_reported_total
-audit_planner_nearest,40,3.8444,76.1232,0.9961,0.9936,364.28,0.011,,,3.5121,4.1767,0.9934,0,0
-audit_planner_adaptive,40,3.6506,76.6965,0.9961,0.9852,386.2075,0.011,,,3.3473,3.9539,0.9835,0,0
-audit_planner_greedy,40,3.828,77.0385,0.9961,0.9958,364.56,0.011,,,3.4895,4.1664,0.9967,0,0
-audit_planner_short_horizon,40,3.5535,74.8342,0.9994,0.9917,397.19,0.0109,,,3.2054,3.9016,0.9934,0,0
-audit_planner_frontier,40,1.665,58.1578,0.9976,0.9649,506.04,0.0131,,14.9694,1.4424,1.8876,0.9652,0,0
+audit_planner_nearest,40,3.8444,76.1232,0.9961,0.9936,364.28,0.0111,,,3.5121,4.1767,0.9934,0,0
+audit_planner_adaptive,40,3.6506,76.6965,0.9961,0.9852,386.2075,0.0111,,,3.3473,3.9539,0.9835,0,0
+audit_planner_greedy,40,3.828,77.0385,0.9961,0.9958,364.56,0.0111,,,3.4895,4.1664,0.9967,0,0
+audit_planner_short_horizon,40,3.5535,74.8342,0.9994,0.9917,397.19,0.0111,,,3.2054,3.9016,0.9934,0,0
+audit_planner_frontier,40,1.7025,59.9435,0.9976,0.9658,519.0875,0.0132,,15.4287,1.4971,1.9079,0.966,0,0

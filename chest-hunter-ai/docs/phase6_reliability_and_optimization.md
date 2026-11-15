@@ -545,14 +545,34 @@ What the runs show:
 **Component profile** (`benchmark_results/phase8/resource_profile.json`: Phase 8 audit,
 final code, 3 held-out maps, active exploration, deterministic policy, one process):
 
-{{P6_RESOURCE_TABLE}}
+| configuration | episodes | sim s | wall s | pipeline CPU s / sim s (share of one core in real time) | pipeline CPU ms / analysed frame | frames analysed | bridge client CPU s | simulator CPU s | RSS first / last / max (MB) |
+|---|---|---|---|---|---|---|---|---|---|
+| 320x180_5fps | 3 | 600.0 | 36.7 | 0.0097 | 1.938 | 3000 | 1.95 | 27.67 | 247.0 / 260.0 / 260.0 |
+| 480x270_5fps | 3 | 600.0 | 45.2 | 0.0168 | 3.370 | 3000 | 2.32 | 31.38 | 265.8 / 269.9 / 269.9 |
+| 640x360_10fps | 3 | 600.0 | 86.1 | 0.0348 | 4.636 | 4500 | 3.42 | 59.79 | 288.8 / 307.9 / 307.9 |
+| 320x180_adaptive | 3 | 600.0 | 32.0 | 0.0092 | 2.147 | 2580 | 2.01 | 22.99 | 313.8 / 314.1 / 314.1 |
 
 Per component at 320×180 and 5 analysed frames per second (mean / p95 ms):
 
-{{P6_COMPONENTS}}
+| Component | Calls (3 episodes, 600 simulated s) | Mean ms | p95 ms |
+|---|---|---|---|
+| preprocessing | 3,000 | 0.55 | 0.76 |
+| chest detection | 3,000 | 0.59 | 1.16 |
+| tracking and localisation | 3,000 | 0.37 | 0.79 |
+| interaction cues | 3,000 | 0.04 | 0.23 |
+| exploration update | 3,000 | 0.40 | 1.64 |
+| action generation (state-machine tick) | 9,000 | 0.33 | 0.14 |
+| route selection | 133 | 18.95 | 46.15 |
+| frontier selection | 94 | 20.90 | 37.62 |
+| navigation query | 385 | 6.25 | 16.85 |
+| database persistence | 15 | 0.11 | 0.23 |
+| simulator step (reference arena, wall clock) | 9,000 | 2.58 | 7.96 |
 
 * **Route and frontier selection** are the most expensive single calls (about 20 ms
-  each). They run only at decision points: roughly once every 5 simulated seconds.
+  each). They run only at decision points: route selection about every 4.5 simulated seconds,
+  frontier selection about every 6.4.
+* **Action generation** has a p95 below its mean: most ticks cost almost nothing, and the
+  mean is raised by the rare ticks that include a route selection.
 * **Database writes** are negligible: 0.1 ms, a few per episode.
 * **Not measured:** GPU load, Unreal frame time and Unreal memory. There is no GPU and no
   Unreal installation. The resource monitor reports them as unavailable rather than

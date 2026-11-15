@@ -421,7 +421,32 @@ Optimisations in place:
 | adaptive image resolution | **not implemented** as per-state switching; the resolution is a deployment setting (benchmarks use 320×180), measured below |
 | region-of-interest processing | **not implemented**: the full-frame segmentation also feeds the empty-spawn votes; see section 13 |
 
-RESULTS_PROFILE
+**Results** (`benchmark_results/phase8/resource_profile.json`, produced by the Phase 8
+audit's `--profile-resources` on the final code):
+
+* 3 held-out maps per configuration (`p7_open_test_000`, `p7_indoor_test_000`,
+  `p7_mixed_test_000`), 200 simulated seconds each.
+* Active exploration, deterministic policy, one process, 4 vCPU, no GPU.
+
+| configuration | episodes | sim s | wall s | pipeline CPU s / sim s (share of one core in real time) | pipeline CPU ms / analysed frame | frames analysed | bridge client CPU s | simulator CPU s | RSS first / last / max (MB) |
+|---|---|---|---|---|---|---|---|---|---|
+| 320x180_5fps | 3 | 600.0 | 36.7 | 0.0097 | 1.938 | 3000 | 1.95 | 27.67 | 247.0 / 260.0 / 260.0 |
+| 480x270_5fps | 3 | 600.0 | 45.2 | 0.0168 | 3.370 | 3000 | 2.32 | 31.38 | 265.8 / 269.9 / 269.9 |
+| 640x360_10fps | 3 | 600.0 | 86.1 | 0.0348 | 4.636 | 4500 | 3.42 | 59.79 | 288.8 / 307.9 / 307.9 |
+| 320x180_adaptive | 3 | 600.0 | 32.0 | 0.0092 | 2.147 | 2580 | 2.01 | 22.99 | 313.8 / 314.1 / 314.1 |
+
+* **The Python decision pipeline is cheap.** The agent's own thread uses about 1 % of one core per simulated second at 320×180 and 5 analysed frames per second (1.9 ms per analysed frame), 1.7 % at 480×270 and 3.5 % at 640×360 and 10 fps (4.6 ms per frame).
+* **Simulator CPU** is the Python reference arena (physics and software renderer). It is
+  the larger share of process CPU and is **not** a measurement of Unreal's cost.
+* **Adaptive profile:** it analysed 2,580 frames instead of 3,000 and used 5 % less pipeline CPU per simulated second (0.0092 vs 0.0097). Its CPU per analysed frame is higher (2.15 ms) only because the work done on every tick is divided by fewer frames. In these three episodes it opened fewer chests (1.1 vs 1.5 per minute on average). Three episodes cannot measure that cost, so the saving should not be assumed to be free; the Phase 6 benchmark measured it at −17 % throughput (Phase 6 document, section 12.1).
+* **Resolution.** On the same three maps, 480×270 and 640×360 opened about as many chests
+  as 320×180 (within 0.2 chests per minute; three episodes cannot separate them). The
+  labelled-frame recall gain at higher resolution (Phase 8 audit, section F) does not show
+  up as throughput here, because the agent re-observes and approaches what it has seen.
+* **Memory:** the RSS values are those of the audit process after its earlier sections,
+  not an agent's own footprint. An endurance agent stays at 97–110 MB, and an acceptance
+  worker peaked at 146.5 MB.
+* **Not measured:** GPU load, Unreal frame time and Unreal memory (no GPU, no Unreal).
 
 ## 11. Runtime packaging
 
@@ -585,8 +610,10 @@ What the numbers say:
 * Ten fault kinds in rotation, 10 episodes each. Every faulted episode has a fault-free
   twin on the same map and seed (paired baseline).
 * 200 episodes, 0 errors, 973 s of wall clock (shared with another benchmark).
-* **Code version:** commit `3ad12f3`, with every Phase 8 fix (F11, F12, F14, F17, F19, F20,
-  F21).
+* **Code version:** commit `3ad12f3`, with the Phase 8 fixes F11, F12, F14, F17 and
+  F19–F21. F22 and F23 came later. F23 concerns only the audit tool. F22 can change an episode only
+  from a second off-mesh manoeuvre in a row without a walked trail; no episode of this run
+  failed, so none was stuck that way.
 * **Earlier runs:**
   * the run before F17 is kept in `benchmark_results/robustness_preF17/`;
   * the run between F17 and F19/F20 (commit `581a527`) had one over-reported opening, now
@@ -684,7 +711,9 @@ complexity without a measured gain (Phase 8 audit, section M).
 * **Episodes.** 10 episodes of 600 simulated seconds (18,000 ticks) for each group, clean
   and with one injected fault per episode (the ten fault kinds in turn).
 * **Comparison.** The Phase 6 agent, given the spawn points, on the same episodes.
-* **Code version.** Commit `3ad12f3`, with every Phase 8 fix (F11–F21 except the open F18).
+* **Code version.** Commit `3ad12f3`, with the Phase 8 fixes F11–F21 (F18 is open). F22 and F23 came later. F23 concerns only the audit tool. F22 can change an episode only
+  from a second off-mesh manoeuvre in a row without a walked trail; no episode of this run
+  failed, so none was stuck that way.
   The run before F17 is kept in `benchmark_results/phase7/acceptance_preF17/`.
 * 41 episodes in 813 s of wall clock (shared with another benchmark), 0 errors, 0
   over-reported openings.
@@ -725,7 +754,9 @@ Other measurements:
 |---|---|---|
 | `ea9216d` | 10 and 11 chests | normal |
 | `c549dce` | identical | normal |
-| final run | 10 and 11 chests | heavy (shared with the Phase 6 benchmark) | Two decisions depend on wall-clock time:
+| final run | 10 and 11 chests | heavy (shared with the Phase 6 benchmark) |
+
+Two decisions depend on wall-clock time:
 
 * the frontier-selection budget (20 ms; a selection takes 15 ms on average, and 6–10
   overruns occur per 600 s episode);
@@ -741,7 +772,7 @@ What re-running showed:
   change outcomes.
 * Which of the two limits caused the single mismatch was not isolated.
 
-Before F17 the same check passed. The fix belongs in the next phase: work-based limits for
+Before F17 the same check passed in the acceptance run. The fix belongs in the next phase: work-based limits for
 lock-step research runs, with the wall-clock limits kept for real-time use. It changes every
 benchmark's semantics, so it was not made under the running Phase 8 queue.
 

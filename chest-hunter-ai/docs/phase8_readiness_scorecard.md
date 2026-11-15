@@ -58,16 +58,16 @@ Classification:
 
 | Category | Weight | Ceiling | Score | Evidence (section of the audit report) and deductions |
 |---|---|---|---|---|
-| Core autonomous functionality | 20 % | 70 | **60** | The full loop runs end to end, with all 12 stages traced (B), and no failed episode in any benchmark after the fixes. −5: coverage target missed in the acceptance run ({{ACC_COV}} vs 85 %). −5: exact replay not guaranteed (F18) |
+| Core autonomous functionality | 20 % | 70 | **60** | The full loop runs end to end, with all 12 stages traced (B), and no failed episode in any benchmark after the fixes (the one failure, F22, was fixed and its episode replayed). −5: coverage target missed in the acceptance run (74.5 % vs 85 %). −5: exact replay not guaranteed (F18) |
 | Unreal integration | 15 % | 15 | **10** | The project and C++ are prepared, and protocol, units and argument ranges match the Python side statically (E). −5: no map asset, never compiled, and `surface_value` is ignored (F3) |
 | Computer vision | 10 % | 70 | **45** | Precision 0.93–0.97 and latency 0.9–3.0 ms (F). −15: chest-appearance shift defeats detection (F15, G = +0.28). −10: recall 0.48 at 320×180 per frame, and opened/closed confusion (F16) |
 | Navigation | 10 % | 70 | **65** | 32/32 reachable goals; 5/5 unreachable goals detected after one query; detour about 1.0 (G). −5: odometry-only localisation, with no visual correction of a persistent offset |
 | Chest interaction | 10 % | 70 | **65** | 7/7 simulator rules. 0 false successes and 0 false failures in 20 cross-checked episodes; 0 over-reports in every benchmark after F19/F20 (H). −5: about 5 % of credits rest on the opening notification after a look-back, not a visual confirmation |
-| Reliability | 10 % | 70 | **60** | {{ROB_RECOVERED}} of applied faults recovered, 100 % clean terminations, endurance to 1000 episodes (K). −5: slow-inference recovery {{ROB_SLOW}}. −5: residual loop alarms ({{TWIN_LOOPS_SHORT}}) |
+| Reliability | 10 % | 70 | **60** | 85 / 94 (90 %) of applied faults recovered, 100 % clean terminations, endurance to 1000 episodes (K). −5: slow-inference recovery 4 / 8. −5: residual loop alarms (159 in 62 of 100 fault-free episodes) |
 | Performance efficiency | 10 % | 70 | **50** | Python pipeline about 1 % of a core at 320×180 (L). −20: the Unreal graphics workload, frame time and GPU are unmeasured (BLOCKED), and that is most of the real cost |
 | Generalisation | 5 % | 70 | **45** | No gap for layout, obstacles, start or elevation (K). −15: appearance gap. −10: lighting gap (G = +0.11) |
 | Data integrity | 5 % | 70 | **65** | 13/14 checks; the failing one is an opening still being verified at episode end (L). −5: openings in the last ~6 s of an episode are never recorded |
-| Testing and documentation | 5 % | 70 | **55** | {{TESTS}} (N). −15: the suite missed four P1 behaviour defects found only by full benchmarks (F17, F19, F20, F21), and the Phase 6 tests had never been run as a suite (F7–F9) |
+| Testing and documentation | 5 % | 70 | **55** | 784 tests pass on the final code, on Python 3.13 and in a clean Python 3.12 environment; ruff and mypy --strict are clean (N). −15: the suite missed five behaviour defects found only by full benchmarks (F17, F19–F22), and the audit tool itself once reused rows from older code (F23), and the Phase 6 tests had never been run as a suite (F7–F9) |
 
 Weighted score: 0.20×60 + 0.15×10 + 0.10×(45 + 65 + 65 + 60 + 50) + 0.05×(45 + 65 + 55)
 = 12.0 + 1.5 + 28.5 + 8.25 = **50.3**.

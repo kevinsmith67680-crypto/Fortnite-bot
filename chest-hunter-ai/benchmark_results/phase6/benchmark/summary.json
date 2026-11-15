@@ -1,0 +1,1435 @@
+{
+ "per_configuration": {
+  "phase4_deterministic": {
+   "episodes": 100,
+   "throughput_truth_per_min": {
+    "n": 100,
+    "mean": 4.5684,
+    "median": 4.5172,
+    "std": 0.4743,
+    "ci_low": 4.4743,
+    "ci_high": 4.6625,
+    "min": 3.2919,
+    "max": 5.8035
+   },
+   "throughput_per_min": {
+    "n": 100,
+    "mean": 4.5684,
+    "median": 4.5172,
+    "std": 0.4743,
+    "ci_low": 4.4743,
+    "ci_high": 4.6625,
+    "min": 3.2919,
+    "max": 5.8035
+   },
+   "percent_available_opened": {
+    "n": 100,
+    "mean": 85.5632,
+    "median": 86.36,
+    "std": 6.6128,
+    "ci_low": 84.2511,
+    "ci_high": 86.8753,
+    "min": 66.67,
+    "max": 100.0
+   },
+   "travel_distance_m": {
+    "n": 100,
+    "mean": 827.8419,
+    "median": 824.085,
+    "std": 55.1107,
+    "ci_low": 816.9067,
+    "ci_high": 838.7771,
+    "min": 681.41,
+    "max": 976.72
+   },
+   "interaction_success_rate": {
+    "n": 100,
+    "mean": 0.9986,
+    "median": 1.0,
+    "std": 0.0079,
+    "ci_low": 0.9971,
+    "ci_high": 1.0002,
+    "min": 0.95,
+    "max": 1.0
+   },
+   "navigation_failure_rate": {
+    "n": 100,
+    "mean": 0.0053,
+    "median": 0.0,
+    "std": 0.0086,
+    "ci_low": 0.0036,
+    "ci_high": 0.007,
+    "min": 0.0,
+    "max": 0.0217
+   },
+   "recovery_success_rate": {
+    "n": 100,
+    "mean": 0.758,
+    "median": 0.7143,
+    "std": 0.2132,
+    "ci_low": 0.7157,
+    "ci_high": 0.8003,
+    "min": 0.0,
+    "max": 1.0
+   },
+   "seconds_between_failures": {
+    "n": 55,
+    "mean": 69.3827,
+    "median": 67.52,
+    "std": 15.7225,
+    "ci_low": 65.1323,
+    "ci_high": 73.6331,
+    "min": 34.17,
+    "max": 141.17
+   },
+   "inference_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "agent_cpu_seconds": {
+    "n": 100,
+    "mean": 7.2523,
+    "median": 7.2535,
+    "std": 0.6608,
+    "ci_low": 7.1212,
+    "ci_high": 7.3835,
+    "min": 5.58,
+    "max": 9.036
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 100,
+    "mean": 0.0271,
+    "median": 0.0271,
+    "std": 0.0013,
+    "ci_low": 0.0269,
+    "ci_high": 0.0274,
+    "min": 0.0235,
+    "max": 0.0306
+   },
+   "cpu_seconds": {
+    "n": 100,
+    "mean": 41.3937,
+    "median": 40.9475,
+    "std": 3.621,
+    "ci_low": 40.6752,
+    "ci_high": 42.1122,
+    "min": 31.747,
+    "max": 51.014
+   },
+   "peak_rss_mb": {
+    "n": 100,
+    "mean": 197.293,
+    "median": 198.7,
+    "std": 12.7524,
+    "ci_low": 194.7626,
+    "ci_high": 199.8234,
+    "min": 103.1,
+    "max": 205.6
+   },
+   "rss_end_mb": {
+    "n": 100,
+    "mean": 186.796,
+    "median": 188.0,
+    "std": 11.3616,
+    "ci_low": 184.5416,
+    "ci_high": 189.0504,
+    "min": 103.6,
+    "max": 204.9
+   },
+   "sim_seconds": {
+    "n": 100,
+    "mean": 267.2073,
+    "median": 266.2,
+    "std": 17.586,
+    "ci_low": 263.7179,
+    "ci_high": 270.6968,
+    "min": 233.467,
+    "max": 319.6
+   },
+   "frames_analysed": {
+    "n": 100,
+    "mean": 1492.49,
+    "median": 1491.5,
+    "std": 105.798,
+    "ci_low": 1471.4974,
+    "ci_high": 1513.4826,
+    "min": 1256.0,
+    "max": 1788.0
+   },
+   "planning_latency_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "supervisor_interventions": {
+    "n": 100,
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "outcomes": {
+    "completed": 100
+   },
+   "completion_rate": 1.0,
+   "failed_episodes": 0,
+   "recovery_success_rate_pooled": 0.7333,
+   "seconds_between_failures_pooled": 119.29,
+   "supervisor_detections_total": {},
+   "supervisor_aborts": 0,
+   "over_reported_total": 0,
+   "under_reported_total": 0,
+   "frames_skipped_total": 0
+  },
+  "phase5_hybrid": {
+   "episodes": 100,
+   "throughput_truth_per_min": {
+    "n": 100,
+    "mean": 3.4415,
+    "median": 3.4504,
+    "std": 0.54,
+    "ci_low": 3.3343,
+    "ci_high": 3.5487,
+    "min": 1.4,
+    "max": 4.3844
+   },
+   "throughput_per_min": {
+    "n": 100,
+    "mean": 3.4415,
+    "median": 3.4504,
+    "std": 0.54,
+    "ci_low": 3.3343,
+    "ci_high": 3.5487,
+    "min": 1.4,
+    "max": 4.3844
+   },
+   "percent_available_opened": {
+    "n": 100,
+    "mean": 79.7777,
+    "median": 80.86,
+    "std": 7.7044,
+    "ci_low": 78.249,
+    "ci_high": 81.3064,
+    "min": 56.0,
+    "max": 96.0
+   },
+   "travel_distance_m": {
+    "n": 100,
+    "mean": 884.2708,
+    "median": 883.575,
+    "std": 80.6746,
+    "ci_low": 868.2632,
+    "ci_high": 900.2784,
+    "min": 406.93,
+    "max": 1150.26
+   },
+   "interaction_success_rate": {
+    "n": 100,
+    "mean": 0.9894,
+    "median": 1.0,
+    "std": 0.0279,
+    "ci_low": 0.9839,
+    "ci_high": 0.995,
+    "min": 0.875,
+    "max": 1.0
+   },
+   "navigation_failure_rate": {
+    "n": 100,
+    "mean": 0.0723,
+    "median": 0.0684,
+    "std": 0.0401,
+    "ci_low": 0.0643,
+    "ci_high": 0.0803,
+    "min": 0.0,
+    "max": 0.1818
+   },
+   "recovery_success_rate": {
+    "n": 100,
+    "mean": 0.6763,
+    "median": 0.6897,
+    "std": 0.1506,
+    "ci_low": 0.6465,
+    "ci_high": 0.7062,
+    "min": 0.3333,
+    "max": 1.0
+   },
+   "seconds_between_failures": {
+    "n": 100,
+    "mean": 30.1383,
+    "median": 22.89,
+    "std": 17.9936,
+    "ci_low": 26.568,
+    "ci_high": 33.7086,
+    "min": 12.51,
+    "max": 120.0
+   },
+   "inference_mean_ms": {
+    "n": 100,
+    "mean": 0.9517,
+    "median": 0.8963,
+    "std": 0.2174,
+    "ci_low": 0.9085,
+    "ci_high": 0.9948,
+    "min": 0.8323,
+    "max": 2.7983
+   },
+   "agent_cpu_seconds": {
+    "n": 100,
+    "mean": 11.3804,
+    "median": 10.914,
+    "std": 2.3586,
+    "ci_low": 10.9124,
+    "ci_high": 11.8484,
+    "min": 7.398,
+    "max": 27.684
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 100,
+    "mean": 0.0338,
+    "median": 0.0335,
+    "std": 0.0025,
+    "ci_low": 0.0333,
+    "ci_high": 0.0343,
+    "min": 0.0284,
+    "max": 0.0461
+   },
+   "cpu_seconds": {
+    "n": 100,
+    "mean": 54.2132,
+    "median": 52.1875,
+    "std": 11.2201,
+    "ci_low": 51.9869,
+    "ci_high": 56.4396,
+    "min": 40.368,
+    "max": 144.766
+   },
+   "peak_rss_mb": {
+    "n": 100,
+    "mean": 197.369,
+    "median": 198.7,
+    "std": 10.3454,
+    "ci_low": 195.3162,
+    "ci_high": 199.4218,
+    "min": 134.2,
+    "max": 205.6
+   },
+   "rss_end_mb": {
+    "n": 100,
+    "mean": 186.561,
+    "median": 187.7,
+    "std": 9.2335,
+    "ci_low": 184.7289,
+    "ci_high": 188.3931,
+    "min": 134.6,
+    "max": 204.9
+   },
+   "sim_seconds": {
+    "n": 100,
+    "mean": 334.478,
+    "median": 326.9,
+    "std": 41.8825,
+    "ci_low": 326.1676,
+    "ci_high": 342.7884,
+    "min": 259.4,
+    "max": 600.0
+   },
+   "frames_analysed": {
+    "n": 100,
+    "mean": 1978.38,
+    "median": 1913.0,
+    "std": 319.7951,
+    "ci_low": 1914.9257,
+    "ci_high": 2041.8343,
+    "min": 1472.0,
+    "max": 4297.0
+   },
+   "planning_latency_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "supervisor_interventions": {
+    "n": 100,
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "outcomes": {
+    "completed": 99,
+    "tick_limit": 1
+   },
+   "completion_rate": 0.99,
+   "failed_episodes": 0,
+   "recovery_success_rate_pooled": 0.6654,
+   "seconds_between_failures_pooled": 23.96,
+   "supervisor_detections_total": {},
+   "supervisor_aborts": 0,
+   "over_reported_total": 0,
+   "under_reported_total": 0,
+   "frames_skipped_total": 0
+  },
+  "phase6_hybrid_supervised": {
+   "episodes": 100,
+   "throughput_truth_per_min": {
+    "n": 100,
+    "mean": 3.4475,
+    "median": 3.4478,
+    "std": 0.4867,
+    "ci_low": 3.3509,
+    "ci_high": 3.544,
+    "min": 2.0528,
+    "max": 4.4796
+   },
+   "throughput_per_min": {
+    "n": 100,
+    "mean": 3.4475,
+    "median": 3.4478,
+    "std": 0.4867,
+    "ci_low": 3.3509,
+    "ci_high": 3.544,
+    "min": 2.0528,
+    "max": 4.4796
+   },
+   "percent_available_opened": {
+    "n": 100,
+    "mean": 79.6669,
+    "median": 80.0,
+    "std": 7.4207,
+    "ci_low": 78.1945,
+    "ci_high": 81.1393,
+    "min": 56.0,
+    "max": 95.65
+   },
+   "travel_distance_m": {
+    "n": 100,
+    "mean": 888.3085,
+    "median": 883.575,
+    "std": 63.3593,
+    "ci_low": 875.7366,
+    "ci_high": 900.8804,
+    "min": 765.1,
+    "max": 1150.26
+   },
+   "interaction_success_rate": {
+    "n": 100,
+    "mean": 0.989,
+    "median": 1.0,
+    "std": 0.0282,
+    "ci_low": 0.9834,
+    "ci_high": 0.9945,
+    "min": 0.875,
+    "max": 1.0
+   },
+   "navigation_failure_rate": {
+    "n": 100,
+    "mean": 0.0727,
+    "median": 0.0684,
+    "std": 0.0392,
+    "ci_low": 0.0649,
+    "ci_high": 0.0805,
+    "min": 0.0,
+    "max": 0.1818
+   },
+   "recovery_success_rate": {
+    "n": 100,
+    "mean": 0.6656,
+    "median": 0.6667,
+    "std": 0.1513,
+    "ci_low": 0.6356,
+    "ci_high": 0.6956,
+    "min": 0.3333,
+    "max": 1.0
+   },
+   "seconds_between_failures": {
+    "n": 100,
+    "mean": 27.9477,
+    "median": 22.265,
+    "std": 15.6229,
+    "ci_low": 24.8478,
+    "ci_high": 31.0476,
+    "min": 11.4,
+    "max": 98.73
+   },
+   "inference_mean_ms": {
+    "n": 100,
+    "mean": 0.945,
+    "median": 0.9025,
+    "std": 0.1264,
+    "ci_low": 0.92,
+    "ci_high": 0.9701,
+    "min": 0.8422,
+    "max": 1.7158
+   },
+   "agent_cpu_seconds": {
+    "n": 100,
+    "mean": 11.6582,
+    "median": 11.3735,
+    "std": 1.6545,
+    "ci_low": 11.3299,
+    "ci_high": 11.9865,
+    "min": 8.001,
+    "max": 16.055
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 100,
+    "mean": 0.035,
+    "median": 0.035,
+    "std": 0.0022,
+    "ci_low": 0.0346,
+    "ci_high": 0.0355,
+    "min": 0.0292,
+    "max": 0.0409
+   },
+   "cpu_seconds": {
+    "n": 100,
+    "mean": 54.2943,
+    "median": 53.242,
+    "std": 6.2991,
+    "ci_low": 53.0444,
+    "ci_high": 55.5442,
+    "min": 41.624,
+    "max": 70.576
+   },
+   "peak_rss_mb": {
+    "n": 100,
+    "mean": 198.371,
+    "median": 200.9,
+    "std": 10.2798,
+    "ci_low": 196.3313,
+    "ci_high": 200.4107,
+    "min": 134.8,
+    "max": 205.6
+   },
+   "rss_end_mb": {
+    "n": 100,
+    "mean": 186.444,
+    "median": 187.6,
+    "std": 8.8895,
+    "ci_low": 184.6801,
+    "ci_high": 188.2079,
+    "min": 135.2,
+    "max": 204.9
+   },
+   "sim_seconds": {
+    "n": 100,
+    "mean": 331.4933,
+    "median": 326.1665,
+    "std": 30.7931,
+    "ci_low": 325.3833,
+    "ci_high": 337.6033,
+    "min": 259.4,
+    "max": 422.933
+   },
+   "frames_analysed": {
+    "n": 100,
+    "mean": 1952.6,
+    "median": 1911.0,
+    "std": 207.2474,
+    "ci_low": 1911.4776,
+    "ci_high": 1993.7224,
+    "min": 1472.0,
+    "max": 2474.0
+   },
+   "planning_latency_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "supervisor_interventions": {
+    "n": 100,
+    "mean": 0.32,
+    "median": 0.0,
+    "std": 0.7638,
+    "ci_low": 0.1684,
+    "ci_high": 0.4716,
+    "min": 0.0,
+    "max": 3.0
+   },
+   "outcomes": {
+    "completed": 100
+   },
+   "completion_rate": 1.0,
+   "failed_episodes": 0,
+   "recovery_success_rate_pooled": 0.6555,
+   "seconds_between_failures_pooled": 22.71,
+   "supervisor_detections_total": {
+    "transition_loop": 292
+   },
+   "supervisor_aborts": 0,
+   "over_reported_total": 0,
+   "under_reported_total": 0,
+   "frames_skipped_total": 0
+  },
+  "phase6_hybrid_planning": {
+   "episodes": 100,
+   "throughput_truth_per_min": {
+    "n": 100,
+    "mean": 3.3682,
+    "median": 3.3703,
+    "std": 0.5042,
+    "ci_low": 3.2681,
+    "ci_high": 3.4682,
+    "min": 2.0118,
+    "max": 4.5501
+   },
+   "throughput_per_min": {
+    "n": 100,
+    "mean": 3.3682,
+    "median": 3.3703,
+    "std": 0.5042,
+    "ci_low": 3.2681,
+    "ci_high": 3.4682,
+    "min": 2.0118,
+    "max": 4.5501
+   },
+   "percent_available_opened": {
+    "n": 100,
+    "mean": 80.0881,
+    "median": 80.86,
+    "std": 8.376,
+    "ci_low": 78.4261,
+    "ci_high": 81.7501,
+    "min": 50.0,
+    "max": 96.15
+   },
+   "travel_distance_m": {
+    "n": 100,
+    "mean": 942.3163,
+    "median": 940.11,
+    "std": 74.8518,
+    "ci_low": 927.4641,
+    "ci_high": 957.1685,
+    "min": 752.72,
+    "max": 1113.69
+   },
+   "interaction_success_rate": {
+    "n": 100,
+    "mean": 0.9894,
+    "median": 1.0,
+    "std": 0.0293,
+    "ci_low": 0.9836,
+    "ci_high": 0.9953,
+    "min": 0.7895,
+    "max": 1.0
+   },
+   "navigation_failure_rate": {
+    "n": 100,
+    "mean": 0.0714,
+    "median": 0.069,
+    "std": 0.0401,
+    "ci_low": 0.0634,
+    "ci_high": 0.0794,
+    "min": 0.0,
+    "max": 0.1646
+   },
+   "recovery_success_rate": {
+    "n": 100,
+    "mean": 0.6779,
+    "median": 0.694,
+    "std": 0.1703,
+    "ci_low": 0.6441,
+    "ci_high": 0.7117,
+    "min": 0.325,
+    "max": 1.0
+   },
+   "seconds_between_failures": {
+    "n": 100,
+    "mean": 26.5507,
+    "median": 20.805,
+    "std": 17.8759,
+    "ci_low": 23.0037,
+    "ci_high": 30.0977,
+    "min": 10.3,
+    "max": 133.5
+   },
+   "inference_mean_ms": {
+    "n": 100,
+    "mean": 0.9443,
+    "median": 0.9066,
+    "std": 0.1192,
+    "ci_low": 0.9207,
+    "ci_high": 0.968,
+    "min": 0.8339,
+    "max": 1.613
+   },
+   "agent_cpu_seconds": {
+    "n": 100,
+    "mean": 11.7776,
+    "median": 11.6005,
+    "std": 1.7006,
+    "ci_low": 11.4401,
+    "ci_high": 12.115,
+    "min": 7.973,
+    "max": 15.739
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 100,
+    "mean": 0.0344,
+    "median": 0.0344,
+    "std": 0.0021,
+    "ci_low": 0.034,
+    "ci_high": 0.0348,
+    "min": 0.0288,
+    "max": 0.0395
+   },
+   "cpu_seconds": {
+    "n": 100,
+    "mean": 54.9676,
+    "median": 54.3065,
+    "std": 6.6592,
+    "ci_low": 53.6462,
+    "ci_high": 56.2889,
+    "min": 41.088,
+    "max": 70.801
+   },
+   "peak_rss_mb": {
+    "n": 100,
+    "mean": 197.973,
+    "median": 198.7,
+    "std": 9.0951,
+    "ci_low": 196.1683,
+    "ci_high": 199.7777,
+    "min": 134.8,
+    "max": 205.6
+   },
+   "rss_end_mb": {
+    "n": 100,
+    "mean": 186.9,
+    "median": 188.0,
+    "std": 7.9285,
+    "ci_low": 185.3268,
+    "ci_high": 188.4732,
+    "min": 135.2,
+    "max": 201.5
+   },
+   "sim_seconds": {
+    "n": 100,
+    "mean": 341.338,
+    "median": 339.8665,
+    "std": 34.115,
+    "ci_low": 334.5688,
+    "ci_high": 348.1072,
+    "min": 267.0,
+    "max": 429.8
+   },
+   "frames_analysed": {
+    "n": 100,
+    "mean": 1970.68,
+    "median": 1948.0,
+    "std": 227.4599,
+    "ci_low": 1925.547,
+    "ci_high": 2015.813,
+    "min": 1498.0,
+    "max": 2627.0
+   },
+   "planning_latency_mean_ms": {
+    "n": 100,
+    "mean": 0.47,
+    "median": 0.4646,
+    "std": 0.0334,
+    "ci_low": 0.4634,
+    "ci_high": 0.4766,
+    "min": 0.4205,
+    "max": 0.6312
+   },
+   "supervisor_interventions": {
+    "n": 100,
+    "mean": 0.39,
+    "median": 0.0,
+    "std": 0.7507,
+    "ci_low": 0.241,
+    "ci_high": 0.539,
+    "min": 0.0,
+    "max": 4.0
+   },
+   "outcomes": {
+    "completed": 100
+   },
+   "completion_rate": 1.0,
+   "failed_episodes": 0,
+   "recovery_success_rate_pooled": 0.6568,
+   "seconds_between_failures_pooled": 20.83,
+   "supervisor_detections_total": {
+    "transition_loop": 159,
+    "repeated_target": 2,
+    "interaction_failures": 1
+   },
+   "supervisor_aborts": 0,
+   "over_reported_total": 0,
+   "under_reported_total": 0,
+   "frames_skipped_total": 0
+  },
+  "phase6_hybrid_optimised": {
+   "episodes": 100,
+   "throughput_truth_per_min": {
+    "n": 100,
+    "mean": 2.7966,
+    "median": 2.8292,
+    "std": 0.43,
+    "ci_low": 2.7112,
+    "ci_high": 2.8819,
+    "min": 1.6112,
+    "max": 3.8416
+   },
+   "throughput_per_min": {
+    "n": 100,
+    "mean": 2.7966,
+    "median": 2.8292,
+    "std": 0.43,
+    "ci_low": 2.7112,
+    "ci_high": 2.8819,
+    "min": 1.6112,
+    "max": 3.8416
+   },
+   "percent_available_opened": {
+    "n": 100,
+    "mean": 72.5999,
+    "median": 73.205,
+    "std": 7.5779,
+    "ci_low": 71.0963,
+    "ci_high": 74.1035,
+    "min": 56.52,
+    "max": 95.24
+   },
+   "travel_distance_m": {
+    "n": 100,
+    "mean": 956.8051,
+    "median": 954.555,
+    "std": 73.4493,
+    "ci_low": 942.2312,
+    "ci_high": 971.379,
+    "min": 632.63,
+    "max": 1124.5
+   },
+   "interaction_success_rate": {
+    "n": 100,
+    "mean": 0.9845,
+    "median": 1.0,
+    "std": 0.0361,
+    "ci_low": 0.9773,
+    "ci_high": 0.9916,
+    "min": 0.8333,
+    "max": 1.0
+   },
+   "navigation_failure_rate": {
+    "n": 100,
+    "mean": 0.0949,
+    "median": 0.093,
+    "std": 0.0456,
+    "ci_low": 0.0859,
+    "ci_high": 0.104,
+    "min": 0.0,
+    "max": 0.2329
+   },
+   "recovery_success_rate": {
+    "n": 100,
+    "mean": 0.5999,
+    "median": 0.5944,
+    "std": 0.1472,
+    "ci_low": 0.5707,
+    "ci_high": 0.6291,
+    "min": 0.1622,
+    "max": 1.0
+   },
+   "seconds_between_failures": {
+    "n": 100,
+    "mean": 16.545,
+    "median": 15.07,
+    "std": 6.1369,
+    "ci_low": 15.3273,
+    "ci_high": 17.7627,
+    "min": 7.91,
+    "max": 43.57
+   },
+   "inference_mean_ms": {
+    "n": 100,
+    "mean": 0.9794,
+    "median": 0.8968,
+    "std": 0.407,
+    "ci_low": 0.8986,
+    "ci_high": 1.0601,
+    "min": 0.8386,
+    "max": 4.7153
+   },
+   "agent_cpu_seconds": {
+    "n": 100,
+    "mean": 11.1419,
+    "median": 10.868,
+    "std": 1.8815,
+    "ci_low": 10.7686,
+    "ci_high": 11.5153,
+    "min": 6.897,
+    "max": 18.112
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 100,
+    "mean": 0.0297,
+    "median": 0.0297,
+    "std": 0.0024,
+    "ci_low": 0.0292,
+    "ci_high": 0.0302,
+    "min": 0.0213,
+    "max": 0.0364
+   },
+   "cpu_seconds": {
+    "n": 100,
+    "mean": 49.5575,
+    "median": 48.6715,
+    "std": 6.6431,
+    "ci_low": 48.2394,
+    "ci_high": 50.8756,
+    "min": 33.847,
+    "max": 70.968
+   },
+   "peak_rss_mb": {
+    "n": 100,
+    "mean": 198.027,
+    "median": 199.5,
+    "std": 8.9075,
+    "ci_low": 196.2596,
+    "ci_high": 199.7944,
+    "min": 150.7,
+    "max": 205.6
+   },
+   "rss_end_mb": {
+    "n": 100,
+    "mean": 187.597,
+    "median": 188.0,
+    "std": 7.6757,
+    "ci_low": 186.074,
+    "ci_high": 189.12,
+    "min": 151.1,
+    "max": 204.4
+   },
+   "sim_seconds": {
+    "n": 100,
+    "mean": 373.6386,
+    "median": 370.1,
+    "std": 43.7645,
+    "ci_low": 364.9548,
+    "ci_high": 382.3225,
+    "min": 281.133,
+    "max": 558.6
+   },
+   "frames_analysed": {
+    "n": 100,
+    "mean": 1743.5,
+    "median": 1714.0,
+    "std": 238.2286,
+    "ci_low": 1696.2303,
+    "ci_high": 1790.7697,
+    "min": 1223.0,
+    "max": 2529.0
+   },
+   "planning_latency_mean_ms": {
+    "n": 100,
+    "mean": 0.4701,
+    "median": 0.4612,
+    "std": 0.0386,
+    "ci_low": 0.4624,
+    "ci_high": 0.4778,
+    "min": 0.3956,
+    "max": 0.5843
+   },
+   "supervisor_interventions": {
+    "n": 100,
+    "mean": 0.55,
+    "median": 0.0,
+    "std": 1.1225,
+    "ci_low": 0.3273,
+    "ci_high": 0.7727,
+    "min": 0.0,
+    "max": 6.0
+   },
+   "outcomes": {
+    "completed": 99,
+    "failed": 1
+   },
+   "completion_rate": 0.99,
+   "failed_episodes": 1,
+   "recovery_success_rate_pooled": 0.5912,
+   "seconds_between_failures_pooled": 14.76,
+   "supervisor_detections_total": {
+    "transition_loop": 271,
+    "interaction_failures": 3,
+    "no_progress": 4
+   },
+   "supervisor_aborts": 1,
+   "over_reported_total": 0,
+   "under_reported_total": 0,
+   "frames_skipped_total": 5662
+  }
+ },
+ "paired_vs_phase4_deterministic": {
+  "phase5_hybrid": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 100,
+     "mean": -1.1269,
+     "median": -1.1017,
+     "std": 0.5771,
+     "ci_low": -1.2414,
+     "ci_high": -1.0124,
+     "min": -3.0706,
+     "max": 0.1112
+    },
+    "percent_change_of_mean": -24.67,
+    "better": 1,
+    "worse": 99,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "percent_available_opened": {
+    "difference": {
+     "n": 100,
+     "mean": -5.7855,
+     "median": -4.255,
+     "std": 9.4877,
+     "ci_low": -7.6681,
+     "ci_high": -3.9029,
+     "min": -33.34,
+     "max": 24.0
+    },
+    "percent_change_of_mean": -6.76,
+    "better": 20,
+    "worse": 62,
+    "tied": 18,
+    "significant_at_95": true
+   },
+   "agent_cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 4.128,
+     "median": 3.923,
+     "std": 2.2263,
+     "ci_low": 3.6863,
+     "ci_high": 4.5697,
+     "min": 0.884,
+     "max": 20.93
+    },
+    "percent_change_of_mean": 56.92,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 12.8195,
+     "median": 11.4835,
+     "std": 10.7192,
+     "ci_low": 10.6926,
+     "ci_high": 14.9464,
+     "min": -0.365,
+     "max": 105.826
+    },
+    "percent_change_of_mean": 30.97,
+    "better": 99,
+    "worse": 1,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "sim_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 67.2706,
+     "median": 63.933,
+     "std": 40.0346,
+     "ci_low": 59.3269,
+     "ci_high": 75.2144,
+     "min": 3.734,
+     "max": 345.0
+    },
+    "percent_change_of_mean": 25.18,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "travel_distance_m": {
+    "difference": {
+     "n": 100,
+     "mean": 56.4289,
+     "median": 54.49,
+     "std": 75.6766,
+     "ci_low": 41.413,
+     "ci_high": 71.4448,
+     "min": -377.16,
+     "max": 229.6
+    },
+    "percent_change_of_mean": 6.82,
+    "better": 84,
+    "worse": 16,
+    "tied": 0,
+    "significant_at_95": true
+   }
+  },
+  "phase6_hybrid_supervised": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 100,
+     "mean": -1.1209,
+     "median": -1.1285,
+     "std": 0.5361,
+     "ci_low": -1.2273,
+     "ci_high": -1.0146,
+     "min": -2.6281,
+     "max": 0.3119
+    },
+    "percent_change_of_mean": -24.54,
+    "better": 1,
+    "worse": 99,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "percent_available_opened": {
+    "difference": {
+     "n": 100,
+     "mean": -5.8963,
+     "median": -4.345,
+     "std": 8.8796,
+     "ci_low": -7.6582,
+     "ci_high": -4.1344,
+     "min": -33.34,
+     "max": 16.0
+    },
+    "percent_change_of_mean": -6.89,
+    "better": 18,
+    "worse": 62,
+    "tied": 20,
+    "significant_at_95": true
+   },
+   "agent_cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 4.4058,
+     "median": 4.4225,
+     "std": 1.4372,
+     "ci_low": 4.1207,
+     "ci_high": 4.691,
+     "min": 1.107,
+     "max": 8.679
+    },
+    "percent_change_of_mean": 60.75,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 12.9006,
+     "median": 13.0275,
+     "std": 5.2582,
+     "ci_low": 11.8572,
+     "ci_high": 13.9439,
+     "min": 0.891,
+     "max": 27.272
+    },
+    "percent_change_of_mean": 31.17,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "sim_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 64.2859,
+     "median": 63.4665,
+     "std": 27.7211,
+     "ci_low": 58.7855,
+     "ci_high": 69.7864,
+     "min": 3.734,
+     "max": 143.333
+    },
+    "percent_change_of_mean": 24.06,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "travel_distance_m": {
+    "difference": {
+     "n": 100,
+     "mean": 60.4666,
+     "median": 58.175,
+     "std": 60.9356,
+     "ci_low": 48.3757,
+     "ci_high": 72.5575,
+     "min": -76.88,
+     "max": 229.6
+    },
+    "percent_change_of_mean": 7.3,
+    "better": 84,
+    "worse": 16,
+    "tied": 0,
+    "significant_at_95": true
+   }
+  },
+  "phase6_hybrid_planning": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 100,
+     "mean": -1.2002,
+     "median": -1.1504,
+     "std": 0.5759,
+     "ci_low": -1.3145,
+     "ci_high": -1.086,
+     "min": -2.7827,
+     "max": 0.3084
+    },
+    "percent_change_of_mean": -26.27,
+    "better": 2,
+    "worse": 98,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "percent_available_opened": {
+    "difference": {
+     "n": 100,
+     "mean": -5.4751,
+     "median": -4.545,
+     "std": 10.2291,
+     "ci_low": -7.5048,
+     "ci_high": -3.4454,
+     "min": -33.34,
+     "max": 15.79
+    },
+    "percent_change_of_mean": -6.4,
+    "better": 24,
+    "worse": 67,
+    "tied": 9,
+    "significant_at_95": true
+   },
+   "agent_cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 4.5252,
+     "median": 4.461,
+     "std": 1.5377,
+     "ci_low": 4.2201,
+     "ci_high": 4.8304,
+     "min": 1.439,
+     "max": 8.528
+    },
+    "percent_change_of_mean": 62.4,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 13.5739,
+     "median": 13.087,
+     "std": 5.6907,
+     "ci_low": 12.4447,
+     "ci_high": 14.703,
+     "min": 0.811,
+     "max": 27.934
+    },
+    "percent_change_of_mean": 32.79,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "sim_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 74.1307,
+     "median": 73.9665,
+     "std": 31.2165,
+     "ci_low": 67.9366,
+     "ci_high": 80.3247,
+     "min": 9.0,
+     "max": 160.667
+    },
+    "percent_change_of_mean": 27.74,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "travel_distance_m": {
+    "difference": {
+     "n": 100,
+     "mean": 114.4744,
+     "median": 119.865,
+     "std": 75.6869,
+     "ci_low": 99.4565,
+     "ci_high": 129.4923,
+     "min": -52.36,
+     "max": 336.51
+    },
+    "percent_change_of_mean": 13.83,
+    "better": 92,
+    "worse": 8,
+    "tied": 0,
+    "significant_at_95": true
+   }
+  },
+  "phase6_hybrid_optimised": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 100,
+     "mean": -1.7719,
+     "median": -1.7092,
+     "std": 0.5676,
+     "ci_low": -1.8845,
+     "ci_high": -1.6592,
+     "min": -3.1298,
+     "max": -0.2003
+    },
+    "percent_change_of_mean": -38.79,
+    "better": 0,
+    "worse": 100,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "percent_available_opened": {
+    "difference": {
+     "n": 100,
+     "mean": -12.9633,
+     "median": -12.77,
+     "std": 9.3192,
+     "ci_low": -14.8124,
+     "ci_high": -11.1142,
+     "min": -32.0,
+     "max": 5.26
+    },
+    "percent_change_of_mean": -15.15,
+    "better": 6,
+    "worse": 85,
+    "tied": 9,
+    "significant_at_95": true
+   },
+   "agent_cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 3.8896,
+     "median": 3.799,
+     "std": 1.7304,
+     "ci_low": 3.5462,
+     "ci_high": 4.2329,
+     "min": -0.302,
+     "max": 10.391
+    },
+    "percent_change_of_mean": 53.63,
+    "better": 99,
+    "worse": 1,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "cpu_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 8.1638,
+     "median": 7.8085,
+     "std": 6.1665,
+     "ci_low": 6.9402,
+     "ci_high": 9.3873,
+     "min": -6.803,
+     "max": 27.7
+    },
+    "percent_change_of_mean": 19.72,
+    "better": 92,
+    "worse": 8,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "sim_seconds": {
+    "difference": {
+     "n": 100,
+     "mean": 106.4313,
+     "median": 103.7665,
+     "std": 43.475,
+     "ci_low": 97.8049,
+     "ci_high": 115.0577,
+     "min": 13.933,
+     "max": 290.733
+    },
+    "percent_change_of_mean": 39.83,
+    "better": 100,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "travel_distance_m": {
+    "difference": {
+     "n": 100,
+     "mean": 128.9632,
+     "median": 125.725,
+     "std": 81.8721,
+     "ci_low": 112.718,
+     "ci_high": 145.2084,
+     "min": -168.09,
+     "max": 360.18
+    },
+    "percent_change_of_mean": 15.58,
+    "better": 98,
+    "worse": 2,
+    "tied": 0,
+    "significant_at_95": true
+   }
+  }
+ },
+ "primary_metric": "throughput_truth_per_min",
+ "episodes_completed": 100,
+ "map_ids": [
+  "research_arena_3d"
+ ],
+ "seed": 42,
+ "episodes_requested": 100,
+ "configurations": {
+  "phase4_deterministic": "Phase 4 deterministic visual controller (baseline)",
+  "phase5_hybrid": "Phase 5 hybrid: learned approach steering when confident",
+  "phase6_hybrid_supervised": "Phase 5 hybrid + reliability supervisor and selector monitors",
+  "phase6_hybrid_planning": "+ short-horizon planning and classified recovery",
+  "phase6_hybrid_optimised": "+ adaptive computation (efficient vision profile, unchanged frames skipped)"
+ },
+ "max_ticks": 18000,
+ "observation": [
+  640,
+  360
+ ],
+ "workers": 4,
+ "model_dir": "/home/user/Fortnite-bot/chest-hunter-ai/training/checkpoints/bc_synthetic_v1",
+ "experience_db": "/home/user/Fortnite-bot/chest-hunter-ai/training/experience.db",
+ "wall_seconds": 7998.9,
+ "errors": [],
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+ "time_basis": "throughput uses simulated minutes; CPU and wall seconds are real time"
+}
