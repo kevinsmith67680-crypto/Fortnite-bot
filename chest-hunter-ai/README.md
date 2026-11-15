@@ -1735,7 +1735,21 @@ RESULTS_BENCHMARK
 
 ### 17.4 Endurance runs
 
-RESULTS_ENDURANCE
+`endurance-test --episodes N --max-ticks-per-episode 1500`.
+
+* Default endurance configuration, reference arena, 50 s episodes, one server connection per
+  run.
+* Commit `e1124bd`; full table in `docs/phase6_reliability_and_optimization.md`, section 12.2.
+
+| Run | Completed | Failed / comm. failures / aborts | Throughput | RSS growth after warm-up | FDs / threads |
+|---|---|---|---|---|---|
+| 100 episodes | 100 / 100 | 0 / 0 / 0 | 5.18 chests/min | 1.36 MB per 100 episodes | 9 / 3, constant |
+| 500 episodes | 500 / 500 | 0 / 0 / 0 | 5.31 | 0.54 MB per 100 | 9 / 3, constant |
+| 1000 episodes | 1000 / 1000 | 0 / 0 / 0 | 5.37 | 0.47 MB per 100 | 9 / 3, constant |
+
+* No leak criterion was exceeded (2 MB per 100 episodes).
+* Every previous agent was released.
+* These runs are not evidence about Unreal or about long episodes.
 
 ### 17.5 Profiling and resource use
 
@@ -1872,7 +1886,29 @@ as version 0 with these defaults):
 
 ### 18.4 Results
 
-RESULTS_P7_README
+All measured on the Python reference arena, not Unreal.
+
+Details are in `docs/phase7_generalization_and_deployment.md`, section 15.
+
+* **Generalisation** (1,600 episodes, held-out seeds and maps):
+  * No significant gap for new layouts, obstacle arrangements, start poses or extra
+    elevations.
+  * Significant gaps for lighting (G = +0.11) and for chest appearance (+0.28), the latter a
+    perception failure (F15).
+  * This benchmark ran before the Phase 8 fixes. F21 ended 18 of its 800 Phase 7 episodes
+    early, so indoor results are understated.
+* **Without spawn points**, the Phase 7 agent opens about 1.6 chests per simulated minute,
+  against 3.3 for the Phase 6 agent given spawn points.
+* **Robustness** (200 episodes, ten fault kinds, paired twins): 85 of 94 applied faults
+  recovered, 100 % clean terminations, 0 failed episodes, 0 over-reported openings. No fault
+  kind has a measurable throughput cost.
+* **Acceptance** (held-out map, 600 s episodes):
+  * clean: 1.16 chests/min, 57 % of the reachable chests opened, interaction success 95 %,
+    0 failures;
+  * coverage 74.5 %, short of the 85 % target;
+  * exact replay not guaranteed (F18).
+* **Exploration strategies:** the trained memory/bandit is not better than the best fixed
+  strategy.
 
 
 ## 19. Phase 8: full-system audit and readiness assessment
@@ -1919,9 +1955,18 @@ and names their source.
 | F12 | openings found by active exploration were not stored in SQLite | schema 7, `discovered_openings` |
 | F14 | an opening could be credited to the wrong spawn point after a track mis-association | credit the spawn point actually reached |
 | F1 | two controller handlers caught every exception silently | `BridgeError` only, counted |
+| F17 | the exploring agent's normal frontier → scan cycle was read as a transition loop (489 false detections in 100 fault-free episodes; one 600 s episode aborted) | new coverage clears the loop window |
+| F19 | after an F14 reattribution the original spawn point was credited a second time (1–4 phantom openings per 40 episodes) | both ids leave the unverified set |
+| F20 | a failed interaction was credited on mixed visual evidence without the opening notification | vision-only credit needs unanimous looks |
+| F21 | exploration was declared complete after the first scan when no ray crossed the start room's doorway (18 of 800 Phase 7 episodes ended at 3.9 s) | one denser ray fan before giving up; a mid-episode case remains (1 map in 100) |
 
-All of these have regression tests in `tests/test_phase8_audit.py`, `tests/test_endurance.py`
-and `tests/test_phase6_workflow.py`.
+Open: **F18**. Decisions depend on two wall-clock limits, so exact replay of an episode is not
+guaranteed under CPU load. **F15**. Chest colours outside the trained range defeat detection.
+**F3**. The Unreal builder ignores `surface_value`.
+
+Every fixed defect has a regression test in `tests/test_phase8_audit.py`,
+`tests/test_endurance.py` or `tests/test_phase6_workflow.py`. Each test replays the exact
+episode that reproduced the defect where that was possible.
 
 ## 20. Running the tests
 
