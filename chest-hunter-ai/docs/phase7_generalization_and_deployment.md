@@ -584,9 +584,13 @@ What the numbers say:
 * Configuration `phase7_active` on held-out layouts, 4500 ticks (150 simulated s).
 * Ten fault kinds in rotation, 10 episodes each. Every faulted episode has a fault-free
   twin on the same map and seed (paired baseline).
-* 200 episodes, 0 errors, 761 s of wall clock.
-* **Code version:** commit `43f3b80`, with the Phase 8 fixes F11, F12, F14 and F17. The run
-  before F17 is kept in `benchmark_results/robustness_preF17/` for comparison.
+* 200 episodes, 0 errors, 565 s of wall clock.
+* **Code version:** commit `c549dce`, with every Phase 8 fix (F11, F12, F14, F17, F19,
+  F20).
+* **Earlier runs:**
+  * the run before F17 is kept in `benchmark_results/robustness_preF17/`;
+  * the run between F17 and F19/F20 (commit `581a527`) had one over-reported opening, now
+    fixed (F20).
 
 **Definitions.**
 
@@ -601,21 +605,22 @@ What the numbers say:
 
 | Fault | Applied | Detected | Recovered | Clean end | Failed | Throughput | Paired diff vs twin |
 |---|---|---|---|---|---|---|---|
-| frame loss | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.68 | +0.12 [−0.21, +0.45] |
-| corrupted frame | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.40 | +0.12 [−0.12, +0.36] |
+| frame loss | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.72 | +0.16 [−0.15, +0.47] |
+| corrupted frame | 10 / 10 | 10 / 10 | 9 / 10 | 10 / 10 | 0 | 1.40 | +0.12 [−0.12, +0.36] |
 | false detection | 10 / 10 | n/a | 10 / 10 | 10 / 10 | 0 | 1.92 | +0.04 [−0.12, +0.20] |
-| missed detection | 8 / 10 | n/a | 6 / 8 | 8 / 8 | 0 | 2.30 | +0.05 [−0.47, +0.57] |
-| localisation drift | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.84 | −0.16 [−0.50, +0.18] |
-| unexpected obstacle | 9 / 10 | 6 / 9 | 8 / 9 | 9 / 9 | 0 | 1.51 | −0.09 [−0.29, +0.12] |
-| interaction failure | 6 / 10 | 6 / 6 | 6 / 6 | 6 / 6 | 0 | 2.40 | −0.07 [−0.38, +0.25] |
-| bridge disconnect | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.76 | +0.04 [−0.05, +0.13] |
+| missed detection | 8 / 10 | n/a | 7 / 8 | 8 / 8 | 0 | 2.30 | −0.05 [−0.47, +0.37] |
+| localisation drift | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.80 | −0.32 [−0.87, +0.23] |
+| unexpected obstacle | 9 / 10 | 5 / 9 | 8 / 9 | 9 / 9 | 0 | 1.51 | −0.04 [−0.23, +0.14] |
+| interaction failure | 6 / 10 | 6 / 6 | 6 / 6 | 6 / 6 | 0 | 2.60 | +0.13 [−0.08, +0.35] |
+| bridge disconnect | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.72 | −0.04 [−0.13, +0.05] |
 | slow inference | 8 / 10 | 8 / 8 | 4 / 8 | 8 / 8 | 0 | 1.90 | +0.10 [−0.06, +0.26] |
 | unreachable target | 10 / 10 | 7 / 10 | 10 / 10 | 10 / 10 | 0 | 1.72 | −0.12 [−0.31, +0.07] |
 
 **Overall.**
 
 * 91 faults applied: 84 recovered (92 %), 91 clean terminations (100 %), 0 failed episodes.
-* Fault-free twins: 1.75 [1.57, 1.92] chests per simulated minute, 0 failed.
+* 0 over-reported openings in 200 episodes.
+* Fault-free twins: 1.77 [1.59, 1.95] chests per simulated minute, 0 failed.
 * **No fault kind costs measurable throughput.** Every paired interval includes 0, though
   with 6–10 pairs per kind only large effects could be detected.
 * **The weak spots** (from the per-episode fault records):
@@ -623,11 +628,13 @@ What the numbers say:
     were detected: the selector timed out, the supervisor reported a model failure and
     switched policy. The agent then abandoned one to three targets and showed no measured
     progress inside the window. The cause beyond that was not investigated.
-  * **Unexpected obstacles:** 3 of 9 not detected; no navigation-failure signal fired. Two
-    of those episodes recovered anyway.
+  * **Unexpected obstacles:** 4 of 9 not detected; no navigation-failure signal fired.
+    Three of those episodes recovered anyway.
   * **Unreachable targets:** 3 of 10 not detected. The blocked path queries happened (3–6
     per episode) without producing the unreachable signal; all three episodes recovered.
-  * **Missed detections:** 2 of 8 not recovered within the window.
+  * **Missed detections:** 1 of 8 not recovered within the window.
+  * **Corrupted frames:** 1 of 10 not recovered. All 46 corrupted frames were detected and
+    dropped, but the agent made no measured progress within the window.
 
 **The F17 fix.** Same 100 twins before and after:
 
@@ -638,6 +645,9 @@ What the numbers say:
 | Loop detections (faulted episodes) | 489 | 159 |
 | Throughput of the twins | 1.78 [1.61, 1.96] | 1.75 [1.57, 1.92] |
 | Faults recovered | 85 / 91 | 84 / 91 |
+
+Both columns were measured before F19/F20. In the final run (`c549dce`) the twins show 151 loop
+detections in 60 episodes and 142 interventions.
 
 ### 15.3 Exploration strategies (`benchmark_results/phase7/strategies/`)
 
@@ -669,14 +679,14 @@ complexity without a measured gain (Phase 8 audit, section M).
 * **Episodes.** 10 episodes of 600 simulated seconds (18,000 ticks) for each group, clean
   and with one injected fault per episode (the ten fault kinds in turn).
 * **Comparison.** The Phase 6 agent, given the spawn points, on the same episodes.
-* **Code version.** Commit `43f3b80`, with all Phase 8 fixes including F17. The run before
-  F17 is kept in `benchmark_results/phase7/acceptance_preF17/`.
-* 41 episodes in 557 s of wall clock, 0 errors.
+* **Code version.** Commit `c549dce`, with every Phase 8 fix (F11–F20 except the open F18).
+  The run before F17 is kept in `benchmark_results/phase7/acceptance_preF17/`.
+* 41 episodes in 485 s of wall clock, 0 errors, 0 over-reported openings.
 
 | Group | Throughput | Reachable opened | Interaction success | Coverage | Outcomes | Loops detected |
 |---|---|---|---|---|---|---|
-| Phase 7 active, clean | 1.12 [0.94, 1.30] | 55.5 % | 94.9 % | 0.73 [0.69, 0.77] | 10 tick limit | 158 |
-| Phase 7 active, faults | 1.09 [0.88, 1.30] | 54.0 % | 92.4 % | 0.73 [0.67, 0.78] | 10 tick limit | 152 |
+| Phase 7 active, clean | 1.13 [0.96, 1.31] | 55.9 % | 95.8 % | 0.72 [0.70, 0.75] | 10 tick limit | 159 |
+| Phase 7 active, faults | 1.09 [0.88, 1.30] | 54.0 % | 92.4 % | 0.72 [0.66, 0.78] | 10 tick limit | 158 |
 | Phase 6 with spawn points, clean | 3.14 [2.65, 3.63] | 60.9 % | 96.1 % | n/a | 10 completed | 5 |
 | Phase 6 with spawn points, faults | 2.91 [2.15, 3.66] | 56.9 % | 95.0 % | n/a | 10 completed | 23 |
 
@@ -684,27 +694,28 @@ Engineering targets (Phase 7 agent, fault-free episodes):
 
 | Target | Measured | Met |
 |---|---|---|
-| Interaction success ≥ 90 % | 94.9 % | yes |
-| Coverage ≥ 85 % | 73.3 % (max 86.7 % in one episode) | **no** |
+| Interaction success ≥ 90 % | 95.8 % | yes |
+| Coverage ≥ 85 % | 72.2 % | **no** |
 | No failed or aborted episode | 0 / 20 (before F17: 1 aborted on the intervention budget) | yes |
-| Exact replay (episode 0 played twice) | 10 vs 11 chests | **no**: finding F18 |
-| Peak memory of a worker | 143.6 MB | – |
+| Exact replay (episode 0 played twice) | identical in this run (11 and 11 chests). The previous run (`ea9216d`) gave 10 and 11 | **not guaranteed**: finding F18 |
+| Peak memory of a worker | 138.6 MB | – |
 
 Other measurements:
 
-* **Detection on this held-out map:** precision 0.99, recall 0.82. Chest-distance error is
+* **Detection on this held-out map:** precision 0.99, recall 0.83. Chest-distance error is
   1.6 m, pose error 0.07 m.
 * **Navigation success:** 0.96.
 * **Throughput against the Phase 6 agent (paired):**
-  * −2.02 [−2.51, −1.53] chests per minute clean (0 better, 10 worse);
+  * −2.01 [−2.50, −1.52] chests per minute clean (0 better, 10 worse);
   * −1.82 [−2.53, −1.11] with faults.
 * **Interpretation.** The agent finds and opens about 55 % of the reachable chests in
   10 minutes on a map it has never seen, without spawn-point knowledge, and survives every
   injected fault kind. It is about a third as productive as an agent that is told where
   chests can be.
 
-**Exact replay (F18).** The first play of episode 0 opened 10 chests; the repeat opened 11.
-The two runs share seed, map and code. Two decisions depend on wall-clock time:
+**Exact replay (F18).** In the previous acceptance run (commit `ea9216d`, before F19/F20,
+which do not affect this agent), the first play of episode 0 opened 10 chests and the repeat
+11. The two runs share seed, map and code. In the final run both plays opened 11. Two decisions depend on wall-clock time:
 
 * the frontier-selection budget (20 ms; a selection takes 15 ms on average, and 6–10
   overruns occur per 600 s episode);
