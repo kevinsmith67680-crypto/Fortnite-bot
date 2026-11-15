@@ -116,6 +116,14 @@ class UnseenMapEpisodes(unittest.TestCase):
                 self.assertIn(result.outcome, ("completed", "tick_limit"))
                 stats = runner.selector.stats.to_dict()
                 self.assertGreater(stats["decisions"], 0)
+                # Discovery is measured on the wrapped visual agent (regression: it was
+                # empty whenever a policy selector wrapped the agent).
+                agent = runner.selector.agent
+                seen = sorted(p.name for p in agent.world.priors.values()
+                              if p.location_id in agent.world.seen_locations)
+                self.assertEqual(result.truth["seen_names"], seen)
+                if mode == "hybrid":
+                    self.assertTrue(seen)
                 if mode == "learned":
                     self.assertGreater(stats["inferences"], 0)
                 self.assertLessEqual(result.chests_opened, result.truth["opened_truth"])

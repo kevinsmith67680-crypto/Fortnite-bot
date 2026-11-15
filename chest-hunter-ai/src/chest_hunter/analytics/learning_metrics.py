@@ -59,6 +59,7 @@ def progress_table(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     """Throughput per strategy and episode index (learning progress across experiments)."""
     out: dict[tuple[str, int], list[float]] = {}
     for r in rows:
-        out.setdefault((r["strategy"], int(r["order"])), []).append(float(r["throughput_per_min"]))
+        value = r.get("throughput_truth_per_min", r["throughput_per_min"])
+        out.setdefault((r["strategy"], int(r["order"])), []).append(float(value))
     return [{"strategy": s, "order": o, "mean_throughput": round(sum(v) / len(v), 4),
              "maps": len(v)} for (s, o), v in sorted(out.items())]

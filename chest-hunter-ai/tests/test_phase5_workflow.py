@@ -15,7 +15,13 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from chest_hunter.analytics.learning_metrics import progress_table, training_report
-from chest_hunter.analytics.policy_comparison import STRATEGIES, run_policy_benchmark
+from chest_hunter.analytics.policy_comparison import (
+    PRIMARY_METRIC,
+    STRATEGIES,
+    format_report,
+    run_policy_benchmark,
+    summarise_rows,
+)
 from chest_hunter.cli import main
 from chest_hunter.config import load_config
 from chest_hunter.database import MIGRATIONS, SCHEMA_VERSION, DatabaseManager
@@ -246,6 +252,43 @@ class LearningDashboard(unittest.TestCase):
         self.assertIn("Policy: learned", dashboard.learning.get())
 
 
+def _row(strategy: str, episode: int, reported: int, truth: int, minutes: float = 2.0) -> dict:
+    return {"map_id": "m", "episode": episode, "strategy": strategy, "outcome": "completed",
+            "end_reason": "done", "chests_opened": reported, "chests_opened_truth": truth,
+            "over_reported": max(0, reported - truth), "under_reported": max(0, truth - reported),
+            "throughput_truth_per_min": truth / minutes, "throughput_per_min": reported / minutes,
+            "percent_available_opened": 50.0, "discovery_rate": 1.0,
+            "navigation_success_rate": 1.0, "interaction_success_rate": 1.0,
+            "exploration_coverage": 1.0, "travel_distance_m": 10.0, "travel_per_chest_m": 5.0,
+            "recoveries": 0, "sim_seconds": 60 * minutes, "inference_mean_ms": None,
+            "learned_share": 0.0, "cpu_seconds": 1.0, "peak_rss_mb": 100.0,
+            "credited_by_notification": 0, "recovery_classes": "{}", "fallbacks": "{}"}
+
+
+class PolicySummary(unittest.TestCase):
+    """Ground truth is the primary metric: counting differences must not look like gains."""
+
+    def test_truth_and_reported_throughput_are_compared_separately(self) -> None:
+        rows = []
+        for e in range(4):
+            rows.append(_row("deterministic", e, reported=4, truth=6))   # misses 2 openings
+            rows.append(_row("hybrid", e, reported=6, truth=6))          # counts them all
+        summary = summarise_rows(rows, ["deterministic", "hybrid"])
+        self.assertEqual(summary["primary_metric"], PRIMARY_METRIC)
+        paired = summary["paired_vs_deterministic"]["hybrid"]
+        self.assertEqual(paired[PRIMARY_METRIC]["difference"]["mean"], 0.0)
+        self.assertEqual(paired[PRIMARY_METRIC]["tied"], 4)
+        self.assertFalse(paired[PRIMARY_METRIC]["significant_at_95"])
+        self.assertEqual(paired["throughput_per_min"]["difference"]["mean"], 1.0)
+        self.assertEqual(paired["throughput_per_min"]["better"], 4)
+        det = summary["per_strategy"]["deterministic"]
+        self.assertEqual(det["under_reported_total"], 8)
+        self.assertEqual(det["over_reported_total"], 0)
+        report = format_report(summary)
+        self.assertIn("chests opened (ground truth)", report)
+        self.assertIn("chests counted by the agent", report)
+
+
 class AcceptanceWorkflow(unittest.TestCase):
     """Spec section 20 on the reference arena with tiny settings (SYNTHETIC demonstrations)."""
 
@@ -268,6 +311,9 @@ class AcceptanceWorkflow(unittest.TestCase):
                 width=320, height=180, output_dir=Path(tmp) / "familiar")
             self.assertEqual(set(summary["per_strategy"]), set(STRATEGIES))
             self.assertEqual(summary["errors"], [])
+            self.assertEqual(summary["primary_metric"], PRIMARY_METRIC)
+            for cmp in summary["paired_vs_deterministic"].values():
+                self.assertEqual(set(cmp), {PRIMARY_METRIC, "throughput_per_min"})
             unseen = run_policy_benchmark(                        # 12: unseen map
                 settings(), strategies=("deterministic", "hybrid_adaptive"),
                 map_ids=("proc_test_004",), seed=5000, episodes=2, model_dir=model,

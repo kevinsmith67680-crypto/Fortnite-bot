@@ -460,9 +460,16 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self.recorder(location_id, present=present, opened=opened, seconds=seconds,
                           reward=reward, sim_time=self.now)
 
-    def _credit_open(self, location_id: int, seconds: float, reward: bool | None) -> None:
+    def _credit_open(self, location_id: int, seconds: float, reward: bool | None) -> bool:
+        """Count one opening; ``False`` when this spawn point was already credited (one
+        spawn point holds at most one chest per episode, so it is never counted twice)."""
         self._unverified.pop(location_id, None)
         prior = self.world.priors[location_id]
+        if prior.status is PriorStatus3D.OPENED:
+            if self.goal is not None and self.goal.location_id == location_id \
+                    and self.state not in (S.VERIFYING_OPEN,):
+                self.goal = None
+            return False
         prior.status = PriorStatus3D.OPENED
         self.metrics.chests_opened += 1
         if self.goal is not None:
@@ -473,12 +480,31 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         if self.goal is not None and self.goal.location_id == location_id \
                 and self.state not in (S.VERIFYING_OPEN,):
             self.goal = None
+        return True
 
-    def credit_opening(self, location_id: int, seconds: float, reward: bool | None) -> None:
+    def credit_opening(self, location_id: int, seconds: float, reward: bool | None) -> bool:
         """Record a verified opening decided outside the state machine (Phase 5 learned
         control: the agent's own opening notification next to a spawn point)."""
         if location_id in self.world.priors:
-            self._credit_open(location_id, seconds, reward)
+            return self._credit_open(location_id, seconds, reward)
+        return False
+
+    def release_interaction(self) -> bool:
+        """Drop an interaction or opening verification that is no longer current.
+
+        Phase 5 learned control: another controller moved the agent since the state machine
+        last ran, so its hold timer, aim point and verification counters are stale (the
+        reward counter may even hold notifications for other chests). Resuming such a phase
+        could credit a spawn point that was never opened. Returns ``True`` when a phase was
+        dropped; pending late verifications are kept (they need fresh visual evidence)."""
+        if self.state not in (S.INTERACTING, S.VERIFYING_OPEN):
+            return False
+        self.goal = None
+        self._verify = {"opened": 0, "closed": 0, "reward": 0}
+        self._hold_started = -1.0
+        self._enter()
+        self._transition(S.EXPLORING, "stale interaction released (another controller drove)")
+        return True
 
     # -- state handlers -------------------------------------------------------------------------
 
@@ -912,8 +938,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self._verify["opened"] = self._verify["closed"] = 0
             return None
         assert goal.location_id is not None
-        self.metrics.credited_by_notification += 1
-        self._credit_open(goal.location_id, seconds, reward=self._last_notification_reward)
+        if self._credit_open(goal.location_id, seconds, reward=self._last_notification_reward):
+            self.metrics.credited_by_notification += 1
         self.goal = None
         return S.EXPLORING
 

@@ -10,11 +10,15 @@ from typing import Any
 import numpy as np
 
 from chest_hunter.agent.controller_3d import Agent3DState
+from chest_hunter.agent.runner_3d import Runner3D
+from chest_hunter.database import DatabaseManager
 from chest_hunter.learning.learned_policy import PolicyOutput
 from chest_hunter.learning.policy_selector import PolicySelector, SafetyLimits
 from chest_hunter.localization.world_model_3d import PriorStatus3D
+from chest_hunter.scenarios import seed_arena_3d
 from chest_hunter.unreal_bridge.action_adapter import ActionCommand
 from chest_hunter.vision.interaction_cues_3d import Cues
+from tests.phase5_helpers import settings
 
 PHASES_UNIFORM = (1 / 7,) * 7
 
@@ -109,6 +113,7 @@ class FakeAgent:
         self.outcome: str | None = None
         self.end_reason: str | None = None
         self._terminal = False
+        self.releases = 0
 
     def tick(self) -> Agent3DState:
         self.ticks += 1
@@ -131,9 +136,17 @@ class FakeAgent:
         self.now = result.telemetry.sim_time
         self.telemetry = result.telemetry
 
-    def credit_opening(self, location_id: int, seconds: float, reward: bool | None) -> None:
+    def credit_opening(self, location_id: int, seconds: float, reward: bool | None) -> bool:
         self.credited.append((location_id, seconds, reward))
         self.world.priors[location_id].status = PriorStatus3D.OPENED
+        return True
+
+    def release_interaction(self) -> bool:
+        if self.state not in (Agent3DState.INTERACTING, Agent3DState.VERIFYING_OPEN):
+            return False
+        self.releases += 1
+        self.state = Agent3DState.EXPLORING
+        return True
 
 
 @dataclass
@@ -274,6 +287,72 @@ class SafetyLayer(unittest.TestCase):
             sel.tick()
         self.assertEqual(sel.stats.learned_recoveries, 2)
         self.assertGreater(agent.ticks, 0)
+
+
+class StateMachineHandover(unittest.TestCase):
+    """After the learned policy drove, the state machine must not resume a stale interaction
+    or verification phase (its timers and counters belong to an earlier situation)."""
+
+    def test_stale_phase_is_released_once_when_the_state_machine_resumes(self) -> None:
+        agent = FakeAgent(Agent3DState.VERIFYING_OPEN)
+        sel = PolicySelector(agent, FakePolicy(output()), mode="learned")
+        sel.tick()                                           # learned decision
+        self.assertEqual(agent.releases, 0)
+        agent.obs = None                                     # no frame: deterministic fallback
+        agent.now = 1.0
+        sel.tick()
+        self.assertEqual(agent.releases, 1)
+        self.assertIs(agent.state, Agent3DState.EXPLORING)
+        self.assertEqual(sel.stats.stale_interactions_released, 1)
+        agent.state = Agent3DState.INTERACTING               # the state machine's own phase
+        sel.tick()                                           # consecutive fallback: current
+        self.assertEqual(agent.releases, 1)
+
+    def test_switching_away_from_learned_releases_the_stale_phase(self) -> None:
+        agent = FakeAgent(Agent3DState.INTERACTING)
+        sel = PolicySelector(agent, FakePolicy(output()), mode="learned")
+        sel.tick()
+        sel.set_mode("hybrid")
+        self.assertEqual(agent.releases, 1)
+
+    def test_deterministic_and_hybrid_modes_never_release(self) -> None:
+        for mode in ("deterministic", "hybrid"):
+            with self.subTest(mode=mode):
+                agent = FakeAgent(Agent3DState.INTERACTING)
+                sel = PolicySelector(agent, FakePolicy(output()), mode=mode)
+                for _ in range(5):
+                    sel.tick()
+                self.assertEqual(agent.releases, 0)
+
+
+class RealAgentBookkeeping(unittest.TestCase):
+    """The visual agent counts each spawn point at most once and drops stale phases."""
+
+    def test_double_credit_and_stale_verification(self) -> None:
+        db = DatabaseManager(":memory:")
+        db.initialize()
+        self.addCleanup(db.close)
+        seed_arena_3d(db)
+        runner = Runner3D.from_settings(db, settings(), mode="hybrid", seed=3,
+                                        backend="reference", max_ticks=150, width=320,
+                                        height=180)
+        runner.run()
+        agent = runner.controller
+        agent.recorder = None                                # the episode is over
+        loc = next(p.location_id for p in agent.world.priors.values()
+                   if p.status is not PriorStatus3D.OPENED)
+        before = agent.metrics.chests_opened
+        self.assertTrue(agent.credit_opening(loc, 1.0, True))
+        self.assertFalse(agent.credit_opening(loc, 1.0, True))
+        self.assertEqual(agent.metrics.chests_opened, before + 1)
+
+        agent.state = Agent3DState.VERIFYING_OPEN            # as left by an earlier handover
+        agent._verify = {"opened": 1, "closed": 0, "reward": 1}
+        self.assertTrue(agent.release_interaction())
+        self.assertIs(agent.state, Agent3DState.EXPLORING)
+        self.assertIsNone(agent.goal)
+        self.assertEqual(agent._verify, {"opened": 0, "closed": 0, "reward": 0})
+        self.assertFalse(agent.release_interaction())        # nothing stale any more
 
 
 class OpeningAttribution(unittest.TestCase):

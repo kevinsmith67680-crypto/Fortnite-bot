@@ -65,6 +65,7 @@ class SelectorStats:
     disabled_reason: str | None = None
     learned_recoveries: int = 0
     openings_attributed: int = 0
+    stale_interactions_released: int = 0
     latencies_ms: list[float] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -79,6 +80,7 @@ class SelectorStats:
             "interaction_holds": self.interaction_holds, "disabled_reason": self.disabled_reason,
             "learned_recoveries": self.learned_recoveries,
             "openings_attributed": self.openings_attributed,
+            "stale_interactions_released": self.stale_interactions_released,
             "latency_mean_ms": round(sum(lat) / len(lat), 4) if lat else None,
             "latency_p95_ms": round(lat[int(0.95 * (len(lat) - 1))], 4) if lat else None,
             "latency_max_ms": round(lat[-1], 4) if lat else None,
@@ -107,6 +109,7 @@ class PolicySelector:
         self._anchor: tuple[tuple[float, float] | None, float] = (None, 0.0)
         self._hold_started: float | None = None
         self._next_observation = 0.0
+        self._fsm_current = True          # False while the learned policy drives
         self.set_mode(mode)
 
     # -- mode -------------------------------------------------------------------------------
@@ -121,6 +124,8 @@ class PolicySelector:
             raise ValueError(f"mode must be one of {', '.join(MODES)}")
         if mode != "deterministic" and self.policy is None:
             raise ValueError(f"mode '{mode}' needs a learned policy")
+        if mode != "learned":
+            self._resume_state_machine()
         self._mode = mode
 
     @property
@@ -195,6 +200,7 @@ class PolicySelector:
             return self._safe_fallback()
         self.action = self._safe(out, allow_interact=True)
         self.stats.learned_decisions += 1
+        self._fsm_current = False
         self._check_progress()
         return self.agent.state
 
@@ -215,7 +221,16 @@ class PolicySelector:
 
     # -- internals ----------------------------------------------------------------------------
 
+    def _resume_state_machine(self) -> None:
+        """The state machine takes control again after the learned policy drove: drop an
+        interaction or verification phase it was in, which is no longer current."""
+        if not self._fsm_current:
+            if self.agent.release_interaction():
+                self.stats.stale_interactions_released += 1
+            self._fsm_current = True
+
     def _deterministic(self) -> Any:
+        self._resume_state_machine()
         state = self.agent.tick()
         self.action = self.agent.action
         self.stats.deterministic_decisions += 1
@@ -330,6 +345,6 @@ class PolicySelector:
             return
         prior = min(candidates, key=lambda p: math.dist(pos[:2], p.xyz[:2]))
         seconds = self.agent.now - self._hold_started if self._hold_started is not None else 0.0
-        self.agent.credit_opening(prior.location_id, seconds, reward)
-        self.stats.openings_attributed += 1
+        if self.agent.credit_opening(prior.location_id, seconds, reward):
+            self.stats.openings_attributed += 1
         self._hold_started = None

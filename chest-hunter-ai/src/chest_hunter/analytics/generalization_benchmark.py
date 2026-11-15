@@ -18,6 +18,8 @@ from typing import Any
 
 from chest_hunter.analytics.policy_comparison import (
     DEFAULT_STRATEGIES,
+    PRIMARY_METRIC,
+    THROUGHPUT_METRICS,
     run_policy_benchmark,
 )
 from chest_hunter.analytics.stats import summarise
@@ -53,24 +55,28 @@ def run_generalization_benchmark(settings: Settings, *, familiar: int = 4, unsee
     gap: dict[str, Any] = {}
     if "familiar" in results and "unseen" in results:
         for s in strategies:
-            f = results["familiar"]["per_strategy"][s]["throughput_per_min"]
-            u = results["unseen"]["per_strategy"][s]["throughput_per_min"]
-            if f.get("mean") is not None and u.get("mean") is not None:
-                gap[s] = {"familiar_mean": f["mean"], "unseen_mean": u["mean"],
-                          "difference": round(u["mean"] - f["mean"], 4),
-                          "percent_change": round(100.0 * (u["mean"] - f["mean"]) / f["mean"], 2)
-                          if f["mean"] else None}
+            for metric in THROUGHPUT_METRICS:
+                f = results["familiar"]["per_strategy"][s][metric]
+                u = results["unseen"]["per_strategy"][s][metric]
+                if f.get("mean") is not None and u.get("mean") is not None:
+                    gap.setdefault(s, {})[metric] = {
+                        "familiar_mean": f["mean"], "unseen_mean": u["mean"],
+                        "difference": round(u["mean"] - f["mean"], 4),
+                        "percent_change": round(100.0 * (u["mean"] - f["mean"]) / f["mean"], 2)
+                        if f["mean"] else None}
     summary = {"groups": {g: [str(m) for m in maps] for g, maps in groups.items()},
-               "seed": seed, "episodes_per_map": episodes, "gap_unseen_minus_familiar": gap,
+               "primary_metric": PRIMARY_METRIC, "seed": seed, "episodes_per_map": episodes,
+               "gap_unseen_minus_familiar": gap,
                "results": {g: {k: v for k, v in r.items() if k != "rows"}
                            for g, r in results.items()}}
     return summary
 
 
-def learning_curve(rows: Sequence[dict[str, Any]], strategy: str) -> list[dict[str, Any]]:
+def learning_curve(rows: Sequence[dict[str, Any]], strategy: str,
+                   metric: str = PRIMARY_METRIC) -> list[dict[str, Any]]:
     """Throughput by position in the episode sequence (online adaptation)."""
     by_order: dict[int, list[float]] = {}
     for r in rows:
         if r["strategy"] == strategy:
-            by_order.setdefault(int(r["order"]), []).append(float(r["throughput_per_min"]))
+            by_order.setdefault(int(r["order"]), []).append(float(r[metric]))
     return [{"order": k, **summarise(v)} for k, v in sorted(by_order.items())]

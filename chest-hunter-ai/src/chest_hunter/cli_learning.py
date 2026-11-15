@@ -393,7 +393,8 @@ def cmd_benchmark_generalization(args: argparse.Namespace, ctx: Any) -> int:
     for group, result in summary["results"].items():
         print(f"\n{group} maps: {', '.join(summary['groups'][group])}")
         print(format_report(result))
-    print("\nUnseen minus familiar (throughput /min): "
+    print("\nUnseen minus familiar (per simulated minute; truth = chests really opened, "
+          "throughput_per_min = as counted by the agent): "
           + json.dumps(summary["gap_unseen_minus_familiar"]))
     out.mkdir(parents=True, exist_ok=True)
     (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")

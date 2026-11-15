@@ -363,13 +363,15 @@ class Runner3D:
         reachable = [c for c in present
                      if nav.find_path(start, tuple(c["position"]), goal_tolerance=1.5).found]
         names = {p.name: p.location_id for p in priors}
+        # the visual agent itself, also when a PolicySelector wraps it
+        agent = getattr(self.controller, "agent", self.controller)
         return {"present": len(present), "available": len(reachable),
                 "opened_truth": sum(1 for c in present if c["opened"]),
                 "available_names": sorted(c["name"] for c in reachable),
                 "opened_names": sorted(c["name"] for c in present if c["opened"]),
                 "seen_names": sorted(p.name for p in priors
-                                     if isinstance(self.controller, VisualAgent3D)
-                                     and p.location_id in self.controller.world.seen_locations),
+                                     if isinstance(agent, VisualAgent3D)
+                                     and p.location_id in agent.world.seen_locations),
                 "location_ids_opened": sorted(names[c["name"]] for c in present
                                               if c["opened"] and c["name"] in names)}
 

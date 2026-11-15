@@ -1,7 +1,10 @@
 """Paired comparison of control strategies (Phase 5 benchmark).
 
 Every strategy plays exactly the same (map, seed, episode) triples on the Python reference
-arena. Per episode it records throughput (opened chests per *simulated* minute), the share
+arena. Per episode it records throughput (opened chests per *simulated* minute) twice: from
+ground truth (``throughput_truth_per_min``, the primary metric: chests that really were
+opened) and as the agent itself counted them (``throughput_per_min``; an agent can miss
+openings it caused or credit one it did not cause). It also records the share
 of available chests opened, discovery, navigation and interaction success, exploration
 coverage, travel, recoveries by class, model latency and fallbacks, CPU time and memory.
 Openings are checked against ground truth through the evaluation channel (never visible
@@ -59,7 +62,8 @@ DEFAULT_STRATEGIES = ("deterministic", "learned", "hybrid", "hybrid_adaptive")
 FIELDS = (
     "map_id", "seed", "episode", "order", "strategy", "outcome", "end_reason", "sim_seconds",
     "chests_present", "chests_available", "chests_seen", "chests_opened", "chests_opened_truth",
-    "over_reported", "throughput_per_min", "percent_available_opened", "discovery_rate",
+    "over_reported", "under_reported", "throughput_truth_per_min", "throughput_per_min",
+    "percent_available_opened", "discovery_rate",
     "navigation_success_rate", "interaction_success_rate", "exploration_coverage",
     "travel_distance_m", "travel_per_chest_m", "recoveries", "navigation_failures",
     "credited_by_notification", "learned_share", "inference_mean_ms", "inference_p95_ms",
@@ -123,6 +127,9 @@ def _row(job: Job, episode: int, order: int, runner: Any, result: Any) -> dict[s
         "chests_available": len(available), "chests_seen": len(seen),
         "chests_opened": result.chests_opened, "chests_opened_truth": t.get("opened_truth"),
         "over_reported": max(0, result.chests_opened - (t.get("opened_truth") or 0)),
+        "under_reported": max(0, (t.get("opened_truth") or 0) - result.chests_opened),
+        "throughput_truth_per_min": round((t.get("opened_truth") or 0) / minutes, 4)
+        if minutes > 0 else 0.0,
         "throughput_per_min": round(result.chests_opened / minutes, 4) if minutes > 0 else 0.0,
         "percent_available_opened": round(100.0 * len(opened_truth & available) / len(available),
                                           2) if available else None,
@@ -266,10 +273,15 @@ def run_policy_benchmark(settings: Settings, *, strategies: Sequence[str] = DEFA
     return summary
 
 
-SUMMARY_METRICS = ("throughput_per_min", "percent_available_opened", "discovery_rate",
-                   "navigation_success_rate", "interaction_success_rate", "exploration_coverage",
-                   "travel_distance_m", "travel_per_chest_m", "recoveries", "sim_seconds",
-                   "inference_mean_ms", "learned_share", "cpu_seconds", "peak_rss_mb")
+#: Primary metric: chests that really were opened (ground truth) per simulated minute.
+PRIMARY_METRIC = "throughput_truth_per_min"
+THROUGHPUT_METRICS = (PRIMARY_METRIC, "throughput_per_min")
+
+SUMMARY_METRICS = ("throughput_truth_per_min", "throughput_per_min", "percent_available_opened",
+                   "discovery_rate", "navigation_success_rate", "interaction_success_rate",
+                   "exploration_coverage", "travel_distance_m", "travel_per_chest_m",
+                   "recoveries", "sim_seconds", "inference_mean_ms", "learned_share",
+                   "cpu_seconds", "peak_rss_mb")
 
 
 def summarise_rows(rows: Sequence[dict[str, Any]], strategies: Sequence[str], *,
@@ -283,6 +295,7 @@ def summarise_rows(rows: Sequence[dict[str, Any]], strategies: Sequence[str], *,
         entry["outcomes"] = dict(Counter(r["outcome"] for r in rs))
         entry["end_reasons"] = dict(Counter(str(r["end_reason"]) for r in rs).most_common(6))
         entry["over_reported_total"] = sum(r["over_reported"] for r in rs)
+        entry["under_reported_total"] = sum(r.get("under_reported") or 0 for r in rs)
         entry["opened_total"] = sum(r["chests_opened"] for r in rs)
         entry["opened_truth_total"] = sum(r["chests_opened_truth"] or 0 for r in rs)
         entry["credited_by_notification_total"] = sum(r["credited_by_notification"] for r in rs)
@@ -300,18 +313,22 @@ def summarise_rows(rows: Sequence[dict[str, Any]], strategies: Sequence[str], *,
     for s in strategies:
         if s == baseline:
             continue
-        diffs = [r["throughput_per_min"] - base[(r["map_id"], r["episode"])]["throughput_per_min"]
-                 for r in rows if r["strategy"] == s and (r["map_id"], r["episode"]) in base]
-        stats = summarise(diffs)
-        base_mean = per.get(baseline, {}).get("throughput_per_min", {}).get("mean")
-        paired[s] = {"throughput_difference": stats,
-                     "percent_change_of_mean": round(100.0 * stats["mean"] / base_mean, 2)
-                     if diffs and base_mean else None,
-                     "better": sum(d > 1e-9 for d in diffs), "worse": sum(d < -1e-9 for d in diffs),
-                     "tied": sum(abs(d) <= 1e-9 for d in diffs),
-                     "significant_at_95": bool(diffs) and stats["n"] > 1 and (
-                         stats["ci_low"] > 0 or stats["ci_high"] < 0)}
+        paired[s] = {}
+        for metric in THROUGHPUT_METRICS:
+            diffs = [r[metric] - base[(r["map_id"], r["episode"])][metric]
+                     for r in rows if r["strategy"] == s and (r["map_id"], r["episode"]) in base]
+            stats = summarise(diffs)
+            base_mean = per.get(baseline, {}).get(metric, {}).get("mean")
+            paired[s][metric] = {
+                "difference": stats,
+                "percent_change_of_mean": round(100.0 * stats["mean"] / base_mean, 2)
+                if diffs and base_mean else None,
+                "better": sum(d > 1e-9 for d in diffs), "worse": sum(d < -1e-9 for d in diffs),
+                "tied": sum(abs(d) <= 1e-9 for d in diffs),
+                "significant_at_95": bool(diffs) and stats["n"] > 1 and (
+                    stats["ci_low"] > 0 or stats["ci_high"] < 0)}
     return {"per_strategy": per, "paired_vs_" + baseline: paired,
+            "primary_metric": PRIMARY_METRIC,
             "episodes_completed": len({(r["map_id"], r["episode"]) for r in rows})}
 
 
@@ -334,33 +351,38 @@ def _fmt(stats: dict[str, Any], digits: int = 3) -> str:
 
 def format_report(summary: dict[str, Any]) -> str:
     per = summary["per_strategy"]
-    lines = ["| Strategy | Episodes | Throughput /min mean (median, sd) [95 % CI] "
-             "| % avail. opened "
+    lines = ["| Strategy | Episodes | Opened (truth) /min mean (median, sd) [95 % CI] "
+             "| Reported /min | % avail. opened "
              "| Nav. success | Interact. success | Coverage | Travel/chest m | Recoveries "
              "| Inference ms | Learned share |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for name, e in per.items():
-        t = e["throughput_per_min"]
+        t = e[PRIMARY_METRIC]
         ci = f"[{t['ci_low']:.3f}, {t['ci_high']:.3f}]" if t.get("mean") is not None else ""
         lines.append(
             f"| {name} | {e['episodes']} | "
             + (f"{t['mean']:.3f} ({t['median']:.3f}, {t['std']:.3f}) {ci}" if t.get("mean")
                is not None else "-")
+            + f" | {_fmt(e['throughput_per_min'])}"
             + f" | {_fmt(e['percent_available_opened'], 1)} | {_fmt(e['navigation_success_rate'])}"
             f" | {_fmt(e['interaction_success_rate'])} | {_fmt(e['exploration_coverage'])}"
             f" | {_fmt(e['travel_per_chest_m'], 1)} | {_fmt(e['recoveries'], 1)}"
             f" | {_fmt(e['inference_mean_ms'], 2)} | {_fmt(e['learned_share'])} |")
     key = next((k for k in summary if k.startswith("paired_vs_")), None)
     if key:
-        lines += ["", f"Paired differences in throughput ({key[10:]} baseline):", ""]
-        for name, p in summary[key].items():
-            d = p["throughput_difference"]
-            if d.get("mean") is None:
-                continue
-            lines.append(f"- {name}: mean {d['mean']:+.3f} /min [95 % CI {d['ci_low']:+.3f}, "
-                         f"{d['ci_high']:+.3f}], {p['percent_change_of_mean']:+.1f} %, better "
-                         f"{p['better']}, worse {p['worse']}, tied {p['tied']}"
-                         + (" (significant)" if p["significant_at_95"] else ""))
+        for metric, label in ((PRIMARY_METRIC, "chests opened (ground truth)"),
+                              ("throughput_per_min", "chests counted by the agent")):
+            lines += ["", f"Paired differences per simulated minute, {label} "
+                      f"({key[10:]} baseline):", ""]
+            for name, cmp in summary[key].items():
+                p = cmp.get(metric, {})
+                d = p.get("difference", {})
+                if d.get("mean") is None:
+                    continue
+                lines.append(f"- {name}: mean {d['mean']:+.3f} /min [95 % CI {d['ci_low']:+.3f}, "
+                             f"{d['ci_high']:+.3f}], {p['percent_change_of_mean']:+.1f} %, better "
+                             f"{p['better']}, worse {p['worse']}, tied {p['tied']}"
+                             + (" (significant)" if p["significant_at_95"] else ""))
     if summary.get("errors"):
         lines += ["", "Errors:"] + [f"- {e}" for e in summary["errors"]]
     return "\n".join(lines)

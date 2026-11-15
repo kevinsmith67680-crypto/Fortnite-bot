@@ -201,10 +201,10 @@ def _comparison_line(runner: Any) -> str:
         return ""
     parts = []
     for name, e in summary.get("per_strategy", {}).items():
-        mean = e.get("throughput_per_min", {}).get("mean")
+        mean = e.get("throughput_truth_per_min", e.get("throughput_per_min", {})).get("mean")
         if mean is not None:
             parts.append(f"{name} {mean:.2f}")
-    return "Benchmark /min: " + ", ".join(parts) if parts else ""
+    return "Benchmark opened /min: " + ", ".join(parts) if parts else ""
 
 
 def draw_spawn_estimates(img: np.ndarray, planner: Any, controller: Any,
