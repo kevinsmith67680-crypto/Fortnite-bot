@@ -661,7 +661,68 @@ complexity without a measured gain (Phase 8 audit, section M).
 
 ## 16. End-to-end acceptance test
 
-RESULTS_ACCEPTANCE
+**Run.** `acceptance-phase7 --episodes 10 --workers 4`.
+
+* **Map.** `p7_complex_test_000_unfamiliar`, never used for training. It is held out on
+  every axis: unseen layout with rooms, outdoor areas and several elevations, plus
+  unfamiliar lighting and start pose.
+* **Episodes.** 10 episodes of 600 simulated seconds (18,000 ticks) for each group, clean
+  and with one injected fault per episode (the ten fault kinds in turn).
+* **Comparison.** The Phase 6 agent, given the spawn points, on the same episodes.
+* **Code version.** Commit `43f3b80`, with all Phase 8 fixes including F17. The run before
+  F17 is kept in `benchmark_results/phase7/acceptance_preF17/`.
+* 41 episodes in 557 s of wall clock, 0 errors.
+
+| Group | Throughput | Reachable opened | Interaction success | Coverage | Outcomes | Loops detected |
+|---|---|---|---|---|---|---|
+| Phase 7 active, clean | 1.12 [0.94, 1.30] | 55.5 % | 94.9 % | 0.73 [0.69, 0.77] | 10 tick limit | 158 |
+| Phase 7 active, faults | 1.09 [0.88, 1.30] | 54.0 % | 92.4 % | 0.73 [0.67, 0.78] | 10 tick limit | 152 |
+| Phase 6 with spawn points, clean | 3.14 [2.65, 3.63] | 60.9 % | 96.1 % | n/a | 10 completed | 5 |
+| Phase 6 with spawn points, faults | 2.91 [2.15, 3.66] | 56.9 % | 95.0 % | n/a | 10 completed | 23 |
+
+Engineering targets (Phase 7 agent, fault-free episodes):
+
+| Target | Measured | Met |
+|---|---|---|
+| Interaction success ≥ 90 % | 94.9 % | yes |
+| Coverage ≥ 85 % | 73.3 % (max 86.7 % in one episode) | **no** |
+| No failed or aborted episode | 0 / 20 (before F17: 1 aborted on the intervention budget) | yes |
+| Exact replay (episode 0 played twice) | 10 vs 11 chests | **no**: finding F18 |
+| Peak memory of a worker | 143.6 MB | – |
+
+Other measurements:
+
+* **Detection on this held-out map:** precision 0.99, recall 0.82. Chest-distance error is
+  1.6 m, pose error 0.07 m.
+* **Navigation success:** 0.96.
+* **Throughput against the Phase 6 agent (paired):**
+  * −2.02 [−2.51, −1.53] chests per minute clean (0 better, 10 worse);
+  * −1.82 [−2.53, −1.11] with faults.
+* **Interpretation.** The agent finds and opens about 55 % of the reachable chests in
+  10 minutes on a map it has never seen, without spawn-point knowledge, and survives every
+  injected fault kind. It is about a third as productive as an agent that is told where
+  chests can be.
+
+**Exact replay (F18).** The first play of episode 0 opened 10 chests; the repeat opened 11.
+The two runs share seed, map and code. Two decisions depend on wall-clock time:
+
+* the frontier-selection budget (20 ms; a selection takes 15 ms on average, and 6–10
+  overruns occur per 600 s episode);
+* the hybrid selector's 20 ms inference timeout.
+
+The simulation is lock-step, so latency does not move simulated time. It can still change
+which frontier or which policy is used.
+
+What re-running showed:
+
+* Re-running the episode in fresh processes under load gave six identical pairs.
+* With a 3 ms frontier budget the episode gives 12 chests instead of 11, so the budget does
+  change outcomes.
+* Which of the two limits caused the single mismatch was not isolated.
+
+Before F17 the same check passed. The fix belongs in the next phase: work-based limits for
+lock-step research runs, with the wall-clock limits kept for real-time use. It changes every
+benchmark's semantics, so it was not made under the running Phase 8 queue.
 
 ## 17. Recommendations for the next phase
 
