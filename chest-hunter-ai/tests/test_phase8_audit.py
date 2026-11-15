@@ -138,6 +138,45 @@ class DefectRegressions(unittest.TestCase):
         self.assertTrue(ex.dense_fan_done((1.0, 1.0, 0.0)))
         self.assertFalse(ex.dense_fan_done((9.0, 9.0, 0.0)))
 
+    def test_f22_off_mesh_manoeuvres_without_a_trail_change_direction(self) -> None:
+        # Phase 6 benchmark, phase6_hybrid_optimised, episode 57: the agent stood off the
+        # NavMesh on a raised spot with no walked trail, so every unstick manoeuvre went
+        # straight behind the camera, into the same obstacle, until the supervisor aborted
+        # the episode for no progress (19 manoeuvres, all at 233 degrees).
+        from types import SimpleNamespace
+
+        from chest_hunter.agent import controller_3d as c3
+
+        agent: Any = SimpleNamespace(_off_mesh_waits=0, _off_mesh_maneuvers=0, now=0.0,
+                                     _cam_yaw=53.0, _maneuver_bearing=0.0,
+                                     _maneuver_until=-1.0, _after_observe=None)
+        agent._trail_bearing = lambda: None
+        agent._go = lambda state: state
+        bearings = []
+        for _ in range(4):
+            for _ in range(13):                               # 12 waits, then a manoeuvre
+                c3.VisualAgent3D._wait_to_land(agent, c3.S.EXPLORING)
+            bearings.append(agent._maneuver_bearing)
+        self.assertEqual(bearings[0], 233.0)                  # the first attempt is unchanged
+        self.assertEqual(len(set(bearings)), 4, bearings)
+        agent._trail_bearing = lambda: 10.0                   # a walked trail still wins
+        for _ in range(13):
+            c3.VisualAgent3D._wait_to_land(agent, c3.S.EXPLORING)
+        self.assertEqual(agent._maneuver_bearing, 10.0)
+
+    @unittest.skipUnless((ROOT / "training" / "experience.db").exists(),
+                         "needs the local experience database the benchmark used")
+    def test_f22_the_stuck_phase6_episode_completes(self) -> None:
+        from chest_hunter.analytics.phase6_benchmark import Phase6Job, run_phase6_job
+
+        row = run_phase6_job(Phase6Job(
+            "phase6_hybrid_optimised", "research_arena_3d", 42, 57,
+            str(ROOT / "config" / "settings.json"), str(ROOT / "training" / "experience.db"),
+            str(ROOT / "training" / "checkpoints" / "bc_synthetic_v1"), 12000, 640, 360))
+        # Before the fix: tick_limit at 400 s here, and a supervisor abort at 558.6 s in the
+        # benchmark's 600 s episode.
+        self.assertEqual(row["outcome"], "completed", row["end_reason"])
+
     def test_f2_a_phase7_map_can_be_exported_for_unreal(self) -> None:
         # Before the fix export-arena-3d exported only research_arena_3d; the Phase 7 maps
         # (including the acceptance map) could not reach the Unreal project at all.

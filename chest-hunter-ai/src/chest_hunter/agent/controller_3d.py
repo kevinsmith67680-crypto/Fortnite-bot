@@ -74,6 +74,8 @@ class Agent3DState(StrEnum):
 
 S = Agent3DState
 _END = frozenset({S.COMPLETED, S.FAILED})
+# Turns added to successive off-mesh manoeuvres that have no trail to retrace (degrees).
+_UNSTICK_TURNS = (0.0, 90.0, -90.0, 180.0)
 TRANSITIONS_3D: dict[Agent3DState, frozenset[Agent3DState]] = {
     S.INITIALIZING: frozenset({S.OBSERVING}) | _END,
     S.OBSERVING: frozenset({S.SCANNING, S.EXPLORING, S.TARGET_DETECTED, S.PLANNING_ROUTE}) | _END,
@@ -276,6 +278,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._approach_progress = (math.inf, 0.0)
         self._approach_goal: tuple[float, float, float] | None = None
         self._off_mesh_waits = 0
+        self._off_mesh_maneuvers = 0
         self._approach_side = 0.0
         self._plan_failures: dict[int, int] = {}
         self._trail: deque[tuple[float, tuple[float, float, float]]] = deque(maxlen=90)
@@ -998,18 +1001,31 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._off_mesh_waits += 1
         if self._off_mesh_waits > 12:
             self._off_mesh_waits = 0
-            self._maneuver_bearing = self._retrace_bearing()
+            bearing = self._trail_bearing()
+            if bearing is None:
+                # No walked trail to retrace: turn each further attempt by a quarter turn, so
+                # a blocked direction is not retried for the rest of the episode (F22).
+                turn = _UNSTICK_TURNS[self._off_mesh_maneuvers % len(_UNSTICK_TURNS)]
+                bearing = (self._cam_yaw + 180.0 + turn) % 360.0
+                self._off_mesh_maneuvers += 1
+            self._maneuver_bearing = bearing
             self._maneuver_until = self.now + 0.8
         self._after_observe = then
         return self._go(S.OBSERVING)
 
     def _retrace_bearing(self) -> float:
         """Direction back along the agent's own recent trail (known to be walkable)."""
+        bearing = self._trail_bearing()
+        return (self._cam_yaw + 180.0) % 360.0 if bearing is None else bearing
+
+    def _trail_bearing(self) -> float | None:
+        """Bearing to the last trail point at least 0.6 m away, or None if the agent has
+        not moved within the trail."""
         pos = self.position
         for t, p in reversed(self._trail):
             if self.now - t >= 1.2 and math.dist(p[:2], pos[:2]) > 0.6:
                 return bearing_deg(p[0] - pos[0], p[1] - pos[1])
-        return (self._cam_yaw + 180.0) % 360.0
+        return None
 
     def _mark_unreachable(self, prior: SpawnPrior3D) -> None:
         if prior.location_id in self._unreachable_keys:
@@ -1081,6 +1097,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self._after_observe = S.EXPLORING
             return self._go(S.OBSERVING)
         self._off_mesh_waits = 0
+        self._off_mesh_maneuvers = 0
         self.metrics.routes_started += 1
         self.follower = PathFollower(plan.waypoints, arrive_radius=0.7)
         self.follower.start(self.now)
