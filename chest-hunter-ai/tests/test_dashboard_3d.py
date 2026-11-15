@@ -75,3 +75,41 @@ class TestDashboard3D(unittest.TestCase):
 
 def tearDownModule() -> None:
     collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
+class TestPhase7Panel(unittest.TestCase):
+    def test_exploration_panel_and_coverage_overlay(self) -> None:
+        from chest_hunter.agent.dashboard_3d import (
+            draw_coverage,
+            exploration_text,
+            map_bounds,
+        )
+        from chest_hunter.exploration.active import ExplorationConfig
+
+        captured: list[tuple[str, np.ndarray]] = []
+
+        def capture(runner: Runner3D, result: object) -> None:
+            ex = runner.explorer
+            if ex is None or ex.map.seen_count == 0 or len(captured) > 2:
+                return
+            c = runner.controller
+            bounds = map_bounds(c, ex)
+            img = np.full((300, 300, 3), 30, np.uint8)
+            draw_coverage(img, ex, bounds)
+            captured.append((exploration_text(runner), img))
+
+        db = DatabaseManager(":memory:")
+        db.initialize()
+        self.addCleanup(db.close)
+        settings = load_config(ROOT / "config" / "settings.json")
+        runner = Runner3D.from_settings(db, settings, mode="hybrid", seed=2,
+                                        backend="reference", map_id="p7_open_test_001",
+                                        max_ticks=450, width=320, height=180,
+                                        exploration=ExplorationConfig(), on_decision=capture)
+        runner.run()
+        self.assertTrue(captured)
+        text, img = captured[-1]
+        for needle in ("Exploration:", "Frontier target", "Localisation confidence",
+                       "Chests/min", "memory", "held-out", "complexity"):
+            self.assertIn(needle, text)
+        self.assertTrue(np.any(img != 30), "no coverage drawn")
+
+

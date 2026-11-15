@@ -267,12 +267,6 @@ def run_p7_job(job: P7Job) -> dict[str, Any]:
         db.close()
 
 
-AGENT_SECTIONS: Final = ("preprocessing", "chest_detection", "tracking_localisation",
-                         "interaction_cues", "route_selection", "navigation_query",
-                         "learned_inference", "supervision", "exploration_update",
-                         "frontier_selection", "database_persistence")
-
-
 def episode_row(job: P7Job, runner: Any, result: Any, profiler: Any) -> dict[str, Any]:
     m, t = result.metrics, result.truth or {}
     minutes = result.sim_seconds / 60.0
@@ -282,8 +276,9 @@ def episode_row(job: P7Job, runner: Any, result: Any, profiler: Any) -> dict[str
     v = result.vision or {}
     log = m.recovery_log
     attempts, resolved = sum(log.attempts.values()), sum(log.resolved.values())
-    report = {r["component"]: r for r in profiler.report()}
-    agent_cpu = sum(report[c]["cpu_total_s"] for c in AGENT_SECTIONS if c in report)
+    from chest_hunter.analytics.resource_monitor import pipeline_cpu_seconds
+
+    agent_cpu = pipeline_cpu_seconds(profiler.report())["pipeline"]
     sel = runner.selector.stats.to_dict() if runner.selector is not None else {}
     sup = result.supervisor or {}
     explorer = runner.explorer

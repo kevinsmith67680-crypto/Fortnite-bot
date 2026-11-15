@@ -191,3 +191,81 @@ class ResourceMonitor:
                 "process_rss_mb_last": rss[-1] if rss else None,
                 "process_rss_mb_peak": round(self.peak_rss_mb, 2),
                 "gpu": self._gpu}
+
+
+#: Top-level profiler sections of the agent's own thread (the Python decision pipeline).
+#: Nested sections are inside these and must not be added again: ``action_generation``
+#: contains route_selection, frontier_selection, navigation_query and learned_inference.
+PIPELINE_SECTIONS: tuple[str, ...] = (
+    "preprocessing", "chest_detection", "tracking_localisation", "interaction_cues",
+    "exploration_update", "action_generation", "supervision", "database_persistence")
+NESTED_SECTIONS: tuple[str, ...] = ("route_selection", "frontier_selection",
+                                    "navigation_query", "learned_inference")
+
+
+def pipeline_cpu_seconds(components: list[dict[str, Any]]) -> dict[str, float]:
+    """CPU seconds of the decision pipeline (agent thread), the bridge client (agent thread,
+    inside ``simulator_step``) from a :meth:`Profiler.report`."""
+    by = {r["component"]: r for r in components}
+    pipeline = sum(float(by[c]["cpu_total_s"]) for c in PIPELINE_SECTIONS if c in by)
+    bridge = float(by["simulator_step"]["cpu_total_s"]) if "simulator_step" in by else 0.0
+    return {"pipeline": pipeline, "bridge_client": bridge}
+
+
+def resource_report(results: dict[str, Any], *, map_id: str, seed: int, policy: str,
+                    exploration: str, observation: tuple[int, int]) -> dict[str, Any]:
+    """Phase 7 resource report from ``profile-agent`` results (one entry per vision profile:
+    ``{"components": Profiler.report(), "episodes": [...]}``). The Python decision pipeline
+    and the simulator are reported separately; nothing is estimated."""
+    gpu = gpu_status()
+    out: dict[str, Any] = {
+        "environment": "Python reference arena in the same process (NOT Unreal Engine)",
+        "machine": {"cpus": os.cpu_count(), "platform": sys.platform,
+                    "python": sys.version.split()[0]},
+        "map": map_id, "seed": seed, "policy": policy, "exploration": exploration,
+        "observation": list(observation), "gpu": gpu,
+        "notes": [
+            "pipeline_cpu: CPU time of the agent's own thread in the top-level profiled "
+            "sections (perception, exploration update, action generation incl. planning, "
+            "navigation queries and learned inference, supervision, persistence)",
+            "simulator_cpu: process CPU minus the agent thread's sections; it is the Python "
+            "reference arena (physics + software renderer) plus runner overhead and the "
+            "evaluation-only scoring. It is NOT a measurement of the Unreal graphics workload, "
+            "which needs a GPU and was not available",
+            "memory: resident set size of the whole process after each episode",
+        ],
+        "profiles": {},
+    }
+    for name, res in results.items():
+        eps = res["episodes"]
+        cpu = pipeline_cpu_seconds(res["components"])
+        sim_s = sum(float(e["sim_seconds"]) for e in eps)
+        proc = sum(float(e["cpu_seconds"]) for e in eps)
+        wall = sum(float(e["wall_seconds"]) for e in eps)
+        frames = sum(int(e.get("frames_analysed") or 0) for e in eps)
+        rss = [float(e["rss_mb"]) for e in eps if e.get("rss_mb") is not None]
+        by = {r["component"]: r for r in res["components"]}
+        out["profiles"][name] = {
+            "episodes": len(eps), "simulated_seconds": round(sim_s, 1),
+            "wall_seconds": round(wall, 1),
+            "pipeline_cpu_seconds": round(cpu["pipeline"], 2),
+            "pipeline_cpu_per_simulated_second": round(cpu["pipeline"] / sim_s, 4)
+            if sim_s else None,
+            "pipeline_cpu_ms_per_analysed_frame": round(1000 * cpu["pipeline"] / frames, 3)
+            if frames else None,
+            "pipeline_share_of_one_core_at_real_time": round(cpu["pipeline"] / sim_s, 4)
+            if sim_s else None,
+            "bridge_client_cpu_seconds": round(cpu["bridge_client"], 2),
+            "process_cpu_seconds": round(proc, 2),
+            "simulator_cpu_seconds": round(max(0.0, proc - cpu["pipeline"]
+                                               - cpu["bridge_client"]), 2),
+            "rss_mb": {"first": rss[0] if rss else None, "last": rss[-1] if rss else None,
+                       "max": max(rss) if rss else None},
+            "frames_analysed": frames,
+            "components": {c: {k: by[c][k] for k in ("calls", "mean_ms", "p95_ms",
+                                                      "cpu_total_s")}
+                           for c in (*PIPELINE_SECTIONS, *NESTED_SECTIONS, "simulator_step")
+                           if c in by},
+            "per_episode": eps,
+        }
+    return out

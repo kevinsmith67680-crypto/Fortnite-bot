@@ -220,6 +220,142 @@ def draw_spawn_estimates(img: np.ndarray, planner: Any, controller: Any,
                    (0, c, c), 1)
 
 
+def map_bounds(controller: Any, explorer: Any = None) -> tuple[float, float, float, float]:
+    """A square map extent covering what the agent knows (its explored cells, its spawn
+    points and itself); (0, 0, 100, 100) before it knows anything."""
+    xs: list[float] = []
+    ys: list[float] = []
+    if explorer is not None and explorer.map.cells:
+        for key in explorer.map.cells:
+            x, y, _ = explorer.map.centre(key)
+            xs.append(x)
+            ys.append(y)
+    for p in getattr(getattr(controller, "world", None), "priors", {}).values():
+        xs.append(p.x)
+        ys.append(p.y)
+    if getattr(controller, "telemetry", None) is not None:
+        xs.append(controller.position[0])
+        ys.append(controller.position[1])
+    if not xs:
+        return (0.0, 0.0, 100.0, 100.0)
+    side = max(max(xs) - min(xs), max(ys) - min(ys), 20.0) + 8.0
+    cx, cy = (max(xs) + min(xs)) / 2.0, (max(ys) + min(ys)) / 2.0
+    return (cx - side / 2.0, cy - side / 2.0, cx + side / 2.0, cy + side / 2.0)
+
+
+def draw_coverage(img: np.ndarray, explorer: Any, bounds: tuple[float, float, float, float],
+                  level: int | None = None) -> np.ndarray:
+    """Phase 7 overlay: walkable cells the camera has covered (green), walkable cells not yet
+    seen (grey), unreachable frontier blocks (red) and the current frontier target
+    (magenta). Drawn in place under the map markers."""
+    x0, y0, x1, y1 = bounds
+    scale = MAP_PX / max(x1 - x0, y1 - y0)
+    half = max(1, int(explorer.map.cell * scale / 2))
+
+    def px(x: float, y: float) -> tuple[int, int]:
+        return int((y - y0) * scale), int(MAP_PX - 1 - (x - x0) * scale)
+
+    for key, cell in explorer.map.cells.items():
+        if not cell.walkable or (level is not None and key[2] != level):
+            continue
+        u, v = px(*explorer.map.centre(key)[:2])
+        colour = (70, 140, 70) if cell.views > 0 else (90, 90, 90)
+        if key in explorer.blacklist:
+            colour = (40, 40, 200)
+        cv2.rectangle(img, (u - half, v - half), (u + half, v + half), colour, -1)
+    t = explorer.target
+    if t is not None:
+        cv2.circle(img, px(t.point[0], t.point[1]), 6, (255, 0, 255), 2)
+    return img
+
+
+def exploration_text(runner: Any) -> str:
+    """Phase 7 panel (agent-side data only, plus the process's own resource use)."""
+    from chest_hunter.analytics.resource_monitor import process_rss_mb
+    from chest_hunter.runtime.configurations import AGENT_VERSION
+
+    controller = runner.controller
+    agent = getattr(controller, "agent", controller)
+    ex = getattr(runner, "explorer", None)
+    lines: list[str] = []
+    if ex is not None:
+        cov = ex.map.coverage()
+        lines.append(f"Exploration: {ex.cfg.strategy}, {ex.map.seen_count} cells seen, "
+                     f"coverage of known walkable {100 * cov:.0f} %" if cov is not None
+                     else f"Exploration: {ex.cfg.strategy}, nothing mapped yet")
+        t = ex.target
+        lines.append("Frontier target: -" if t is None else
+                     f"Frontier target: ({t.point[0]:.0f}, {t.point[1]:.0f}) {t.region}, "
+                     f"gain G={t.gain:.0f} cells, chest value C={t.chest_value:.2f}, "
+                     f"T={t.travel_s:.0f} s, S={t.score:.3f}")
+        lines.append(f"Exploration done: {ex.done}   unreachable areas: {len(ex.blacklist)}")
+    world = getattr(agent, "world", None)
+    tracks = list(world.tracker.confirmed()) if world is not None else []
+    chests = [tr for tr in tracks if tr.category == "chest"]
+    if chests:
+        best = max(chests, key=lambda tr: tr.confidence)
+        sigma = sum(tr.sigma for tr in chests) / len(chests)
+        lines.append(f"Chest detection confidence: best {best.confidence:.2f} "
+                     f"({len(chests)} chest track(s)); world-model uncertainty: mean "
+                     f"sigma {sigma:.2f} m")
+    else:
+        lines.append("Chest detection confidence: no confirmed chest track")
+    if world is not None and getattr(world, "discover", False):
+        dyn = [p for p in world.priors.values() if p.location_id < 0]
+        lines.append(f"Discovered spawn points: {len(dyn)} "
+                     f"({sum(1 for p in dyn if p.resolved)} resolved)")
+    conf = getattr(agent, "localisation_confidence", None)
+    if conf is not None:
+        lines.append(f"Localisation confidence: {conf:.2f}  "
+                     f"(odometry jumps: {getattr(agent, 'localisation_jumps', 0)})")
+    sup = getattr(runner, "supervisor", None)
+    if sup is not None:
+        recent = sup.events.recent(3)
+        lines.append("Recent events: " + ("; ".join(
+            f"{e.kind}->{e.action or '-'} @{e.sim_time:.0f}s" for e in recent) or "none"))
+    policy = getattr(runner, "learned_policy", None)
+    lines.append(f"Agent {AGENT_VERSION}; policy model "
+                 f"{policy.version if policy is not None else '- (deterministic)'}")
+    from chest_hunter.simulation3d.generator7 import DEFAULTS, is_generated, parse
+
+    mid = getattr(runner, "map_id", "")
+    if is_generated(mid):
+        spec = parse(mid)
+        lines.append(f"Map: {spec.category} (complexity {DEFAULTS[spec.category].complexity}),"
+                     f" {'held-out' if spec.split == 'test' or spec.variant else 'training'}"
+                     + (f", shift {spec.variant}" if spec.variant else ""))
+    m = agent.metrics
+    tel = getattr(agent, "telemetry", None)
+    minutes = tel.sim_time / 60.0 if tel is not None and tel.sim_time > 0 else 0.0
+    sel = getattr(runner, "selector", None)
+    lat = sel.stats.to_dict().get("latency_mean_ms") if sel is not None else None
+    lines.append(f"Chests/min: {m.chests_opened / minutes:.2f}" if minutes else "Chests/min: -")
+    lines.append(f"CPU latency: perception {m.perception_ms_mean:.1f} ms, inference "
+                 f"{lat if lat is not None else '-'} ms; memory "
+                 f"{process_rss_mb()[0]:.0f} MB")
+    gen = generalization_line(getattr(runner, "settings", None))
+    if gen:
+        lines.append(gen)
+    return "\n".join(lines)
+
+
+def generalization_line(settings: Any) -> str:
+    """The latest Phase 7 generalisation result on disk (benchmark_results/phase7)."""
+    import json
+    from pathlib import Path
+
+    if settings is None:
+        return ""
+    path = Path(settings.base_dir) / "benchmark_results" / "phase7" / "summary.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        gaps = data["generalization_gap"].get("phase7_active", {})
+    except (OSError, ValueError, KeyError, AttributeError):
+        return ""
+    parts = [f"{c} {g['G']:+.2f}" for c, g in gaps.items() if g.get("G") is not None]
+    return "Generalisation gap G (phase7_active): " + (", ".join(parts) or "n/a")
+
+
 def _photo(tk_module: Any, bgr: np.ndarray) -> Any:
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     h, w = rgb.shape[:2]
@@ -248,6 +384,10 @@ class Dashboard3D:
         tk.Label(self.root, textvariable=self.learning, justify="left", anchor="nw", bg="#1f1f1f",
                  fg="#bfe3ff", font=("TkFixedFont", 9)).grid(row=2, column=1, sticky="nw",
                                                              padx=6)
+        self.exploration: Any = tk.StringVar(value="")
+        tk.Label(self.root, textvariable=self.exploration, justify="left", anchor="nw",
+                 bg="#1f1f1f", fg="#c8f0c8", font=("TkFixedFont", 9)).grid(
+            row=3, column=0, columnspan=2, sticky="nw", padx=6)
         self.policy_choice: Any = tk.StringVar(value="deterministic")
         bar = tk.Frame(self.root, bg="#1f1f1f")
         bar.grid(row=2, column=0, sticky="w", padx=6)
@@ -296,7 +436,17 @@ class Dashboard3D:
         if cam is not None:
             images.append(_photo(self.tk, cam))
             self.camera.configure(image=images[-1])
-        map_img = draw_map(controller)
+        explorer = getattr(runner, "explorer", None)
+        if explorer is not None:
+            bounds = map_bounds(controller, explorer)
+            map_img = np.full((MAP_PX, MAP_PX, 3), 30, np.uint8)
+            draw_coverage(map_img, explorer, bounds, explorer.map.level(controller.position[2]))
+            overlay = draw_map(controller, bounds)
+            drawn = np.any(overlay != 30, axis=2)
+            map_img[drawn] = overlay[drawn]
+            self.exploration.set(exploration_text(runner))
+        else:
+            map_img = draw_map(controller)
         planner = getattr(runner, "planner", None)
         if planner is not None:
             draw_spawn_estimates(map_img, planner, controller)
@@ -323,5 +473,6 @@ class Dashboard3D:
         with contextlib.suppress(self.tk.TclError):
             self.root.destroy()
         self.camera = self.map = self.info = self.learning = self.policy_choice = None
+        self.exploration = None
         self.root = None
         gc.collect()                       # leftover cycles: collect them on this thread

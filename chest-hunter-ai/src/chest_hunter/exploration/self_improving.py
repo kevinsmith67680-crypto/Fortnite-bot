@@ -140,13 +140,13 @@ class ExplorationMemory:
         c = self.categories.get(category)
         if not c or c["travel_s"] < 30.0:
             return default
-        return c["travel_m"] / c["travel_s"]
+        return float(c["travel_m"]) / float(c["travel_s"])
 
     def interaction_success(self, category: str) -> float | None:
         c = self.categories.get(category)
         if not c or not c["interaction_attempts"]:
             return None
-        return c["openings"] / c["interaction_attempts"]
+        return float(c["openings"]) / float(c["interaction_attempts"])
 
     def recovery_success(self, category: str) -> dict[str, float]:
         c = self.categories.get(category) or {}
@@ -157,7 +157,7 @@ class ExplorationMemory:
         c = self.categories.get(category)
         if not c or not c["scans"]:
             return None
-        return c["cells_from_scans"] / c["scans"]
+        return float(c["cells_from_scans"]) / float(c["scans"])
 
     # -- updates (between training episodes only) ------------------------------------------------
 

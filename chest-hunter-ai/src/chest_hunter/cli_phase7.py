@@ -146,7 +146,7 @@ def print_phase7_result(runner: Any, result: Any) -> None:
                                  f"{s['seen_cells']} of {s['walkable_cells']} known walkable "
                                  f"cells seen, done={s['done']}"),
                  ("Frontier selection", f"{s.get('latency_mean_ms')} ms mean, "
-                                        f"{s.get('latency_max_ms')} ms max")]
+                                        f"{s.get('latency_p95_ms')} ms p95")]
         cov = (result.truth or {}).get("true_coverage")
         if cov is not None:
             rows.append(("Coverage of reachable area", f"{100 * cov:.1f} % (evaluation only)"))

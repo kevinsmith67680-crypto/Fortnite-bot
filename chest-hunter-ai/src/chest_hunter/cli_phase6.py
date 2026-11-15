@@ -156,7 +156,15 @@ def register(add: AddCommand) -> None:
     sub.add_argument("--observation-width", type=_positive, default=640)
     sub.add_argument("--observation-height", type=_positive, default=360)
     sub.add_argument("--model", metavar="DIR")
-    sub.add_argument("--output", required=True, metavar="DIR")
+    sub.add_argument("--exploration", choices=("spawn-points", "active"),
+                     default="spawn-points",
+                     help="Phase 7: profile active exploration (with --map procedural: a "
+                          "different held-out procedural map every episode)")
+    sub.add_argument("--output", metavar="DIR",
+                     help="directory for profile.json and the per-profile tables")
+    sub.add_argument("--report", metavar="PATH",
+                     help="Phase 7 resource report (JSON): Python decision pipeline and "
+                          "simulator workload measured separately, memory, per component")
 
     sub = add("calibrate-policy", "Measure how well the learned policy's phase output predicts "
                                   "reliable commands on held-out episodes and fit a reliability "
@@ -245,6 +253,7 @@ def cmd_endurance_test(args: argparse.Namespace, ctx: Any) -> int:
 def cmd_profile_agent(args: argparse.Namespace, ctx: Any) -> int:
     from chest_hunter.agent.runner_3d import Runner3D, _layout_hash
     from chest_hunter.analytics.policy_comparison import _memory_copy
+    from chest_hunter.analytics.resource_monitor import process_rss_mb
     from chest_hunter.runtime.configurations import (
         custom_setup,
         make_planner,
@@ -265,10 +274,15 @@ def cmd_profile_agent(args: argparse.Namespace, ctx: Any) -> int:
     if bad:
         print(f"error: unknown vision profile(s) {bad}; choose from {', '.join(VISION_PROFILES)}")
         return 2
+    if not args.output and not args.report:
+        print("error: give --output DIR and/or --report PATH")
+        return 2
     policy = load_policy(ctx, args.model) if args.policy != "deterministic" else None
-    setup = custom_setup(policy=args.policy, planner=planner_name(args.planner),
+    active = args.exploration == "active"
+    setup = custom_setup(policy=args.policy, planner="none" if active
+                         else planner_name(args.planner),
                          supervisor=args.supervisor == "enabled", adaptive_compute=False)
-    out = Path(args.output)
+    out = Path(args.output) if args.output else Path(args.report).parent
     out.mkdir(parents=True, exist_ok=True)
     results: dict[str, Any] = {}
     print(f"Profiling {args.episodes} episode(s) per vision profile on {args.map} (Python "
@@ -277,25 +291,42 @@ def cmd_profile_agent(args: argparse.Namespace, ctx: Any) -> int:
         prof = Profiler()
         episodes = []
         for ep in range(args.episodes):
-            db = _memory_copy(None, args.map)
+            map_id = args.map
+            if map_id == "procedural":
+                from chest_hunter.analytics.phase7_benchmark import evaluation_map
+
+                map_id = evaluation_map("unseen_layout", ep)[1]
+            db = _memory_copy(None, map_id)
             try:
                 cfg = apply_vision_profile(
                     Agent3DConfig(decision_ticks=settings.simulation_3d.decision_ticks,
                                   smart_recovery=setup.smart_recovery), name,
                     skip_unchanged=args.skip_unchanged_frames)
-                planner = make_planner(settings, setup, db, args.map, _layout_hash(args.map))
+                planner = None if active else make_planner(settings, setup, db, map_id,
+                                                           _layout_hash(map_id))
+                extra: dict[str, Any] = {}
+                if active:
+                    from chest_hunter.cli_phase7 import thresholds_from_settings
+                    from chest_hunter.exploration.active import ExplorationConfig
+
+                    extra = {"exploration": ExplorationConfig(),
+                             "thresholds": thresholds_from_settings(settings)}
                 runner = Runner3D.from_settings(
                     db, settings, mode="hybrid", seed=args.seed, episode=ep, backend="reference",
-                    map_id=args.map, collect_truth=True, config=cfg, max_ticks=args.max_ticks,
+                    map_id=map_id, collect_truth=True, config=cfg, max_ticks=args.max_ticks,
                     width=args.observation_width, height=args.observation_height,
                     policy=args.policy, learned_policy=policy, planner=planner,
                     policy_options=policy_options(settings, setup) or None,
-                    supervisor=supervisor_config(settings, setup), profiler=prof)
+                    supervisor=supervisor_config(settings, setup), profiler=prof, **extra)
                 res = runner.run()
             finally:
                 db.close()
             minutes = res.sim_seconds / 60.0
-            episodes.append({"episode": ep, "outcome": res.outcome,
+            episodes.append({"episode": ep, "map_id": map_id, "outcome": res.outcome,
+                             "rss_mb": round(process_rss_mb()[0], 1),
+                             "decisions": res.metrics.decisions
+                             if hasattr(res.metrics, "decisions") else None,
+                             "coverage": res.truth.get("true_coverage"),
                              "sim_seconds": round(res.sim_seconds, 2),
                              "opened_truth": res.truth.get("opened_truth"),
                              "throughput_truth_per_min": round(
@@ -312,6 +343,17 @@ def cmd_profile_agent(args: argparse.Namespace, ctx: Any) -> int:
         (out / f"profile_{name}.md").write_text(format_report(report) + "\n", encoding="utf-8")
         print(f"\nVision profile {name}:")
         print(format_report(report))
+    if args.report:
+        from chest_hunter.analytics.resource_monitor import resource_report
+
+        report_path = Path(args.report)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(resource_report(
+            results, map_id=args.map, seed=args.seed, policy=args.policy,
+            exploration=args.exploration,
+            observation=(args.observation_width, args.observation_height)), indent=1) + "\n",
+            encoding="utf-8")
+        print(f"Resource report written to {report_path}")
     (out / "profile.json").write_text(json.dumps({
         "map": args.map, "seed": args.seed, "episodes": args.episodes, "policy": args.policy,
         "planner": args.planner, "observation": [args.observation_width, args.observation_height],

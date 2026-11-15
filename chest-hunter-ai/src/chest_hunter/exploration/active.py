@@ -39,13 +39,17 @@ STRATEGIES: Final = ("nearest_frontier", "max_information", "chest_prior", "clus
                      "risk_adjusted")
 REGION_TYPES: Final = ("enclosed", "open", "elevated")
 
-#: (lambda_g, lambda_c, lambda_r, cluster weight) per exploration strategy.
+#: (lambda_g, lambda_c, lambda_r, cluster weight) per exploration strategy. The value
+#: ``lambda_g G + lambda_c C`` is in "newly seen cells" units: ``chest_prior`` counts one
+#: expected chest as 40 cells, ``cluster`` adds up to 8 cells per nearby discovery,
+#: ``risk_adjusted`` subtracts 0.3 score units per failure nearby (a typical score is
+#: 0.2-1). ``nearest_frontier`` ignores the value: the score is 1 / travel time.
 STRATEGY_WEIGHTS: Final[dict[str, tuple[float, float, float, float]]] = {
-    "nearest_frontier": (0.05, 0.0, 0.01, 0.0),
+    "nearest_frontier": (0.0, 0.0, 0.01, 0.0),
     "max_information": (1.0, 0.0, 0.01, 0.0),
-    "chest_prior": (0.3, 1.0, 0.01, 0.0),
-    "cluster": (0.5, 0.5, 0.01, 1.0),
-    "risk_adjusted": (0.6, 0.5, 0.2, 0.0),
+    "chest_prior": (0.5, 40.0, 0.01, 0.0),
+    "cluster": (0.5, 10.0, 0.01, 8.0),
+    "risk_adjusted": (1.0, 10.0, 0.3, 0.0),
 }
 
 
@@ -450,6 +454,8 @@ class ActiveExplorer:
     def score(self, c: Candidate, travel_s: float) -> float:
         lg, lc, lr, cluster = STRATEGY_WEIGHTS[self.cfg.strategy]
         value = lg * c.gain + lc * c.chest_value
+        if self.cfg.strategy == "nearest_frontier":
+            value = 1.0
         if cluster:
             value += cluster * sum(math.exp(-math.dist(d[:2], c.point[:2]) / 10.0)
                                    for d in self.discovered)
