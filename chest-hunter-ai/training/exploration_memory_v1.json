@@ -1,0 +1,255 @@
+{
+ "agent_version": "7.0.0",
+ "bandit": {
+  "arms": [
+   "nearest_frontier",
+   "max_information",
+   "chest_prior",
+   "cluster",
+   "risk_adjusted"
+  ],
+  "noise_sd": 0.8,
+  "prior_count": 1.0,
+  "prior_mean": 1.0,
+  "stats": {
+   "complex": {
+    "chest_prior": [
+     1.0,
+     0.8999999999999999
+    ],
+    "cluster": [
+     1.0,
+     0.8999999999999999
+    ],
+    "max_information": [
+     6.0,
+     9.6
+    ],
+    "nearest_frontier": [
+     14.0,
+     25.799999999999997
+    ],
+    "risk_adjusted": [
+     18.0,
+     34.49999999999999
+    ]
+   },
+   "indoor": {
+    "chest_prior": [
+     4.0,
+     2.4
+    ],
+    "cluster": [
+     8.0,
+     8.099999999999998
+    ],
+    "max_information": [
+     13.0,
+     13.799999999999999
+    ],
+    "nearest_frontier": [
+     4.0,
+     2.6999999999999997
+    ],
+    "risk_adjusted": [
+     11.0,
+     11.1
+    ]
+   },
+   "mixed": {
+    "chest_prior": [
+     7.0,
+     11.100000000000001
+    ],
+    "cluster": [
+     11.0,
+     18.0
+    ],
+    "max_information": [
+     8.0,
+     13.499999999999998
+    ],
+    "nearest_frontier": [
+     8.0,
+     12.599999999999998
+    ],
+    "risk_adjusted": [
+     6.0,
+     9.0
+    ]
+   },
+   "open": {
+    "chest_prior": [
+     8.0,
+     14.099999999999998
+    ],
+    "cluster": [
+     13.0,
+     24.299999999999997
+    ],
+    "max_information": [
+     10.0,
+     19.799999999999997
+    ],
+    "nearest_frontier": [
+     3.0,
+     2.9999999999999996
+    ],
+    "risk_adjusted": [
+     6.0,
+     11.4
+    ]
+   }
+  }
+ },
+ "categories": {
+  "complex": {
+   "cells_by_region": {
+    "elevated": 3705.0,
+    "enclosed": 697.0,
+    "open": 33011.0
+   },
+   "cells_from_scans": 9720.0,
+   "discoveries_by_region": {
+    "elevated": 229.0,
+    "enclosed": 9.0,
+    "open": 534.0
+   },
+   "episodes": 40,
+   "interaction_attempts": 246,
+   "openings": 236,
+   "recovery": {
+    "camera_alignment_failure": {
+     "attempts": 290,
+     "resolved": 49
+    },
+    "interaction_failure": {
+     "attempts": 56,
+     "resolved": 50
+    },
+    "path_blocked": {
+     "attempts": 87,
+     "resolved": 46
+    },
+    "target_unreachable": {
+     "attempts": 29,
+     "resolved": 0
+    }
+   },
+   "scans": 866,
+   "travel_m": 17705.70963089394,
+   "travel_s": 3599.799989
+  },
+  "indoor": {
+   "cells_by_region": {
+    "elevated": 0.0,
+    "enclosed": 1342.0,
+    "open": 19841.0
+   },
+   "cells_from_scans": 8081.0,
+   "discoveries_by_region": {
+    "elevated": 2.0,
+    "enclosed": 5.0,
+    "open": 217.0
+   },
+   "episodes": 40,
+   "interaction_attempts": 135,
+   "openings": 125,
+   "recovery": {
+    "camera_alignment_failure": {
+     "attempts": 59,
+     "resolved": 13
+    },
+    "interaction_failure": {
+     "attempts": 15,
+     "resolved": 9
+    },
+    "path_blocked": {
+     "attempts": 9,
+     "resolved": 8
+    }
+   },
+   "scans": 1208,
+   "travel_m": 19608.268636326226,
+   "travel_s": 4058.333345
+  },
+  "mixed": {
+   "cells_by_region": {
+    "elevated": 683.0,
+    "enclosed": 179.0,
+    "open": 40062.0
+   },
+   "cells_from_scans": 16650.0,
+   "discoveries_by_region": {
+    "elevated": 66.0,
+    "enclosed": 2.0,
+    "open": 400.0
+   },
+   "episodes": 40,
+   "interaction_attempts": 222,
+   "openings": 205,
+   "recovery": {
+    "camera_alignment_failure": {
+     "attempts": 169,
+     "resolved": 41
+    },
+    "interaction_failure": {
+     "attempts": 66,
+     "resolved": 51
+    },
+    "path_blocked": {
+     "attempts": 32,
+     "resolved": 23
+    },
+    "target_unreachable": {
+     "attempts": 3,
+     "resolved": 0
+    }
+   },
+   "scans": 1168,
+   "travel_m": 18622.462525646963,
+   "travel_s": 3720.3999989999998
+  },
+  "open": {
+   "cells_by_region": {
+    "elevated": 0.0,
+    "enclosed": 1.0,
+    "open": 46632.0
+   },
+   "cells_from_scans": 19466.0,
+   "discoveries_by_region": {
+    "elevated": 18.0,
+    "enclosed": 0.0,
+    "open": 445.0
+   },
+   "episodes": 40,
+   "interaction_attempts": 250,
+   "openings": 231,
+   "recovery": {
+    "camera_alignment_failure": {
+     "attempts": 189,
+     "resolved": 43
+    },
+    "interaction_failure": {
+     "attempts": 75,
+     "resolved": 57
+    },
+    "path_blocked": {
+     "attempts": 33,
+     "resolved": 31
+    },
+    "target_unreachable": {
+     "attempts": 3,
+     "resolved": 0
+    }
+   },
+   "scans": 1053,
+   "travel_m": 19653.620573399872,
+   "travel_s": 3833.733341000001
+  }
+ },
+ "format": "chest-hunter-exploration-memory",
+ "generator_version": "7.0",
+ "updates": 160,
+ "version": 1
+}
