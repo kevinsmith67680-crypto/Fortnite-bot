@@ -6,8 +6,11 @@ Modes:
 * ``learned`` - the imitation policy drives every decision. The deterministic agent keeps
   running perception and bookkeeping (world model, empty-spot votes, database records);
   openings are credited when the agent's own "chest opened" notification arrives next to
-  a spawn point after a learned action. On any model failure the decision falls back to
-  the deterministic agent, whose own verification then handles any notification.
+  a spawn point. On a model failure or a stuck handover the decision falls back to the
+  deterministic agent. When a notification credited here arrives during an interaction the
+  deterministic agent started itself, that interaction ends without being verified (its
+  goal may be a neighbouring spawn point), so each notification is counted once; only a
+  notification with no spawn point nearby is left to the deterministic verification.
 * ``hybrid`` - the deterministic agent drives; in the local visual-servoing states
   (approaching and aligning with a visible chest) its movement and camera commands are
   replaced by the learned ones when the model is validated and confident.
@@ -35,6 +38,7 @@ from chest_hunter.unreal_bridge.observation_adapter import Telemetry
 
 MODES = ("deterministic", "learned", "hybrid")
 HYBRID_STATES = (Agent3DState.APPROACHING, Agent3DState.ALIGNING)
+INTERACTION_STATES = (Agent3DState.INTERACTING, Agent3DState.VERIFYING_OPEN)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +70,7 @@ class SelectorStats:
     disabled_reason: str | None = None
     learned_recoveries: int = 0
     openings_attributed: int = 0
+    interactions_closed_after_attribution: int = 0
     notifications_to_state_machine: int = 0
     stale_interactions_released: int = 0
     latencies_ms: list[float] = field(default_factory=list)
@@ -82,6 +87,7 @@ class SelectorStats:
             "interaction_holds": self.interaction_holds, "disabled_reason": self.disabled_reason,
             "learned_recoveries": self.learned_recoveries,
             "openings_attributed": self.openings_attributed,
+            "interactions_closed_after_attribution": self.interactions_closed_after_attribution,
             "notifications_to_state_machine": self.notifications_to_state_machine,
             "stale_interactions_released": self.stale_interactions_released,
             "latency_mean_ms": round(sum(lat) / len(lat), 4) if lat else None,
@@ -221,14 +227,17 @@ class PolicySelector:
         for event in result.telemetry.events:
             if event.get("type") != "chest_opened_notification":
                 continue
-            if self._fsm_current:
-                # The state machine produced this step's action (a stuck handover, a model
-                # fallback or a disabled model): the notification belongs to its own
-                # interaction, and its verification credits the opening. Attributing it here
-                # as well could count one chest at two spawn points.
+            # The state machine's own interaction (started in a stuck handover, a model
+            # fallback or with the model disabled) produced this step's action?
+            own = self._fsm_current and self.agent.state in INTERACTION_STATES
+            if self._attribute_opening(bool(event.get("reward"))):
+                # Credited here: the interaction ends, or its verification (aimed at its goal,
+                # possibly a neighbouring spawn point) would count the same chest again.
+                if own and self.agent.close_credited_interaction():
+                    self.stats.interactions_closed_after_attribution += 1
+            elif own:
+                # No spawn point to attribute: the state machine's verification decides.
                 self.stats.notifications_to_state_machine += 1
-            else:
-                self._attribute_opening(bool(event.get("reward")))
 
     # -- internals ----------------------------------------------------------------------------
 
@@ -343,9 +352,9 @@ class PolicySelector:
             self._recover_until = now + self.limits.recovery_seconds
             self._anchor = ((pos[0], pos[1]), now)
 
-    def _attribute_opening(self, reward: bool) -> None:
-        """The agent's own notification says it opened a chest: credit the unresolved spawn
-        point next to the agent (estimated position), if there is exactly one candidate."""
+    def _attribute_opening(self, reward: bool) -> bool:
+        """The agent's own notification says it opened a chest: credit the nearest unresolved
+        spawn point next to the agent (estimated position). ``True`` when one was credited."""
         pos = self.agent.position
         candidates = [p for p in self.agent.world.priors.values()
                       if p.status not in (PriorStatus3D.OPENED, PriorStatus3D.EMPTY)
@@ -353,9 +362,11 @@ class PolicySelector:
                       and abs(p.z - pos[2]) <= 1.0]
         if not candidates:
             self.stats.fallbacks["unattributed_opening"] += 1
-            return
+            return False
         prior = min(candidates, key=lambda p: math.dist(pos[:2], p.xyz[:2]))
         seconds = self.agent.now - self._hold_started if self._hold_started is not None else 0.0
-        if self.agent.credit_opening(prior.location_id, seconds, reward):
+        credited = self.agent.credit_opening(prior.location_id, seconds, reward)
+        if credited:
             self.stats.openings_attributed += 1
         self._hold_started = None
+        return credited

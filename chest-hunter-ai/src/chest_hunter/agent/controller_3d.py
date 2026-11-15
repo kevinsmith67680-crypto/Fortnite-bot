@@ -500,12 +500,29 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         dropped; pending late verifications are kept (they need fresh visual evidence)."""
         if self.state not in (S.INTERACTING, S.VERIFYING_OPEN):
             return False
+        self._end_interaction("stale interaction released (another controller drove)")
+        return True
+
+    def close_credited_interaction(self) -> bool:
+        """End the state machine's current interaction because its opening notification was
+        credited outside it (Phase 5 learned control: the policy selector credits every
+        notification at the spawn point next to the agent). The interaction's goal may be a
+        neighbouring spawn point; its verification, or a late verification of it, would count
+        the same chest a second time, so both are dropped. Returns ``True`` when a phase was
+        ended."""
+        if self.state not in (S.INTERACTING, S.VERIFYING_OPEN):
+            return False
+        if self.goal is not None and self.goal.location_id is not None:
+            self._unverified.pop(self.goal.location_id, None)
+        self._end_interaction("opening credited by the policy selector")
+        return True
+
+    def _end_interaction(self, reason: str) -> None:
         self.goal = None
         self._verify = {"opened": 0, "closed": 0, "reward": 0}
         self._hold_started = -1.0
         self._enter()
-        self._transition(S.EXPLORING, "stale interaction released (another controller drove)")
-        return True
+        self._transition(S.EXPLORING, reason)
 
     # -- state handlers -------------------------------------------------------------------------
 

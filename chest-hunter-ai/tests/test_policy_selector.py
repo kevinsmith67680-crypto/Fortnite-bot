@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import unittest
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -114,6 +115,7 @@ class FakeAgent:
         self.end_reason: str | None = None
         self._terminal = False
         self.releases = 0
+        self.closes = 0
 
     def tick(self) -> Agent3DState:
         self.ticks += 1
@@ -145,6 +147,13 @@ class FakeAgent:
         if self.state not in (Agent3DState.INTERACTING, Agent3DState.VERIFYING_OPEN):
             return False
         self.releases += 1
+        self.state = Agent3DState.EXPLORING
+        return True
+
+    def close_credited_interaction(self) -> bool:
+        if self.state not in (Agent3DState.INTERACTING, Agent3DState.VERIFYING_OPEN):
+            return False
+        self.closes += 1
         self.state = Agent3DState.EXPLORING
         return True
 
@@ -354,6 +363,15 @@ class RealAgentBookkeeping(unittest.TestCase):
         self.assertEqual(agent._verify, {"opened": 0, "closed": 0, "reward": 0})
         self.assertFalse(agent.release_interaction())        # nothing stale any more
 
+        agent.state = Agent3DState.VERIFYING_OPEN            # its own, credited elsewhere
+        agent.goal = SimpleNamespace(location_id=loc, track_id=None)
+        agent._unverified[loc] = 2.0
+        self.assertTrue(agent.close_credited_interaction())
+        self.assertIs(agent.state, Agent3DState.EXPLORING)
+        self.assertIsNone(agent.goal)
+        self.assertNotIn(loc, agent._unverified)             # no late verification either
+        self.assertFalse(agent.close_credited_interaction())
+
 
 class OpeningAttribution(unittest.TestCase):
     def test_notification_next_to_a_spawn_point_is_credited_once(self) -> None:
@@ -370,45 +388,89 @@ class OpeningAttribution(unittest.TestCase):
         self.assertEqual(len(agent.credited), 1)
         self.assertEqual(sel.stats.fallbacks["unattributed_opening"], 1)
 
-    def test_notification_after_a_deterministic_step_is_left_to_the_state_machine(self) -> None:
-        """Regression: when the state machine drove the step (a fallback, a stuck handover
-        or a disabled model), its own verification credits the opening. The selector must
-        not attribute the same notification as well, or one chest is counted at two spawn
-        points (seen under heavy CPU load, when inference timeouts disabled the model)."""
+    def test_notification_in_the_state_machines_own_interaction_is_counted_once(self) -> None:
+        """Regression: the state machine drove the step (a fallback, a stuck handover or a
+        disabled model) inside its own interaction. The notification is credited here, at
+        the spawn point next to the agent, and the interaction ends, so that its
+        verification cannot count the same chest again at its goal (seen under heavy CPU
+        load, when inference timeouts disabled the model)."""
         agent = FakeAgent(Agent3DState.INTERACTING)
         agent.world.priors = {1: Prior(1, (1.0, 0.5, 0.0))}
-        agent.cues = Cues(True, False)
-        sel = PolicySelector(agent, FakePolicy(output(interact_prob=0.9)), mode="learned")
+        sel = PolicySelector(agent, FakePolicy(output()), mode="learned")
         event = {"type": "chest_opened_notification", "reward": True}
         agent.obs = None                                     # no frame: deterministic decision
         sel.tick()
         sel.on_step(Step(Telemetry(events=[event], sim_time=1.0)))
-        self.assertEqual(agent.credited, [])
-        self.assertEqual(sel.stats.notifications_to_state_machine, 1)
-        agent.obs = Obs(2)                                   # the learned policy drives again
-        sel.tick()
-        sel.on_step(Step(Telemetry(events=[event], sim_time=2.0)))
         self.assertEqual([c[0] for c in agent.credited], [1])
-        self.assertEqual(sel.stats.openings_attributed, 1)
+        self.assertEqual(agent.closes, 1)
+        self.assertIs(agent.state, Agent3DState.EXPLORING)
+        self.assertEqual(sel.stats.interactions_closed_after_attribution, 1)
+        self.assertEqual(sel.stats.notifications_to_state_machine, 0)
 
-    def test_disabled_model_leaves_every_opening_to_the_state_machine(self) -> None:
-        """A whole learned-mode episode in which every inference fails: the state machine
-        drives throughout and is the only one to credit openings."""
+    def test_without_a_nearby_spawn_point_the_state_machine_decides(self) -> None:
+        agent = FakeAgent(Agent3DState.VERIFYING_OPEN)
+        agent.world.priors = {1: Prior(1, (30.0, 0.0, 0.0))}  # too far to attribute
+        sel = PolicySelector(agent, FakePolicy(output()), mode="learned")
+        agent.obs = None
+        sel.tick()
+        sel.on_step(Step(Telemetry(events=[{"type": "chest_opened_notification"}],
+                                   sim_time=1.0)))
+        self.assertEqual(agent.credited, [])
+        self.assertEqual(agent.closes, 0)                    # its verification goes on
+        self.assertIs(agent.state, Agent3DState.VERIFYING_OPEN)
+        self.assertEqual(sel.stats.notifications_to_state_machine, 1)
+
+    def test_a_stale_phase_is_not_closed_after_a_learned_step(self) -> None:
+        """After a learned action the state machine's phase is stale, not its own current
+        interaction: it is released when the state machine resumes, not closed here."""
+        agent = FakeAgent(Agent3DState.INTERACTING)
+        agent.world.priors = {1: Prior(1, (1.0, 0.5, 0.0))}
+        agent.cues = Cues(True, False)
+        sel = PolicySelector(agent, FakePolicy(output(interact_prob=0.9)), mode="learned")
+        sel.tick()                                           # learned decision
+        sel.on_step(Step(Telemetry(events=[{"type": "chest_opened_notification"}],
+                                   sim_time=1.0)))
+        self.assertEqual([c[0] for c in agent.credited], [1])
+        self.assertEqual(agent.closes, 0)
+        agent.obs = None
+        agent.now = 2.0
+        sel.tick()                                           # the state machine resumes
+        self.assertEqual(agent.releases, 1)
+
+    def _learned_episode(self, seed: int, policy: FakePolicy,
+                         limits: SafetyLimits | None = None) -> tuple[Any, Any]:
         db = DatabaseManager(":memory:")
         db.initialize()
         self.addCleanup(db.close)
         seed_arena_3d(db)
-        runner = Runner3D.from_settings(db, settings(), mode="hybrid", seed=4,
-                                        backend="reference", max_ticks=1500, width=320,
+        options = {"limits": limits} if limits is not None else {}
+        runner = Runner3D.from_settings(db, settings(), mode="hybrid", seed=seed,
+                                        backend="reference", max_ticks=1800, width=320,
                                         height=180, evaluate=True, policy="learned",
-                                        learned_policy=FakePolicy(RuntimeError("model down")))
-        result = runner.run()
-        stats = runner.selector.stats
+                                        learned_policy=policy, policy_options=options)
+        return runner.run(), runner.selector.stats
+
+    def test_disabled_model_counts_each_opening_once(self) -> None:
+        """A whole learned-mode episode in which every inference fails: the state machine
+        drives throughout, and each of its openings is counted exactly once."""
+        result, stats = self._learned_episode(4, FakePolicy(RuntimeError("model down")))
         self.assertTrue(stats.disabled_reason)
         self.assertGreater(result.chests_opened, 0)
-        self.assertEqual(stats.openings_attributed, 0)
-        self.assertGreater(stats.notifications_to_state_machine, 0)
-        self.assertLessEqual(result.chests_opened, result.truth["opened_truth"])
+        self.assertEqual(result.chests_opened, result.truth["opened_truth"])
+
+    def test_openings_in_stuck_handovers_are_counted_exactly(self) -> None:
+        """Regression: a model that never moves, so the state machine drives only in short
+        stuck handovers and its interactions meet the end of a handover window. An earlier
+        rule left those notifications to its verification, which the window's end dropped:
+        openings went uncounted (1 of 2 and 3 of 4 on these seeds)."""
+        limits = SafetyLimits(stuck_seconds=0.5, recovery_seconds=2.5, max_recoveries=10_000)
+        for seed in (1, 3):
+            with self.subTest(seed=seed):
+                result, stats = self._learned_episode(
+                    seed, FakePolicy(output(move_forward=0.0, look_yaw=0.0)), limits)
+                self.assertGreater(result.chests_opened, 0)
+                self.assertEqual(result.chests_opened, result.truth["opened_truth"])
+                self.assertGreater(stats.interactions_closed_after_attribution, 0)
 
     def test_all_resolved_ends_the_episode(self) -> None:
         agent = FakeAgent()
