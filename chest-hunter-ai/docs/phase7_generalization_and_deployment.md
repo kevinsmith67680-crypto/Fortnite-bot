@@ -577,7 +577,87 @@ What the numbers say:
 * **Cost.** Frontier selection took 17.5 ms on average. The agent's own CPU was 1.6 % of one
   core per simulated second, against 1.5 % for the Phase 6 agent.
 
-RESULTS_ROBUSTNESS
+### 15.2 Robustness under injected failures (`benchmark_results/robustness/`)
+
+**Run.** `benchmark-robustness --episodes 100 --failure-injection --workers 4`.
+
+* Configuration `phase7_active` on held-out layouts, 4500 ticks (150 simulated s).
+* Ten fault kinds in rotation, 10 episodes each. Every faulted episode has a fault-free
+  twin on the same map and seed (paired baseline).
+* 200 episodes, 0 errors, 761 s of wall clock.
+* **Code version:** commit `43f3b80`, with the Phase 8 fixes F11, F12, F14 and F17. The run
+  before F17 is kept in `benchmark_results/robustness_preF17/` for comparison.
+
+**Definitions.**
+
+* **Applied**: the fault actually happened. Some need a trigger: for example,
+  `interaction_failure` needs an interaction attempt within the episode.
+* **Detected**: the fault's own signal fired within 15 s, such as an invalid observation
+  for a corrupted frame or a localisation jump for drift. `n/a` means the fault has no
+  agent-side signal by design: a phantom or missed detection looks like an ordinary
+  observation.
+* **Recovered**: within 30 s the agent was making progress again: moving, opening, or
+  exploring new area.
+
+| Fault | Applied | Detected | Recovered | Clean end | Failed | Throughput | Paired diff vs twin |
+|---|---|---|---|---|---|---|---|
+| frame loss | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.68 | +0.12 [−0.21, +0.45] |
+| corrupted frame | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.40 | +0.12 [−0.12, +0.36] |
+| false detection | 10 / 10 | n/a | 10 / 10 | 10 / 10 | 0 | 1.92 | +0.04 [−0.12, +0.20] |
+| missed detection | 8 / 10 | n/a | 6 / 8 | 8 / 8 | 0 | 2.30 | +0.05 [−0.47, +0.57] |
+| localisation drift | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.84 | −0.16 [−0.50, +0.18] |
+| unexpected obstacle | 9 / 10 | 6 / 9 | 8 / 9 | 9 / 9 | 0 | 1.51 | −0.09 [−0.29, +0.12] |
+| interaction failure | 6 / 10 | 6 / 6 | 6 / 6 | 6 / 6 | 0 | 2.40 | −0.07 [−0.38, +0.25] |
+| bridge disconnect | 10 / 10 | 10 / 10 | 10 / 10 | 10 / 10 | 0 | 1.76 | +0.04 [−0.05, +0.13] |
+| slow inference | 8 / 10 | 8 / 8 | 4 / 8 | 8 / 8 | 0 | 1.90 | +0.10 [−0.06, +0.26] |
+| unreachable target | 10 / 10 | 7 / 10 | 10 / 10 | 10 / 10 | 0 | 1.72 | −0.12 [−0.31, +0.07] |
+
+**Overall.**
+
+* 91 faults applied: 84 recovered (92 %), 91 clean terminations (100 %), 0 failed episodes.
+* Fault-free twins: 1.75 [1.57, 1.92] chests per simulated minute, 0 failed.
+* **No fault kind costs measurable throughput.** Every paired interval includes 0, though
+  with 6–10 pairs per kind only large effects could be detected.
+* **The weak spots** (from the per-episode fault records):
+  * **Slow inference:** 4 of 8 not recovered within 30 s. In all four the slow inferences
+    were detected: the selector timed out, the supervisor reported a model failure and
+    switched policy. The agent then abandoned one to three targets and showed no measured
+    progress inside the window. The cause beyond that was not investigated.
+  * **Unexpected obstacles:** 3 of 9 not detected; no navigation-failure signal fired. Two
+    of those episodes recovered anyway.
+  * **Unreachable targets:** 3 of 10 not detected. The blocked path queries happened (3–6
+    per episode) without producing the unreachable signal; all three episodes recovered.
+  * **Missed detections:** 2 of 8 not recovered within the window.
+
+**The F17 fix.** Same 100 twins before and after:
+
+| | Before F17 | After F17 |
+|---|---|---|
+| Loop detections (fault-free twins) | 489 in 92 episodes | 152 in 61 episodes |
+| Supervisor interventions (fault-free twins) | 380 | 143 |
+| Loop detections (faulted episodes) | 489 | 159 |
+| Throughput of the twins | 1.78 [1.61, 1.96] | 1.75 [1.57, 1.92] |
+| Faults recovered | 85 / 91 | 84 / 91 |
+
+### 15.3 Exploration strategies (`benchmark_results/phase7/strategies/`)
+
+**Run.** `benchmark-exploration --episodes 20 --workers 4`: the five fixed strategies and the
+memory-selected one, on the same 20 held-out layouts (paired). Commit `fc5877d`, before F17.
+
+| Strategy | Throughput | Coverage | Travel (m) | Paired diff vs memory-selected |
+|---|---|---|---|---|
+| nearest frontier | 1.58 [1.19, 1.96] | 0.38 | 363 | +0.02 [−0.17, +0.20] |
+| maximum information | 1.58 [1.26, 1.89] | 0.47 | 480 | +0.02 [−0.06, +0.09] |
+| chest prior | 1.49 [1.23, 1.74] | 0.45 | 483 | −0.08 [−0.32, +0.17] |
+| cluster | 1.29 [0.98, 1.60] | 0.35 | 440 | **−0.27 [−0.52, −0.02]** |
+| risk adjusted | 1.49 [1.14, 1.83] | 0.47 | 484 | −0.08 [−0.25, +0.10] |
+| memory-selected (bandit) | 1.56 [1.24, 1.88] | 0.47 | 479 | – |
+
+The memory chose maximum information on 15 maps and risk adjusted on 5 (complex family). It
+is **not better than the best fixed strategy.** Only `cluster` is distinguishably worse.
+Nearest frontier reaches the same throughput with a quarter less travel and lower coverage.
+In this arena the choice of frontier strategy hardly matters for throughput. The bandit adds
+complexity without a measured gain (Phase 8 audit, section M).
 
 ## 16. End-to-end acceptance test
 
