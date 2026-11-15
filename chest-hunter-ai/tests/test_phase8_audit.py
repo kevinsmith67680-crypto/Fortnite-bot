@@ -138,6 +138,50 @@ class DefectRegressions(unittest.TestCase):
         self.assertTrue(ex.dense_fan_done((1.0, 1.0, 0.0)))
         self.assertFalse(ex.dense_fan_done((9.0, 9.0, 0.0)))
 
+    def test_f2_a_phase7_map_can_be_exported_for_unreal(self) -> None:
+        # Before the fix export-arena-3d exported only research_arena_3d; the Phase 7 maps
+        # (including the acceptance map) could not reach the Unreal project at all.
+        import io
+        import json
+        from contextlib import redirect_stderr, redirect_stdout
+
+        from chest_hunter.cli import main
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "map.json"
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = main(["--db", str(Path(tmp) / "unused.db"), "export-arena-3d",
+                             "--map", "p7_complex_test_000_unfamiliar", "--output",
+                             str(target)])
+            self.assertEqual(code, 0, err.getvalue())
+            committed = ROOT / "unreal" / "ChestHunterResearch" / "Content" / \
+                "ResearchData" / "p7_complex_test_000_unfamiliar.json"
+            self.assertEqual(json.loads(target.read_text()), json.loads(committed.read_text()))
+
+    def test_f1_only_service_errors_are_absorbed(self) -> None:
+        # Two handlers caught every Exception from navigation-service calls and recorded
+        # nothing; now only BridgeError is absorbed (and counted), a programming error
+        # propagates.
+        from types import SimpleNamespace
+
+        from chest_hunter.agent.controller_3d import VisualAgent3D
+        from chest_hunter.unreal_bridge.client import BridgeError
+
+        def agent(exc: BaseException) -> Any:
+            def fail(*_: Any, **__: Any) -> bool:
+                raise exc
+            return SimpleNamespace(navigator=SimpleNamespace(clear_line=fail),
+                                   position=(0.0, 0.0, 0.0),
+                                   metrics=SimpleNamespace(service_errors=0))
+
+        prior = SimpleNamespace(xyz=(1.0, 1.0, 0.0))
+        a = agent(BridgeError("unavailable", "navigation service down"))
+        VisualAgent3D._clear_line(a, prior)  # type: ignore[arg-type]
+        self.assertEqual(a.metrics.service_errors, 1)
+        with self.assertRaises(ZeroDivisionError):
+            VisualAgent3D._clear_line(agent(ZeroDivisionError()), prior)  # type: ignore[arg-type]
+
     def test_f17_exploration_progress_clears_the_loop_window(self) -> None:
         # p7_indoor_test_007, evaluation seed, episode 29: 11 false "transition loop"
         # detections and 6 interventions in 150 fault-free seconds before the fix.
