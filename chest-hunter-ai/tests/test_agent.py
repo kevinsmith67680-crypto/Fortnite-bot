@@ -33,6 +33,7 @@ from chest_hunter.session_repository import SessionRepository
 from chest_hunter.simulation.collision import GridMap, circle_collides
 from chest_hunter.simulation.entities import Obstacle
 from chest_hunter.simulation.environment import ChestSpec, World, WorldTransform
+from tests.tk_support import collect_on_main_thread
 
 MAP = "test_arena"
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
@@ -453,6 +454,10 @@ class DemoMapTests(unittest.TestCase):
                                 env=env, timeout=120)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("ok", result.stdout)
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ from chest_hunter.vision.observation import (
     SimulatorObservationProvider,
     VisualObservation,
 )
+from tests.tk_support import collect_on_main_thread
 
 SIM = SimulationSettings(default_map="t", default_spawn_probability=1.0, default_open_seconds=2.0,
                          decoration_density=0.0)
@@ -176,6 +177,10 @@ class PreprocessingTests(unittest.TestCase):
         self.assertEqual((pre.frames_processed, pre.frames_skipped), (1, 1))
         mask = first.mask("ground")
         self.assertIs(first.mask("ground"), mask)   # cached per frame
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
 
 
 if __name__ == "__main__":

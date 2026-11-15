@@ -18,6 +18,7 @@ from chest_hunter.cli import EXIT_FAILURE, EXIT_OK, EXIT_USAGE, format_table, ma
 from chest_hunter.config import default_config_path, load_config
 from chest_hunter.database import DatabaseManager
 from chest_hunter.demo_data import DEMO_CHESTS
+from tests.tk_support import collect_on_main_thread
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
@@ -506,6 +507,10 @@ class VisualCommandTests(CliTestCase):
         self.assertIn("SIMULATED time", out)
         for name in ("navigation_benchmark.csv", "vision_benchmark.csv", "summary.json"):
             self.assertTrue((out_dir / name).is_file())
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ from chest_hunter.database import MIGRATIONS, SCHEMA_VERSION, DatabaseManager
 from chest_hunter.exceptions import ConfigError
 from chest_hunter.learning.learned_policy import LearnedPolicy
 from tests.phase5_helpers import ROOT, onnx_available, settings, tiny_dataset, tiny_model
+from tests.tk_support import collect_on_main_thread, collect_tk_garbage_after
 
 
 def _cli(*argv: str) -> tuple[int, str, str]:
@@ -161,6 +162,7 @@ class Teleoperation(unittest.TestCase):
             import tkinter  # noqa: F401
         except ImportError:
             self.skipTest("this Python build has no Tk")
+        collect_tk_garbage_after(self)  # Tk runs here next to the mock server's threads
         from chest_hunter.learning.demonstration_recorder import (
             DemonstrationRecorder,
             load_episode,
@@ -236,6 +238,7 @@ class LearningDashboard(unittest.TestCase):
             import tkinter  # noqa: F401
         except ImportError:
             self.skipTest("this Python build has no Tk")
+        collect_tk_garbage_after(self)  # the episode runs the mock server's threads
         from chest_hunter.agent.dashboard_3d import Dashboard3D
 
         dashboard = Dashboard3D(refresh_seconds=0.0)
@@ -328,6 +331,10 @@ class AcceptanceWorkflow(unittest.TestCase):
                 self.assertEqual(entry["over_reported_total"], 0)
         self.assertTrue(dataset.exists())
         self.assertEqual(progress_table([]), [])
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
 
 
 if __name__ == "__main__":

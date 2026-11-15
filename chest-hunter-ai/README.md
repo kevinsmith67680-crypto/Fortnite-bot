@@ -1636,15 +1636,16 @@ xvfb-run -a python -m unittest discover -s tests       # including the GUI tests
 python -m pip install onnx onnxruntime                 # optional: enables the ONNX export tests
 ```
 
-* **Coverage.** 545 tests:
+* **Coverage.** 553 tests:
   * Phase 1: 127; Phase 2: 109; Phase 3: 80.
   * Phase 4: 143. That is 141 test methods holding all 194 original cases (parametrised
     cases became sub-tests), plus 2 database migration tests.
-  * Phase 5: 86. They cover:
+  * Phase 5: 94. They cover:
     * the recorder and exact replay, and the dataset pipeline;
     * a numerical gradient check, training, and ONNX FP32/INT8 parity;
     * the policy selector's safety layer, and opening bookkeeping across handovers
-      (no spawn point credited twice, stale phases dropped);
+      (stale phases dropped; each opening counted exactly once with a disabled model
+      or frequent stuck handovers);
     * benchmark summaries with ground truth as the primary metric;
     * the Bayesian estimator, route memory, planner and recovery classes;
     * procedural maps and episodes on unseen maps;
@@ -1706,7 +1707,12 @@ python -m pip install onnx onnxruntime                 # optional: enables the O
     visual CLI commands; vision config validation; and the visual debug GUI.
 * **Isolation.** Tests use temporary or in-memory databases only.
 * **GUI tests** are skipped automatically when Tkinter or a display is
-  missing.
+  missing. Modules that open Tk windows free their Tk objects on the main thread when
+  they finish, and tests that run Tk next to the mock server's threads keep automatic
+  garbage collection off until then (`tests/tk_support.py`). Otherwise a later
+  mock-server thread could free a leftover Tk object, which aborts the test process
+  ("Tcl_AsyncDelete: async handler deleted by the wrong thread"); this happened in some
+  Python 3.12 runs under Xvfb.
 
 Verified with `python -m unittest discover -s tests` on Python 3.11 and 3.13 (545 tests
 pass, 6 GUI tests skipped without a display) and with `xvfb-run -a` on Python 3.12 (545

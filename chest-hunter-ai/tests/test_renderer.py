@@ -21,6 +21,7 @@ from chest_hunter.database import DatabaseManager
 from chest_hunter.demo_data import seed_demo_chests
 from chest_hunter.models import STRATEGY_NAMES, SessionStatus
 from chest_hunter.session_repository import SessionRepository
+from tests.tk_support import collect_on_main_thread
 
 
 def make_root() -> tk.Tk | None:
@@ -154,6 +155,10 @@ class VisualDebugRendererTests(unittest.TestCase):
         self.assertTrue(finished)
         with contextlib.suppress(tk.TclError):
             app.close()
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
 
 
 if __name__ == "__main__":

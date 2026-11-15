@@ -15,6 +15,7 @@ from chest_hunter.agent.runner_3d import Runner3D
 from chest_hunter.config import load_config
 from chest_hunter.database import DatabaseManager
 from chest_hunter.scenarios import seed_arena_3d
+from tests.tk_support import collect_on_main_thread, collect_tk_garbage_after
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,6 +60,7 @@ class TestDashboard3D(unittest.TestCase):
             importlib.import_module("tkinter")
         except ImportError:
             self.skipTest("this Python build has no Tk")
+        collect_tk_garbage_after(self)  # the episode runs the mock server's threads
         from chest_hunter.agent.dashboard_3d import Dashboard3D
 
         dashboard = Dashboard3D(refresh_seconds=0.0)
@@ -69,3 +71,7 @@ class TestDashboard3D(unittest.TestCase):
             self.assertGreater(dashboard.frames_shown, 5)
         finally:
             dashboard.close()
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread

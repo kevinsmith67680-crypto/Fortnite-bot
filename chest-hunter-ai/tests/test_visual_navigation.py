@@ -46,6 +46,7 @@ from chest_hunter.simulation.environment import (
 )
 from chest_hunter.vision.obstacle_detector import BLOCKED, FREE, UNKNOWN
 from chest_hunter.vision.visual_tracker import VisualTracker
+from tests.tk_support import collect_on_main_thread
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC = PROJECT_ROOT / "src"
@@ -529,6 +530,10 @@ class SettingsFixtureTests(unittest.TestCase):
         self.assertIsInstance(settings.simulation, SimulationSettings)
         self.assertTrue(settings.template_dir().is_dir())
         self.assertTrue(math.isclose(settings.simulation.world_units_per_cell, 1.0))
+
+
+def tearDownModule() -> None:
+    collect_on_main_thread()  # this module's Tk objects are freed here, on the main thread
 
 
 if __name__ == "__main__":
