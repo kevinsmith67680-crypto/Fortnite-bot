@@ -1,0 +1,412 @@
+{
+ "per_strategy": {
+  "deterministic": {
+   "episodes": 48,
+   "throughput_truth_per_min": {
+    "n": 48,
+    "mean": 3.4572,
+    "median": 3.3861,
+    "std": 1.0145,
+    "ci_low": 3.1626,
+    "ci_high": 3.7518,
+    "min": 1.5101,
+    "max": 6.0302
+   },
+   "throughput_per_min": {
+    "n": 48,
+    "mean": 3.2471,
+    "median": 3.0471,
+    "std": 1.0251,
+    "ci_low": 2.9494,
+    "ci_high": 3.5447,
+    "min": 1.3314,
+    "max": 6.0302
+   },
+   "percent_available_opened": {
+    "n": 48,
+    "mean": 76.2144,
+    "median": 76.695,
+    "std": 15.7774,
+    "ci_low": 71.6331,
+    "ci_high": 80.7957,
+    "min": 30.0,
+    "max": 100.0
+   },
+   "discovery_rate": {
+    "n": 48,
+    "mean": 0.841,
+    "median": 0.9,
+    "std": 0.1637,
+    "ci_low": 0.7935,
+    "ci_high": 0.8885,
+    "min": 0.4,
+    "max": 1.0
+   },
+   "navigation_success_rate": {
+    "n": 48,
+    "mean": 0.9836,
+    "median": 1.0,
+    "std": 0.0458,
+    "ci_low": 0.9703,
+    "ci_high": 0.9969,
+    "min": 0.8,
+    "max": 1.0
+   },
+   "interaction_success_rate": {
+    "n": 48,
+    "mean": 0.9409,
+    "median": 1.0,
+    "std": 0.1038,
+    "ci_low": 0.9108,
+    "ci_high": 0.9711,
+    "min": 0.6,
+    "max": 1.0
+   },
+   "exploration_coverage": {
+    "n": 48,
+    "mean": 1.0,
+    "median": 1.0,
+    "std": 0.0,
+    "ci_low": 1.0,
+    "ci_high": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "travel_distance_m": {
+    "n": 48,
+    "mean": 400.6631,
+    "median": 389.85,
+    "std": 69.2102,
+    "ci_low": 380.5666,
+    "ci_high": 420.7597,
+    "min": 287.84,
+    "max": 541.31
+   },
+   "travel_per_chest_m": {
+    "n": 48,
+    "mean": 59.2477,
+    "median": 56.51,
+    "std": 18.7606,
+    "ci_low": 53.8002,
+    "ci_high": 64.6952,
+    "min": 30.44,
+    "max": 120.33
+   },
+   "recoveries": {
+    "n": 48,
+    "mean": 5.9583,
+    "median": 5.0,
+    "std": 4.3022,
+    "ci_low": 4.7091,
+    "ci_high": 7.2076,
+    "min": 0.0,
+    "max": 17.0
+   },
+   "sim_seconds": {
+    "n": 48,
+    "mean": 137.4222,
+    "median": 139.3665,
+    "std": 24.5509,
+    "ci_low": 130.2934,
+    "ci_high": 144.551,
+    "min": 87.4,
+    "max": 175.933
+   },
+   "inference_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "learned_share": {
+    "n": 48,
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "cpu_seconds": {
+    "n": 48,
+    "mean": 16.7066,
+    "median": 16.934,
+    "std": 3.8485,
+    "ci_low": 15.5891,
+    "ci_high": 17.8241,
+    "min": 9.394,
+    "max": 23.633
+   },
+   "peak_rss_mb": {
+    "n": 48,
+    "mean": 124.5125,
+    "median": 126.0,
+    "std": 6.6597,
+    "ci_low": 122.5787,
+    "ci_high": 126.4463,
+    "min": 107.3,
+    "max": 132.4
+   },
+   "outcomes": {
+    "completed": 48
+   },
+   "end_reasons": {
+    "all spawn points resolved": 48
+   },
+   "over_reported_total": 0,
+   "under_reported_total": 26,
+   "opened_total": 365,
+   "opened_truth_total": 391,
+   "credited_by_notification_total": 0,
+   "recovery_attempts_by_class": {
+    "camera_alignment_failure": 179,
+    "interaction_failure": 104,
+    "path_blocked": 3
+   },
+   "fallbacks": {}
+  },
+  "deterministic_adaptive": {
+   "episodes": 48,
+   "throughput_truth_per_min": {
+    "n": 48,
+    "mean": 3.3832,
+    "median": 3.1181,
+    "std": 1.0545,
+    "ci_low": 3.077,
+    "ci_high": 3.6894,
+    "min": 1.6833,
+    "max": 5.7439
+   },
+   "throughput_per_min": {
+    "n": 48,
+    "mean": 3.3832,
+    "median": 3.1181,
+    "std": 1.0545,
+    "ci_low": 3.077,
+    "ci_high": 3.6894,
+    "min": 1.6833,
+    "max": 5.7439
+   },
+   "percent_available_opened": {
+    "n": 48,
+    "mean": 75.5362,
+    "median": 80.625,
+    "std": 17.205,
+    "ci_low": 70.5404,
+    "ci_high": 80.5321,
+    "min": 30.0,
+    "max": 100.0
+   },
+   "discovery_rate": {
+    "n": 48,
+    "mean": 0.8503,
+    "median": 0.9,
+    "std": 0.1493,
+    "ci_low": 0.807,
+    "ci_high": 0.8937,
+    "min": 0.4,
+    "max": 1.0
+   },
+   "navigation_success_rate": {
+    "n": 48,
+    "mean": 0.9234,
+    "median": 1.0,
+    "std": 0.0977,
+    "ci_low": 0.895,
+    "ci_high": 0.9518,
+    "min": 0.6667,
+    "max": 1.0
+   },
+   "interaction_success_rate": {
+    "n": 48,
+    "mean": 1.0,
+    "median": 1.0,
+    "std": 0.0,
+    "ci_low": 1.0,
+    "ci_high": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "exploration_coverage": {
+    "n": 48,
+    "mean": 1.0,
+    "median": 1.0,
+    "std": 0.0,
+    "ci_low": 1.0,
+    "ci_high": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "travel_distance_m": {
+    "n": 48,
+    "mean": 447.1048,
+    "median": 439.49,
+    "std": 62.9002,
+    "ci_low": 428.8405,
+    "ci_high": 465.3691,
+    "min": 318.96,
+    "max": 583.34
+   },
+   "travel_per_chest_m": {
+    "n": 48,
+    "mean": 64.3817,
+    "median": 59.35,
+    "std": 24.3064,
+    "ci_low": 57.3238,
+    "ci_high": 71.4395,
+    "min": 31.87,
+    "max": 125.95
+   },
+   "recoveries": {
+    "n": 48,
+    "mean": 1.4583,
+    "median": 1.0,
+    "std": 2.0931,
+    "ci_low": 0.8506,
+    "ci_high": 2.0661,
+    "min": 0.0,
+    "max": 8.0
+   },
+   "sim_seconds": {
+    "n": 48,
+    "mean": 138.8347,
+    "median": 138.7665,
+    "std": 22.1454,
+    "ci_low": 132.4044,
+    "ci_high": 145.2651,
+    "min": 96.333,
+    "max": 183.467
+   },
+   "inference_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "learned_share": {
+    "n": 48,
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "cpu_seconds": {
+    "n": 48,
+    "mean": 16.0889,
+    "median": 16.1365,
+    "std": 3.513,
+    "ci_low": 15.0688,
+    "ci_high": 17.1089,
+    "min": 9.432,
+    "max": 23.73
+   },
+   "peak_rss_mb": {
+    "n": 48,
+    "mean": 124.3354,
+    "median": 124.75,
+    "std": 6.1362,
+    "ci_low": 122.5537,
+    "ci_high": 126.1172,
+    "min": 108.1,
+    "max": 131.2
+   },
+   "outcomes": {
+    "completed": 48
+   },
+   "end_reasons": {
+    "all spawn points resolved": 48
+   },
+   "over_reported_total": 0,
+   "under_reported_total": 0,
+   "opened_total": 388,
+   "opened_truth_total": 388,
+   "credited_by_notification_total": 55,
+   "recovery_attempts_by_class": {
+    "interaction_failure": 203,
+    "target_lost": 39,
+    "camera_alignment_failure": 24,
+    "localisation_uncertainty": 6,
+    "path_blocked": 3
+   },
+   "fallbacks": {}
+  }
+ },
+ "paired_vs_deterministic": {
+  "deterministic_adaptive": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 48,
+     "mean": -0.074,
+     "median": -0.0518,
+     "std": 0.5869,
+     "ci_low": -0.2444,
+     "ci_high": 0.0964,
+     "min": -1.5577,
+     "max": 1.1791
+    },
+    "percent_change_of_mean": -2.14,
+    "better": 22,
+    "worse": 26,
+    "tied": 0,
+    "significant_at_95": false
+   },
+   "throughput_per_min": {
+    "difference": {
+     "n": 48,
+     "mean": 0.1361,
+     "median": 0.1206,
+     "std": 0.7967,
+     "ci_low": -0.0952,
+     "ci_high": 0.3674,
+     "min": -1.5577,
+     "max": 1.6228
+    },
+    "percent_change_of_mean": 4.19,
+    "better": 25,
+    "worse": 23,
+    "tied": 0,
+    "significant_at_95": false
+   }
+  }
+ },
+ "primary_metric": "throughput_truth_per_min",
+ "episodes_completed": 48,
+ "map_ids": [
+  "proc_test_000",
+  "proc_test_001",
+  "proc_test_002",
+  "proc_test_003"
+ ],
+ "seed": 5000,
+ "episodes_requested": 12,
+ "strategies": {
+  "deterministic": "Phase 4 deterministic visual controller (baseline)",
+  "deterministic_adaptive": "ablation: Phase 4 controller + adaptive planning and recovery"
+ },
+ "online_adaptation": true,
+ "max_ticks": 18000,
+ "observation": [
+  640,
+  360
+ ],
+ "model_dir": "/home/user/Fortnite-bot/chest-hunter-ai/training/checkpoints/bc_synthetic_v1",
+ "quantized_model": false,
+ "experience_db": "/home/user/Fortnite-bot/chest-hunter-ai/training/experience.db",
+ "workers": 4,
+ "wall_seconds": 433.1,
+ "errors": [],
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+ "time_basis": "throughput uses simulated minutes; cpu/wall seconds are real time"
+}

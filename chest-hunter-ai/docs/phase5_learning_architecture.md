@@ -356,7 +356,10 @@ builder.
 All numbers in this section come from the **Python reference arena**, not Unreal Engine.
 Throughput is per **simulated** minute; CPU and wall times are real time. Machine: the
 4-vCPU Intel Xeon 2.1 GHz development machine, no GPU, Python 3.13, 4 worker processes
-running in parallel. The benchmarks ran on commit `f544bf6`.
+running in parallel. The benchmarks ran on commit `f544bf6`. After the ablation in 13.4
+exposed a recovery loop, the adaptive strategies were re-run on commit `91a8297`. Their
+rows below come from that re-run; every other row comes from the first run (13.2
+explains why the two can be combined).
 
 ### 13.1 Policy benchmark (research arena)
 
@@ -374,6 +377,11 @@ python -m chest_hunter benchmark-policies --episodes 100 --workers 4 \
 * **History:** the adaptive strategies read the training-time history (6 episodes, seed
   1000) and do not update it during this benchmark.
 * **Outcome:** all 500 episodes completed, with no errors, in 8,259 s wall time.
+* **Re-run after the recovery fix:** deterministic, hybrid_adaptive and
+  deterministic_adaptive on the same 100 episodes, written to
+  `benchmark_results/phase5/policies_recovery_fix`. All 300 episodes completed with no
+  errors in 3,907 s. The hybrid_adaptive and deterministic_adaptive rows in this section
+  come from the re-run.
 
 **Primary metric: chests actually opened per simulated minute.** Openings are taken from
 the simulator's ground truth, which is used only for scoring. The agent's own count is
@@ -386,8 +394,8 @@ the t distribution. Paired differences are per episode.
 | deterministic | **4.403** | 4.385 | 0.559 | [4.292, 4.514] | baseline | - | - |
 | learned | 0.844 | 0.800 | 0.137 | [0.817, 0.871] | −3.559 [−3.666, −3.452] | −80.8 % | 0 / 100 / 0 |
 | hybrid | 3.350 | 3.359 | 0.532 | [3.245, 3.456] | −1.053 [−1.170, −0.935] | −23.9 % | 3 / 97 / 0 |
-| hybrid_adaptive | 3.296 | 3.322 | 0.570 | [3.183, 3.409] | −1.107 [−1.229, −0.984] | −25.1 % | 3 / 97 / 0 |
-| deterministic_adaptive | 4.397 | 4.383 | 0.488 | [4.301, 4.494] | −0.005 [−0.100, +0.089] (not significant) | −0.1 % | 53 / 47 / 0 |
+| hybrid_adaptive | 3.281 | 3.257 | 0.611 | [3.160, 3.403] | −1.122 [−1.259, −0.984] | −25.5 % | 3 / 97 / 0 |
+| deterministic_adaptive | 4.388 | 4.347 | 0.485 | [4.292, 4.485] | −0.015 [−0.107, +0.078] (not significant) | −0.3 % | 53 / 47 / 0 |
 
 Secondary metric, chests counted by the agent per simulated minute:
 
@@ -396,14 +404,14 @@ Secondary metric, chests counted by the agent per simulated minute:
 | deterministic | 4.133 | [4.015, 4.250] | baseline | - | 126 / 0 | 0 |
 | learned | 0.844 | [0.817, 0.871] | −3.289 [−3.403, −3.174] | −79.6 % | 0 / 0 | 0 |
 | hybrid | 3.183 | [3.072, 3.293] | −0.950 [−1.076, −0.824] | −23.0 % | 97 / 0 | 0 |
-| hybrid_adaptive | 3.296 | [3.183, 3.409] | −0.836 [−0.963, −0.710] | −20.2 % | 0 / 0 | 165 |
-| deterministic_adaptive | 4.397 | [4.301, 4.494] | **+0.265 [+0.163, +0.367]** | **+6.4 %** | 0 / 0 | 155 |
+| hybrid_adaptive | 3.281 | [3.160, 3.403] | −0.851 [−0.989, −0.713] | −20.6 % | 0 / 0 | 160 |
+| deterministic_adaptive | 4.388 | [4.292, 4.485] | **+0.256 [+0.155, +0.356]** | **+6.2 %** | 0 / 0 | 155 |
 
-The +6.4 % for deterministic_adaptive is **bookkeeping, not more chests**. The classified
+The +6.2 % for deterministic_adaptive is **bookkeeping, not more chests**. The classified
 recovery confirms openings the agent was notified about but did not see clearly, which
 the plain controller leaves uncounted. Measured against ground truth, the two
-strategies are indistinguishable. In all 500 episodes no strategy recorded an opening
-that did not happen.
+strategies are indistinguishable. In all 800 episodes of both runs no strategy recorded
+an opening that did not happen.
 
 Other measurements (means per episode unless noted):
 
@@ -412,8 +420,8 @@ Other measurements (means per episode unless noted):
 | deterministic | 85.9 % | 94.3 % | 0.996 | 0.937 | 100 % | 43.7 m | 11.4 | 279.0 |
 | learned | 35.7 % | 55.9 % | 0.775 | 0.661 | 43.5 % | 90.6 m | 10.3 | 600.0 |
 | hybrid | 79.2 % | 94.1 % | 1.000 | 0.936 | 99.4 % | 49.4 m | 25.2 | 342.9 |
-| hybrid_adaptive | 80.0 % | 93.6 % | 0.999 | 0.990 | 99.5 % | 50.3 m | 16.6 | 352.9 |
-| deterministic_adaptive | 86.8 % | 93.6 % | 0.940 | 0.998 | 100 % | 44.6 m | 2.9 | 281.8 |
+| hybrid_adaptive | 79.5 % | 93.3 % | 0.998 | 0.988 | 98.9 % | 50.5 m | 16.3 | 353.1 |
+| deterministic_adaptive | 86.7 % | 93.6 % | 0.939 | 0.998 | 100 % | 44.7 m | 2.9 | 282.0 |
 
 How the columns are defined:
 
@@ -426,12 +434,12 @@ Recovery attempts by class (totals over 100 episodes):
 
 | Class | deterministic | learned | hybrid | hybrid_adaptive | deterministic_adaptive |
 |---|---|---|---|---|---|
-| camera_alignment_failure | 802 | 29 | 1,556 | 1,013 | 169 |
-| interaction_failure | 339 | 11 | 559 | 835 | 602 |
-| path_blocked | 0 | 988 | 405 | 388 | 0 |
-| target_lost | 0 | 0 | 0 | 312 | 178 |
-| target_unreachable | 29 | 29 | 32 | 47 | 54 |
-| localisation_uncertainty | 0 | 0 | 0 | 10 | 6 |
+| camera_alignment_failure | 802 | 29 | 1,556 | 997 | 169 |
+| interaction_failure | 339 | 11 | 559 | 813 | 601 |
+| path_blocked | 0 | 988 | 405 | 402 | 0 |
+| target_lost | 0 | 0 | 0 | 285 | 176 |
+| target_unreachable | 29 | 29 | 32 | 45 | 54 |
+| localisation_uncertainty | 0 | 0 | 0 | 8 | 6 |
 | model_inference_failure | 0 | 0 | 0 | 0 | 0 |
 
 Selector fallbacks (totals over 100 episodes):
@@ -442,7 +450,7 @@ Selector fallbacks (totals over 100 episodes):
   * `timeout` 2: inferences over 20 ms, discarded.
 * **hybrid:** `low_confidence` 22,061. These are approach or align decisions where
   P < 0.6, which the controller handled itself.
-* **hybrid_adaptive:** `low_confidence` 11,580.
+* **hybrid_adaptive:** `low_confidence` 11,676.
 
 **Why the learned and hybrid policies underperform:**
 
@@ -471,14 +479,18 @@ Because of these results, the deterministic controller stays the default policy 
 **Adaptive planning:**
 
 * Neither ablation shows a measurable gain in chests opened: deterministic_adaptive
-  against deterministic is above; hybrid_adaptive against hybrid is −0.054 /min
-  [−0.193, +0.085], −1.6 %.
-* deterministic_adaptive travelled 10.7 % further (+88 m [+76, +100] per episode) in the
-  same simulated time (+2.9 s [−0.8, +6.5]).
+  against deterministic is above; hybrid_adaptive against hybrid is −0.069 /min
+  [−0.214, +0.076], −2.1 %.
+* deterministic_adaptive travelled 10.9 % further (+89 m [+77, +101] per episode) in the
+  same simulated time (+3.0 s [−0.6, +6.7]).
 * It entered the RECOVERING state 74 % less often, because look-backs and rescans
   resolve those situations first.
 * On this hand-made arena the configured spawn probabilities are already correct, so the
   spawn estimates have nothing to correct (section 15).
+* The recovery fix changed the arena results very little. Against the first run, the
+  paired change was −0.009 /min [−0.025, +0.006] for deterministic_adaptive (97 of 100
+  episodes unchanged) and −0.015 /min [−0.085, +0.055] for hybrid_adaptive. Neither is
+  significant. `target_lost` attempts fell from 178 to 176 and from 312 to 285.
 
 **Resources (real time, 4 workers sharing 4 vCPUs):**
 
@@ -487,8 +499,12 @@ Because of these results, the deterministic controller stays the default policy 
 | deterministic | 45.3 | 0.162 | 45.7 | 6.2 | - | 140 MiB |
 | learned | 117.4 | 0.196 | 118.4 | 5.9 | 0.89 / 1.15 | 140 MiB |
 | hybrid | 58.9 | 0.172 | 59.5 | 6.5 | 0.86 / 1.11 | 140 MiB |
-| hybrid_adaptive | 59.9 | 0.170 | 60.4 | 6.4 | 0.86 / 1.11 | 140 MiB |
-| deterministic_adaptive | 44.4 | 0.158 | 44.9 | 6.2 | - | 140 MiB |
+| hybrid_adaptive | 61.6 | 0.174 | 62.2 | 6.5 | 0.91 / 1.16 | 139 MiB |
+| deterministic_adaptive | 45.3 | 0.161 | 45.8 | 6.3 | - | 139 MiB |
+
+The two adaptive rows come from the re-run. Timings vary between runs: deterministic took
+46.4 CPU s per episode in the re-run, against 45.3 in the first run. Compare CPU figures
+only within one run.
 
 So one worker simulates about 5–6× faster than real time on one core of this machine.
 That is simulator throughput, not the speed of any real game. Inference latency is the
@@ -512,6 +528,26 @@ bookkeeping errors, all fixed (commit `31f34d4`) before the second run:
 The deterministic and deterministic_adaptive strategies do not use the selector. Their
 100 episodes each were **identical in both runs** (every non-timing column of every row),
 so the fixes did not change the baseline.
+
+**A fourth problem, found by the ablation (13.4): an unbounded recovery loop.**
+
+* In the first ablation run, 3 of 48 deterministic_adaptive episodes on unseen maps
+  failed when the episode's global recovery budget ran out.
+* The trace showed one chest on `proc_test_002` that dropped out of tracking during the
+  approach 100 times. Each re-detection created a new track, and the rescan limit was
+  counted per track, so it never stopped the retries.
+* The fix (commit `91a8297`, section 10) limits rescans per spawn point and checks the
+  `target_lost` class budget. A regression test fails on the old code.
+* The adaptive strategies were then re-run in all three benchmarks.
+
+The non-adaptive strategies in those re-runs matched the earlier runs exactly, in every
+non-timing field:
+
+* arena: deterministic, 100 episodes;
+* generalisation: deterministic and hybrid, 96 episodes;
+* ablation: deterministic, 96 episodes.
+
+Rows from different runs therefore share the same baseline and stay paired.
 
 ### 13.3 Generalisation: familiar vs unseen maps
 
@@ -541,13 +577,20 @@ python -m chest_hunter benchmark-generalization --familiar 4 --unseen 4 --episod
 * Episodes are paired across strategies by (map, episode).
 * All 192 episodes completed with no errors: 1,154 s wall for the familiar group and
   1,084 s for the unseen group.
+* **Re-run after the recovery fix** (13.2), output in
+  `benchmark_results/phase5/generalization_recovery_fix`. It covered deterministic, hybrid
+  and hybrid_adaptive: 144 episodes, no errors, 427 s and 356 s wall.
+  * The deterministic and hybrid episodes were identical to the first run.
+  * The hybrid_adaptive rows below come from the re-run. In the first run they were
+    3.102 (familiar) and 2.626 (unseen), with a significant unseen − familiar gap
+    (−15.4 %).
 
 | Strategy | Familiar: mean [95 % CI] | Unseen: mean [95 % CI] | Unseen − familiar, Welch [95 % CI] | Paired Δ vs deterministic, familiar [95 % CI] | Paired Δ vs deterministic, unseen [95 % CI] |
 |---|---|---|---|---|---|
 | deterministic | **3.673** [3.292, 4.054] | **3.422** [2.964, 3.880] | −0.251 [−0.832, +0.329] (−6.8 %) | baseline | baseline |
 | learned | 0.646 [0.566, 0.726] | 0.671 [0.578, 0.764] | +0.025 [−0.094, +0.144] (+3.9 %) | −3.027 [−3.386, −2.668] (−82.4 %), 0 / 24 better | −2.751 [−3.135, −2.367] (−80.4 %), 0 / 24 better |
 | hybrid | 3.063 [2.781, 3.345] | 2.686 [2.409, 2.963] | −0.377 [−0.762, +0.008] (−12.3 %) | −0.610 [−0.884, −0.335] (−16.6 %), 5 / 24 better | −0.736 [−1.025, −0.446] (−21.5 %), 4 / 24 better |
-| hybrid_adaptive | 3.102 [2.821, 3.384] | 2.626 [2.342, 2.910] | −0.476 [−0.866, −0.087] (−15.4 %) | −0.570 [−0.835, −0.306] (−15.5 %), 4 / 24 better | −0.796 [−1.111, −0.480] (−23.2 %), 4 / 24 better |
+| hybrid_adaptive | 3.011 [2.733, 3.289] | 2.710 [2.427, 2.993] | −0.301 [−0.687, +0.085] (−10.0 %) | −0.662 [−0.918, −0.405] (−18.0 %), 2 / 24 better | −0.712 [−1.011, −0.412] (−20.8 %), 5 / 24 better |
 
 Chests actually opened per simulated minute. The familiar and unseen groups use different
 maps, so their difference is unpaired.
@@ -559,13 +602,14 @@ Further measurements (means per episode):
 | familiar | deterministic | 3.607 | 4 / 0 | 78.3 % | 92.4 % | 0.937 | 57.1 m | 144.3 | 17.0 | 170 MiB |
 | familiar | learned | 0.646 | 0 / 0 | 59.0 % | 83.8 % | 0.780 | 174.7 m | 600.0 | 85.7 | 170 MiB |
 | familiar | hybrid | 3.047 | 1 / 0 | 74.5 % | 93.5 % | 0.956 | 61.7 m | 162.0 | 20.0 | 178 MiB |
-| familiar | hybrid_adaptive | 3.102 | 0 / 0 | 82.2 % | 93.2 % | 0.965 | 60.9 m | 177.5 | 21.5 | 171 MiB |
+| familiar | hybrid_adaptive | 3.011 | 0 / 0 | 80.8 % | 94.0 % | 0.938 | 62.3 m | 179.3 | 22.1 | 171 MiB |
 | unseen | deterministic | 3.241 | 11 / 0 | 75.8 % | 83.4 % | 0.972 | 61.7 m | 131.1 | 15.2 | 192 MiB |
 | unseen | learned | 0.671 | 0 / 0 | 68.8 % | 84.1 % | 0.829 | 164.3 m | 600.0 | 83.4 | 168 MiB |
 | unseen | hybrid | 2.565 | 7 / 0 | 67.1 % | 82.5 % | 0.992 | 75.3 m | 145.9 | 17.6 | 202 MiB |
-| unseen | hybrid_adaptive | 2.626 | 0 / 0 | 72.0 % | 88.3 % | 0.937 | 73.4 m | 160.9 | 18.7 | 195 MiB |
+| unseen | hybrid_adaptive | 2.710 | 0 / 0 | 72.9 % | 88.2 % | 0.989 | 71.8 m | 157.0 | 19.5 | 169 MiB |
 
-Under- and over-counted values are totals over 24 episodes. The learned policy reached
+Under- and over-counted values are totals over 24 episodes. The hybrid_adaptive rows
+come from the re-run. The learned policy reached
 the 600 s limit in all 48 of its episodes, using 591 and 598 stuck handovers of the 600
 allowed.
 
@@ -577,12 +621,12 @@ of chests present:
 | familiar | chests present | 10.5 | 9.0 | 8.5 | 13.25 | 11.5 | 14.0 |
 | familiar | deterministic | 3.511 | 3.185 | 2.900 | 3.774 | 4.118 | 4.549 |
 | familiar | hybrid | 3.164 | 2.939 | 2.233 | 3.040 | 3.248 | 3.754 |
-| familiar | hybrid_adaptive | 3.214 | 2.805 | 2.484 | 3.065 | 3.172 | 3.875 |
+| familiar | hybrid_adaptive | 3.214 | 2.668 | 2.430 | 3.199 | 2.865 | 3.689 |
 | familiar | learned | 0.600 | 0.625 | 0.450 | 0.675 | 0.775 | 0.750 |
 | unseen | chests present | 8.5 | 8.25 | 8.0 | 11.75 | 9.75 | 13.0 |
 | unseen | deterministic | 2.712 | 3.083 | 2.728 | 4.109 | 3.338 | 4.560 |
 | unseen | hybrid | 2.111 | 2.147 | 2.452 | 3.146 | 2.815 | 3.445 |
-| unseen | hybrid_adaptive | 2.119 | 2.192 | 2.111 | 3.120 | 2.728 | 3.486 |
+| unseen | hybrid_adaptive | 2.170 | 2.357 | 2.295 | 3.177 | 2.658 | 3.604 |
 | unseen | learned | 0.500 | 0.600 | 0.525 | 0.850 | 0.675 | 0.875 |
 
 **Interpretation:**
@@ -591,21 +635,113 @@ of chests present:
   for each episode, and it is just as strong for deterministic, which keeps no history.
 * **The adaptation effect is the paired difference hybrid_adaptive − hybrid**, which
   differ only in adaptive planning and recovery:
-  * familiar: +0.040 /min [−0.140, +0.219] (+1.3 %);
-  * unseen: −0.060 /min [−0.294, +0.174] (−2.2 %).
-  * Its least-squares slope over the sequence is +0.009 /min per episode
-    [−0.099, +0.117] on familiar maps and +0.002 [−0.138, +0.143] on unseen ones.
+  * familiar: −0.052 /min [−0.269, +0.165] (−1.7 %);
+  * unseen: +0.024 /min [−0.200, +0.248] (+0.9 %).
+  * Its least-squares slope over the sequence is −0.027 /min per episode
+    [−0.157, +0.103] on familiar maps and −0.012 [−0.146, +0.123] on unseen ones.
   * So there is no measurable improvement within six episodes.
 * **The generalisation gap:**
   * deterministic itself loses 6.8 % on the unseen maps, which hold fewer chests.
   * The learned components' deficit against deterministic grows from −16.6 % to −21.5 %
-    (hybrid) and from −15.5 % to −23.2 % (hybrid_adaptive).
+    (hybrid) and from −18.0 % to −20.8 % (hybrid_adaptive).
   * Neither change is significant. The Welch difference-in-differences is −0.126 /min
-    [−0.514, +0.262] and −0.225 [−0.626, +0.176].
+    [−0.514, +0.262] and −0.050 [−0.434, +0.334].
   * The learned policy's deficit is about the same on both groups (−82.4 %, −80.4 %).
   * A gap smaller than about 0.4–0.5 /min cannot be resolved with 24 episodes per group.
 
-@@ABLATION_RESULTS@@
+### 13.4 Ablation: adaptive planning without the learned policy
+
+```bash
+python -m chest_hunter benchmark-generalization --familiar 4 --unseen 4 --episodes 12 --workers 4 \
+    --strategies deterministic,deterministic_adaptive \
+    --model training/checkpoints/bc_synthetic_v1 --experience-db training/experience.db \
+    --output-dir benchmark_results/phase5/generalization_adaptive
+```
+
+hybrid_adaptive mixes the planner's effect with the learned policy's. This ablation
+removes the policy: deterministic_adaptive is the Phase 4 controller with adaptive
+planning and classified recovery added, and nothing else differs.
+
+**Setup:**
+
+* The same maps as 13.3, with 12 episodes per map from seed 5000, played in sequence
+  with online updates after every episode.
+* 48 paired episodes per strategy and group.
+* Run on commit `91a8297`, after the recovery fix.
+* All 192 episodes completed with no errors: 517 s wall for familiar, 433 s for unseen.
+
+Chests actually opened per simulated minute:
+
+| Group | Strategy | Mean | Median | SD | 95 % CI | Paired Δ vs deterministic [95 % CI] | % change | Better / worse |
+|---|---|---|---|---|---|---|---|---|
+| familiar | deterministic | 3.680 | 3.513 | 0.942 | [3.407, 3.954] | baseline | - | - |
+| familiar | deterministic_adaptive | 3.500 | 3.381 | 0.855 | [3.251, 3.748] | −0.181 [−0.315, −0.047] (significant) | −4.9 % | 16 / 32 |
+| unseen | deterministic | 3.457 | 3.386 | 1.014 | [3.163, 3.752] | baseline | - | - |
+| unseen | deterministic_adaptive | 3.383 | 3.118 | 1.054 | [3.077, 3.689] | −0.074 [−0.244, +0.096] (not significant) | −2.1 % | 22 / 26 |
+
+Paired differences per episode, deterministic_adaptive − deterministic, with 95 % CIs:
+
+| Group | Chests opened | Simulated s | Travel | % of available opened | RECOVERING entries |
+|---|---|---|---|---|---|
+| familiar | +0.10 [−0.25, +0.46] | +10.4 [+5.5, +15.4] (+6.9 %) | +58 m [+44, +72] (+12.6 %) | +1.8 [−1.3, +5.0] | −1.8 [−3.2, −0.4] |
+| unseen | −0.06 [−0.40, +0.27] | +1.4 [−3.8, +6.7] (+1.0 %) | +46 m [+30, +63] (+11.6 %) | −0.7 [−3.8, +2.4] | −4.5 [−5.8, −3.2] |
+
+**Agent-counted throughput** shows the same bookkeeping effect as in the arena:
+
+* familiar: −0.002 /min [−0.156, +0.152];
+* unseen: +0.136 /min [−0.095, +0.367].
+
+deterministic under-counted 23 and 26 openings. deterministic_adaptive under-counted
+none, crediting 34 and 55 by notification.
+
+**Online adaptation:**
+
+* The least-squares slope of the paired difference is −0.008 /min per episode
+  [−0.047, +0.031] on familiar maps, and +0.022 [−0.028, +0.071] on unseen maps.
+* Split by halves of the sequence:
+
+  | Group | Episodes 1–6 | Episodes 7–12 |
+  |---|---|---|
+  | familiar | −0.197 [−0.395, +0.001] (−5.4 %) | −0.165 [−0.360, +0.030] (−4.5 %) |
+  | unseen | −0.197 [−0.443, +0.050] (−5.7 %) | +0.049 [−0.195, +0.291] (+1.4 %) |
+
+* The second half on unseen maps is better, but every interval includes zero. The data
+  do not show the planner improving with experience.
+
+**Per map** (mean paired difference over 12 episodes):
+
+* familiar: `proc_train_000` −0.318, `001` −0.066, `002` +0.117, `003` −0.456;
+* unseen: `proc_test_000` +0.032, `001` −0.105, `002` −0.108, `003` −0.115.
+
+**Before and after the recovery fix:**
+
+| Group | Before (commit `f544bf6`) | After (commit `91a8297`) |
+|---|---|---|
+| familiar | −0.202 [−0.350, −0.053] (−5.5 %), no failures | −0.181 [−0.315, −0.047] (−4.9 %), no failures |
+| unseen | −0.303 [−0.611, +0.005] (−8.8 %), 3 episodes failed | −0.074 [−0.244, +0.096] (−2.1 %), no failures |
+
+Before the fix, the 3 failed episodes counted with the throughput they had reached. The
+deterministic episodes were identical in both runs, and identical to the first 6
+episodes per map of 13.3.
+
+**Interpretation:**
+
+* **Adaptive planning does not open more chests.**
+  * It opens about as many as the plain controller.
+  * It travels about 12 % further.
+  * On the familiar maps it takes about 7 % longer per episode, which lowers throughput
+    significantly.
+* **Classified recovery replaces most Phase 4 recoveries.** It entered the RECOVERING
+  state 35 % and 76 % less often, but that did not translate into more chests per minute.
+* **The planner has little to exploit on these maps.**
+  * True spawn probabilities on procedural maps are independent uniform draws (section
+    15), so there are no real clusters.
+  * The history is thin: 2 sessions per familiar map and none for unseen maps.
+  * The longer routes are consistent with the planner trading distance for estimated
+    probability that is not there. That is an inference from the measurements, not a
+    tested cause.
+* **The claim that adaptive planning improves performance is not supported.** It stays
+  opt-in (`--adaptive-planning`), and the default remains off.
 
 ## 14. Hardware requirements
 
@@ -616,6 +752,12 @@ of chests present:
   machine.
 * **Agent:** the reference arena's software renderer dominates its cost (Phase 4: 16.5 ms
   per 640×360 frame). Peak memory per worker process was about 116 MiB in Phase 4.
+* **Measured in the Phase 5 benchmarks** (section 13; 4 workers on 4 vCPUs, no GPU):
+  * Perception took about 6.2–6.5 ms per analysed frame.
+  * One worker simulated about 5–6× faster than real time.
+  * Peak resident memory per worker was at most 141 MiB in the arena and 202 MiB on
+    the procedural maps, where one worker plays a whole sequence of episodes.
+  * The learned policy adds under 1 ms per decision.
 
 The Unreal runtime was not measured. A full UE5 editor is not expected to run reliably on
 8 GB of RAM or integrated graphics, and adding the learned policy does not change that.
@@ -646,12 +788,12 @@ The Python agent and the Unreal runtime should be benchmarked separately.
 * **Credited by notification.** With smart recovery, an opening the agent was notified
   about but could not see is credited after two look-backs.
   * This corrects the agent's own count. It does not open more chests.
-  * In the arena benchmark it accounts for all of deterministic_adaptive's +6.4 % gain in
-    agent-counted throughput. Against ground truth the change is −0.1 % (not
+  * In the arena benchmark it accounts for all of deterministic_adaptive's +6.2 % gain in
+    agent-counted throughput. Against ground truth the change is −0.3 % (not
     significant).
   * Such openings are counted separately (`credited_by_notification`). The benchmark
-    checks every recorded opening against ground truth, and none of the 500 episodes
-    counted an opening that did not happen.
+    checks every recorded opening against ground truth, and none of the 800 arena
+    episodes or 528 procedural-map episodes counted an opening that did not happen.
 * **Procedural maps** have single-storey buildings, with elevation coming from plateaus. True
   spawn probabilities are independent uniform draws, so there is no spatial correlation
   for the planner to exploit.
@@ -659,7 +801,26 @@ The Python agent and the Unreal runtime should be benchmarked separately.
   Unreal is untested, and exact replay there would need deterministic engine stepping.
 * **Training in NumPy** is practical only for small models like this one. A larger model
   would need a framework (PyTorch or similar) and probably a GPU.
-@@P5_RESULT_LIMITATIONS@@
+* **The learned and hybrid policies are worse than the controller they imitate.**
+  * Learned: −81 % in the arena, −82 % and −80 % on familiar and unseen procedural maps.
+  * Hybrid: −24 % in the arena, −17 % and −22 % on the procedural maps.
+  * The deterministic controller stays the default (`learning.policy: deterministic`).
+* **Adaptive planning is not shown to help.**
+  * Arena: −0.3 % (not significant).
+  * Familiar procedural maps: −4.9 % (significant).
+  * Unseen procedural maps: −2.1 % (not significant).
+  * No improvement over 6 or 12 online episodes.
+  * It stays opt-in.
+* **Small samples for generalisation.** There are 4 maps per group and 24 episodes per
+  strategy and group (48 in the ablation). Unpaired familiar-vs-unseen gaps below roughly
+  0.4 /min cannot be resolved, and the maps differ in how many chests they hold.
+* **Results combine runs.** The adaptive strategies' numbers come from re-runs after the
+  recovery fix, and the rest from the first runs. This is valid because every
+  non-adaptive strategy reproduced exactly (13.2), but CPU timings differ slightly
+  between runs.
+* **Simulated time only.** All throughputs are per simulated minute in the Python
+  reference arena, on one CPU core per worker. They say nothing about speed in Unreal, in a
+  real game, or with GPU rendering.
 
 ## 16. Future improvements
 
@@ -674,3 +835,6 @@ The Python agent and the Unreal runtime should be benchmarked separately.
   benchmarks there.
 * Online re-estimation inside an episode, for example: a cleared cluster lowers its
   neighbours' probability when presence is correlated.
+* Generate procedural maps with spatially correlated spawn probabilities (real clusters),
+  and repeat the ablation of 13.4. On the current maps the planner has nothing to
+  exploit, and it costs travel.
