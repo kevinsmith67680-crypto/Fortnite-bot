@@ -147,13 +147,16 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     # -- active exploration persistence ----------------------------------------------------------
     runner, result = _episode(db, settings, seed=seed, episode=7, max_ticks=max_ticks,
                               map_id="p7_open_test_004", exploration=True)
-    rows = _one(db, "SELECT COUNT(*) AS n FROM chest_observations WHERE session_id = ?",
-                        (result.session_id,))["n"]
+    try:
+        rows = int(_one(db, "SELECT COUNT(*) AS n FROM discovered_openings "
+                            "WHERE session_id = ?", (result.session_id,))["n"])
+    except sqlite3.Error:                    # schema before Phase 8 (F12): no such table
+        rows = 0
+    credited = result.metrics.chests_opened
     check("active-exploration openings reach the database",
-          rows >= (result.truth.get("opened_truth") or 0) > 0 or
-          (result.truth.get("opened_truth") or 0) == 0,
-          {"observation_rows": rows, "true_openings": result.truth.get("opened_truth"),
-           "credited": result.metrics.chests_opened})
+          rows == credited and (credited > 0 or not result.truth.get("opened_truth")),
+          {"discovered_opening_rows": rows, "credited": credited,
+           "true_openings": result.truth.get("opened_truth")})
     db.close()
 
     # -- invalid values ----------------------------------------------------------------------------

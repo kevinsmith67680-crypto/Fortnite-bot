@@ -271,6 +271,16 @@ class Runner3D:
                                 observed_at=clock.base + timedelta(seconds=sim_time),
                                 reward_received=reward)
 
+        def record_discovered(xyz: tuple[float, float, float], *, seconds: float,
+                              reward: bool | None, sim_time: float) -> None:
+            with prof.section("database_persistence"), self.db.transaction() as conn:
+                conn.execute(
+                    "INSERT INTO discovered_openings (session_id, x, y, z, observed_at, "
+                    "interaction_seconds, reward_received) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (session.id, float(xyz[0]), float(xyz[1]), float(xyz[2]),
+                     (clock.base + timedelta(seconds=sim_time)).isoformat(),
+                     round(max(0.0, seconds), 4), None if reward is None else int(reward)))
+
         outcome, reason = "failed", None
         try:
             navigation = {"oracle": "navmesh", "hybrid": "navmesh",
@@ -309,6 +319,7 @@ class Runner3D:
                                        detector=detector, navigation=navigation,
                                        config=self.config, recorder=record,
                                        explorer=self.explorer, thresholds=self.thresholds)
+                visual.discovery_recorder = record_discovered
                 if self.planner is not None:
                     self.planner.attach(visual, map_id=self.map_id)
                 controller = visual

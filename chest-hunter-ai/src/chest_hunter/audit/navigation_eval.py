@@ -149,6 +149,10 @@ def run_nav_task(task: NavTask) -> dict[str, Any]:
                                          inspect_confidence=2.0, inspect_hits=10**6)
     db = DatabaseManager(":memory:")
     db.initialize()
+    if task.map_id == "research_arena_3d":
+        from chest_hunter.scenarios import seed_arena_3d
+
+        seed_arena_3d(db)
 
     def hook(runner: Any, result: Any) -> None:
         agent = getattr(runner.controller, "agent", runner.controller)

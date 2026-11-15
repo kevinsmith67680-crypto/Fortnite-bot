@@ -42,7 +42,7 @@ from chest_hunter.navigation.navigation_3d import (
 )
 from chest_hunter.runtime.profiler import NULL_PROFILER
 from chest_hunter.unreal_bridge.action_adapter import ActionCommand, look_towards, move_towards
-from chest_hunter.unreal_bridge.client import StepResult
+from chest_hunter.unreal_bridge.client import BridgeError, StepResult
 from chest_hunter.unreal_bridge.observation_adapter import Observation3D, Telemetry
 from chest_hunter.vision.chest_detector_3d import (
     ChestDetector3D,
@@ -130,6 +130,9 @@ class Agent3DConfig:
 
 #: Phase 6 visual-processing profiles: analyses per simulated second while travelling far
 #: from the goal, searching/approaching, aligning-interacting-verifying, and otherwise.
+#: an opened chest was within interaction reach (1.8 m) of the agent; with odometry noise
+REACH_CHECK_M = 2.6
+
 VISION_PROFILES: dict[str, dict[str, float]] = {
     "phase5": {"rate_travel": 3.0, "rate_search": 8.0, "rate_verify": 10.0, "rate_idle": 2.0},
     "efficient": {"rate_travel": 2.0, "rate_search": 6.0, "rate_verify": 10.0,
@@ -185,6 +188,8 @@ class Metrics3D:
     recovery_reasons: dict[str, int] = field(default_factory=dict)
     interaction_attempts: int = 0
     credited_by_notification: int = 0
+    reattributed_openings: int = 0      # opening credited to the spawn point actually reached
+    service_errors: int = 0             # navigation-service requests that failed (skipped)
     frames_skipped_unchanged: int = 0
     routes_started: int = 0
     recovery_log: RecoveryLog = field(default_factory=RecoveryLog)
@@ -215,6 +220,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self.rules = rules
         self.detector = detector
         self.recorder = recorder
+        #: Phase 8: where openings of discovered (negative-id) spawn points are stored
+        self.discovery_recorder: Callable[..., None] | None = None
         #: Phase 7 active exploration (exploration.active.ActiveExplorer): no prior chest
         #: coordinates; frontiers, camera sectors and dynamic spawn points instead.
         self.explorer = explorer
@@ -431,7 +438,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
     def _clear_line(self, prior: SpawnPrior3D) -> bool:
         try:
             return self.navigator.clear_line(self.position, prior.xyz)
-        except Exception:                      # navigation service unavailable: be conservative
+        except BridgeError:                    # navigation service unavailable: be conservative
+            self.metrics.service_errors += 1
             return False
 
     def _target_bbox(self) -> tuple[int, int, int, int] | None:
@@ -558,10 +566,41 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             return False
         return math.dist(self.position[:2], self.goal.position[:2]) <= radius
 
+    def _opened_location(self, location_id: int) -> int:
+        """The spawn point the opening belongs to. A chest is opened only within reach
+        (1.8 m), so when the agent stands far from the spawn point its goal was associated
+        with, but next to another known spawn point, the chest it opened is that one (Phase 8
+        audit F14: a misplaced track had been associated with a spawn point 4.8 m away).
+        Discovered spawn points (negative ids) move to the opening instead."""
+        if location_id < 0 or self.telemetry is None:
+            return location_id
+        pos = self.position
+        here = self.world.priors.get(location_id)
+        if here is None or math.hypot(here.x - pos[0], here.y - pos[1]) <= REACH_CHECK_M:
+            return location_id
+        near = [(math.hypot(p.x - pos[0], p.y - pos[1]), p.location_id)
+                for p in self.world.priors.values()
+                if p.location_id >= 0 and p.status is not PriorStatus3D.OPENED
+                and abs(p.z - pos[2]) <= 1.0]
+        best = min(near, default=None)
+        if best is not None and best[0] <= REACH_CHECK_M:
+            self.metrics.reattributed_openings += 1
+            return best[1]
+        return location_id
+
     def _record(self, location_id: int | None, *, present: bool, opened: bool, seconds: float,
                 reward: bool | None) -> None:
-        if location_id is None or location_id < 0:   # Phase 7 dynamic spawn points: not in
-            return                                    # the database's location table
+        if location_id is not None and location_id < 0:
+            # Phase 7 discovered spawn points have no chest_locations row: their openings go
+            # to discovered_openings (Phase 8 audit F12; before, they were not stored at all)
+            prior = self.world.priors.get(location_id)
+            if opened and prior is not None and self.discovery_recorder is not None:
+                self.metrics.locations_recorded += 1
+                self.discovery_recorder(prior.xyz, seconds=seconds, reward=reward,
+                                        sim_time=self.now)
+            return
+        if location_id is None:
+            return
         self.metrics.locations_recorded += 1
         if self.recorder is not None:
             self.recorder(location_id, present=present, opened=opened, seconds=seconds,
@@ -570,6 +609,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
     def _credit_open(self, location_id: int, seconds: float, reward: bool | None) -> bool:
         """Count one opening; ``False`` when this spawn point was already credited (one
         spawn point holds at most one chest per episode, so it is never counted twice)."""
+        location_id = self._opened_location(location_id)
         self._unverified.pop(location_id, None)
         prior = self.world.priors[location_id]
         if prior.status is PriorStatus3D.OPENED:
@@ -843,7 +883,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             try:
                 distances = self.port.nav_raycast(pos, ex.bearings(),
                                                   max_distance=ex.cfg.ray_reach_m)
-            except Exception:                  # the service may be unavailable: skip a fan
+            except BridgeError:                # the service may be unavailable: skip a fan
+                self.metrics.service_errors += 1
                 distances = None
             if distances is not None:
                 ex.add_fan(pos, distances)
@@ -1244,7 +1285,11 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             self.recovery_reason = "interaction_failed"
             return S.RECOVERING
         if elapsed > 2.0:
-            if self.cfg.smart_recovery and v["reward"] >= 1 and goal.location_id is not None:
+            # The agent's own "chest opened" notification arrived but the opened lid was not
+            # seen clearly (Phase 8 audit F11: some opened chests read as closed from the
+            # verification pose): look again from a step back, bounded, then credit the
+            # opening on the notification - counted separately, never as visually verified.
+            if v["reward"] >= 1 and goal.location_id is not None:
                 return self._look_back_or_credit(goal, seconds)
             self.recovery_reason = "verification_inconclusive"
             return S.RECOVERING

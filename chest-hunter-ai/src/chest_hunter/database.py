@@ -327,9 +327,42 @@ _SCHEMA_V6: tuple[str, ...] = (
     """,
 )
 
+# Phase 8 (audit finding F12): chests opened by an agent exploring without spawn points have no
+# chest_locations row; their openings were not persisted at all. One row per opening.
+_SCHEMA_V7: tuple[str, ...] = (
+    f"""
+    CREATE TABLE discovered_openings (
+        id                   INTEGER PRIMARY KEY,
+        session_id           INTEGER NOT NULL
+            REFERENCES simulation_sessions (id) ON DELETE RESTRICT,
+        x                    REAL    NOT NULL CHECK (typeof(x) = 'real'
+                                                     AND x BETWEEN -{_MAX_REAL} AND {_MAX_REAL}),
+        y                    REAL    NOT NULL CHECK (typeof(y) = 'real'
+                                                     AND y BETWEEN -{_MAX_REAL} AND {_MAX_REAL}),
+        z                    REAL    NOT NULL CHECK (typeof(z) = 'real'
+                                                     AND z BETWEEN -{_MAX_REAL} AND {_MAX_REAL}),
+        observed_at          TEXT    NOT NULL,
+        interaction_seconds  REAL    NOT NULL DEFAULT 0.0
+            CHECK (interaction_seconds BETWEEN 0.0 AND {_MAX_REAL}),
+        reward_received      INTEGER CHECK (reward_received IS NULL OR reward_received IN (0, 1))
+    )
+    """,
+    """
+    CREATE INDEX idx_discovered_openings_session ON discovered_openings (session_id)
+    """,
+    """
+    CREATE TRIGGER trg_discovered_openings_running_session
+    BEFORE INSERT ON discovered_openings
+    WHEN (SELECT status FROM simulation_sessions WHERE id = NEW.session_id) IS NOT 'running'
+    BEGIN
+        SELECT RAISE(ABORT, 'openings can only be recorded for a running session');
+    END
+    """,
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
     (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3), (4, _SCHEMA_V4), (5, _SCHEMA_V5),
-    (6, _SCHEMA_V6))
+    (6, _SCHEMA_V6), (7, _SCHEMA_V7))
 """Ordered ``(version, statements)`` pairs. Append new versions; never edit old ones."""
 
 SCHEMA_VERSION: int = MIGRATIONS[-1][0]
@@ -342,6 +375,7 @@ EXPECTED_TABLES: tuple[str, ...] = (
     "spawn_estimates",
     "route_memory",
     "episode_experience",
+    "discovered_openings",
 )
 
 
