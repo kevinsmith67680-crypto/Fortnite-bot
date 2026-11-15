@@ -102,7 +102,7 @@ persistent statistics.
 Unreachable spawn points are *kept and flagged* (`reachable=False`, tag `unreachable`). An
 example is the sealed room some layouts contain (indoor complexes leave no space for one).
 The generator version (`GENERATOR_VERSION = "7.0"`), settings and settings hash are stored in
-`Arena3D.meta` and exported with the layout for Unreal (`export-arena-3d`).
+`Arena3D.meta` and exported with the layout for Unreal (`export-arena-3d --map MAP_ID`; the `--map` option was added in Phase 8 - before it, only `research_arena_3d` could be exported, audit finding F2).
 
 ## 3. Active exploration (`exploration/active.py`)
 
@@ -493,10 +493,15 @@ Every failure or warning comes with a remedy. The exit code is non-zero if a che
 * **New, not in Unreal.** The reference server now reports `environment_version` in `HELLO`.
   The Unreal plug-in does not yet; `check-runtime` reports that as a warning.
 * **Not run in Unreal:**
-  * Phase 7 maps can be exported with `export-arena-3d` (same layout format as Phase 5). Their
-    loading in the Unreal project has **not** been run.
-  * Lighting and appearance variants are applied by the reference renderer. The Unreal
-    project's lighting and material parameters for them are **not** verified.
+  * Phase 7 maps can be exported with `export-arena-3d --map MAP_ID` (same layout format as
+    Phase 5). This was **not possible before Phase 8**: the command exported only
+    `research_arena_3d`, contrary to an earlier version of this document (audit finding F2).
+    The acceptance map and one held-out map per family are now in
+    `Content/ResearchData`. Their loading in the Unreal project has **not** been run.
+  * Lighting and appearance variants are applied by the reference renderer. The Unreal arena
+    builder reads `lighting`, `chest_value` and `chest_hue_shift` but **not**
+    `surface_value`, so the `appearance` variant is only partly reproducible in Unreal
+    (audit finding F3). None of these parameters has been verified in Unreal.
   * Dynamic obstacles (fault injection) are a reference-server feature. The Unreal research
     server has no `ADD_OBSTACLE` request, so that fault is reference-only.
   * Frame timing, GPU load and the Unreal graphics workload were **not measured** (no Unreal,

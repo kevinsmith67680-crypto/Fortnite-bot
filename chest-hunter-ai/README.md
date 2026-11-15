@@ -14,6 +14,7 @@ opened per minute.**
 | 5. Imitation learning, adaptive exploration, generalisation | Done on the Python reference arena; **no human demonstrations recorded, Unreal untested** | Demonstration recorder (teleoperation + synthetic scripted), dataset pipeline, NumPy behaviour cloning, ONNX FP32/INT8 export and CPU inference, policy selector with safety layer, Bayesian spawn estimates, route memory, adaptive planner, classified recovery, procedural maps, paired policy and generalisation benchmarks (section 16) |
 | 6. Reliability, planning and optimisation | Done on the Python reference arena; **Unreal untested** | Episode supervisor with state specifications, loop detection and bounded escalation; short-horizon planning; adaptive computation; learned-policy monitors and reliability calibration; partitioned experience; endurance runs with checkpoints; resource monitor and profiler; operations panel; paired benchmark (section 17) |
 | 7. Generalisation, self-improving exploration, deployment readiness | Done on the Python reference arena; **Unreal untested** | Procedural environment families with held-out shift variants, active frontier exploration without spawn points, information-aware camera search, uncertainty thresholds, versioned exploration memory and strategy bandit, failure injection and robustness benchmark, generalisation benchmark, startup checks, pinned runtime, JSON logs (section 18) |
+| 8. Full-system audit | Done; **verdict UNVERIFIED for the Unreal environment** (never built or run) | Independent audit of Phases 1-7 with executed evidence: inventory, Unreal static audit, traced end-to-end episode, ground-truth isolation, bridge security, vision, navigation, interaction, policies, planners, endurance, generalisation, resources, database; 8 confirmed defects fixed with regression tests (section 19) |
 
 > The simulator is entirely self-contained. The project never talks to a game
 > client, game service or network. It never reads or writes game memory or
@@ -760,7 +761,7 @@ oldest) is evicted.
   steps behind a dead zone, so it only coarsely follows the agent. The
   agent's exact position, heading, chests and walls all come from pixels.
   Estimating the camera pose from images alone (visual odometry or
-  landmarks) is a next step (section 24). Tests check the round trip and
+  landmarks) is a next step (section 25). Tests check the round trip and
   that the transform is not an identity.
 * **Filter.** The pose is predicted from the agent's own velocity commands
   (dead reckoning) and corrected with each visual fix by exponential
@@ -1002,7 +1003,7 @@ What the numbers say:
   * Each one was the Blue House attic/basement pair, 0.28 cells apart: the
     chest is opened, but the spot it was credited to had already been judged
     empty, so the opening is not recorded (reproduced and traced for episode
-    0, and consistent with the limitation in section 23).
+    0, and consistent with the limitation in section 24).
   * Openings were **never over-reported** in any mode or map.
 * **Cost.**
   * Perception averaged 3.2-4.0 ms per analysed frame, at 6-8 analyses per
@@ -1874,7 +1875,55 @@ as version 0 with these defaults):
 RESULTS_P7_README
 
 
-## 19. Running the tests
+## 19. Phase 8: full-system audit and readiness assessment
+
+Phase 8 is an independent audit of Phases 1–7. It does not assume they work: it checks what
+actually runs, measures it, fixes confirmed defects, and states readiness on the evidence. The
+full report is `docs/phase8_full_system_audit.md`; the scorecard is
+`docs/phase8_readiness_scorecard.md`.
+
+**Verdict.** The verdict is UNVERIFIED for the intended Unreal Engine research environment.
+That environment has never been built or run: there are no binaries and no map asset.
+Every end-to-end result comes from the Python reference arena, a protocol-identical mock of
+the Unreal server. Within that mock, the autonomous loop works end to end. The figures are in
+the report.
+
+### 19.1 Commands
+
+```bash
+# The whole audit: inventory, Unreal static audit, traced end-to-end episode (with video),
+# ground-truth isolation, bridge security, vision, navigation, interaction, policy and planner
+# comparisons, endurance, generalisation, resources, database integrity
+python -m chest_hunter audit-system --episodes 40 --held-out-maps --profile-resources \
+    --verify-database --workers 4 --output benchmark_results/phase8
+
+# Export layouts for the Unreal project (any map; Phase 7 maps could not be exported before)
+python -m chest_hunter export-arena-3d --map p7_complex_test_000_unfamiliar
+```
+
+`audit-system` writes the thirteen artifacts listed in the brief (`component_inventory.json` …
+`audit_summary.json`) to `benchmark_results/phase8`. An evaluation it cannot run is recorded
+as BLOCKED, never as zeros. It reuses the long Phase 7 results
+(`benchmark_results/phase7`, `benchmark_results/robustness`) and the Phase 6 endurance runs,
+and names their source.
+
+### 19.2 Defects found and fixed
+
+| # | Defect | Fix |
+|---|---|---|
+| F2 | Phase 7 maps could not be exported for Unreal at all | `export-arena-3d --map` |
+| F7 | `profile-agent`, `benchmark-phase6`, `endurance-test` and `calibrate-policy` refused to run without an initialised database they never use | removed the requirement |
+| F8 | experience partitions mixed supervised and unsupervised configurations | supervisor and monitors added to the partition key |
+| F9 | every endurance resume after a crash in the session-finished window failed (integrity trigger) | lost-result sessions marked superseded |
+| F11 | opened chests judged "closed" by the visual check were never credited (5.7 % of real openings); the agent re-aligned on them | bounded look-back, then credit on the agent's own opening notification (counted separately) |
+| F12 | openings found by active exploration were not stored in SQLite | schema 7, `discovered_openings` |
+| F14 | an opening could be credited to the wrong spawn point after a track mis-association | credit the spawn point actually reached |
+| F1 | two controller handlers caught every exception silently | `BridgeError` only, counted |
+
+All of these have regression tests in `tests/test_phase8_audit.py`, `tests/test_endurance.py`
+and `tests/test_phase6_workflow.py`.
+
+## 20. Running the tests
 
 ```bash
 python -m unittest discover -s tests -v                # every phase (standard library only)
@@ -1968,7 +2017,7 @@ The Unreal C++ code is not built by these
 tests (see section 15); `tests/test_unreal_sources.py` compiles only the shared
 SplitMix64/UnitRoll functions with the host C++ compiler.
 
-## 20. Example output
+## 21. Example output
 
 ```text
 $ python -m chest_hunter simulate --map research_arena_01 --strategy weighted --seed 42 --headless
@@ -2004,7 +2053,7 @@ the episode itself takes about 0.05 s. Running
 `simulate --render --strategy weighted --seed 42` gives exactly the same
 result in the GUI: 4,120 ticks, 25 opened, 10.92 chests/min.
 
-## 21. Programmatic use
+## 22. Programmatic use
 
 ```python
 from chest_hunter.agent import SimulationRunner
@@ -2032,7 +2081,7 @@ optionally `evaluate=True` to measure perception against ground truth:
 loops. `runner.env.add_obstacle(...)` changes the map at runtime; cached
 paths are invalidated automatically.
 
-## 22. Troubleshooting
+## 23. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -2058,7 +2107,7 @@ paths are invalidated automatically.
 | `argument --config: ...` with `train-policy` | The training configuration option is `--train-config` (`--config` selects the settings file) |
 | Human demonstrations: `need Tkinter and a display` | Run on a desktop session (or `xvfb-run` for testing) |
 
-## 23. Known limitations
+## 24. Known limitations
 
 * **2D only.** `z` is ignored, so stacked chests share a grid position. They
   are visited one after the other without moving.
@@ -2110,7 +2159,7 @@ Phase 3:
   sprites. There are no textures, shadows, perspective or motion blur, and
   the templates match the rendering exactly.
 
-## 24. Recommended next steps
+## 25. Recommended next steps
 
 1. **Tour optimisation for full sweeps.** For example, nearest-neighbour
    plus 2-opt over the distance oracle, since full-sweep throughput is
