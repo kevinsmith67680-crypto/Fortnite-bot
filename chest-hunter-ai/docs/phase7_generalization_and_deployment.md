@@ -747,4 +747,23 @@ benchmark's semantics, so it was not made under the running Phase 8 queue.
 
 ## 17. Recommendations for the next phase
 
-RESULTS_RECOMMENDATIONS
+In priority order. The Phase 8 audit gives the evidence (`docs/phase8_full_system_audit.md`,
+section O).
+
+1. **Run the Unreal project.** Nothing in this document has been measured in Unreal.
+   Building the module, creating the map and running the acceptance map over the C++ bridge
+   is the first step. The results above may not transfer.
+2. **Perception robustness to chest appearance.** This is the largest measured
+   generalisation gap (G ≈ +0.3). Add a hue-independent cue before anything heavier, and
+   measure its latency at 320×180.
+3. **Reproducible research runs (F18).** Replace the wall-clock frontier budget and
+   inference timeout with work-based limits when the simulation is lock-step. Keep the
+   wall-clock limits for real-time use.
+4. **Exploration completeness (F21 residual).** When the frontier search runs dry
+   mid-episode, also cast denser fans from earlier fan origins before declaring the map
+   explored.
+5. **Coverage.** 74.5 % against the 85 % target in 600 s. The explorer's frontier choice
+   hardly matters (section 15.3); travel time does. Shorter scans and fewer revisits are
+   the likely levers.
+6. **Simplify.** The exploration memory and bandit add no measured gain over a fixed
+   strategy. Keep one or two strategies.
