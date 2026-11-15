@@ -1325,6 +1325,9 @@ from the `learning` configuration section (`deterministic`).
     * bounded handovers when a learned policy is stuck;
     * when the deterministic controller takes over again, an interaction or opening
       check it was paused in is dropped (stale timers could credit an unopened chest).
+    * an opening notification is credited by the selector only after a learned action.
+      After a step the deterministic controller drove, its own verification handles it,
+      so one chest cannot be counted at two spawn points.
 
 ### 16.3 Adaptive exploration
 
