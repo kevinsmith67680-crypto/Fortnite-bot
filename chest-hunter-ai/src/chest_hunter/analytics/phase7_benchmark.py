@@ -53,6 +53,7 @@ from chest_hunter.analytics.stats import summarise
 from chest_hunter.config import Settings, load_config
 from chest_hunter.exceptions import ValidationError
 from chest_hunter.exploration.active import STRATEGIES
+from chest_hunter.runtime.configurations import AgentSetup
 from chest_hunter.simulation3d.generator7 import CATEGORIES, GENERATOR_VERSION, map_id
 
 PRIMARY_METRIC: Final = "throughput_truth_per_min"
@@ -126,6 +127,47 @@ PHASE7_SETUPS: Final[dict[str, Phase7Setup]] = {s.name: s for s in (
     *(Phase7Setup(f"phase7_{s}", "phase6_hybrid_supervised", True, s,
                   f"active exploration with the fixed strategy {s}") for s in STRATEGIES),
 )}
+#: Phase 8 audit configurations (same maps and seeds as the Phase 7 benchmark): the three
+#: control policies with the Phase 4 target rule, and the target planners with the
+#: deterministic controller. On procedural maps every spawn point carries the same
+#: (uninformative) probability, so the Phase 4 rule - probability / (travel time + 1) - is
+#: nearest-target planning there.
+AUDIT_BASES: Final[dict[str, AgentSetup]] = {s.name: s for s in (
+    AgentSetup("audit_deterministic", "deterministic", "none", True, False, False, False,
+               "deterministic controller, Phase 4 target rule, supervisor"),
+    AgentSetup("audit_learned", "learned", "none", True, False, False, True,
+               "learned policy alone (with the selector's safety layer), supervisor"),
+    AgentSetup("audit_hybrid", "hybrid", "none", True, False, False, True,
+               "hybrid policy, supervisor"),
+    AgentSetup("audit_planner_adaptive", "deterministic", "adaptive", True, False, True, False,
+               "Phase 5 adaptive planner (Bayesian spawn estimates, cluster bonus)"),
+    AgentSetup("audit_planner_greedy", "deterministic", "greedy", True, False, True, False,
+               "Phase 6 greedy planner S = (pq + lambda I)/(T + eps) - mu R"),
+    AgentSetup("audit_planner_short_horizon", "deterministic", "short_horizon", True, False,
+               True, False, "Phase 6 short-horizon beam planner"),
+)}
+AUDIT_SETUPS: Final = {
+    "audit_policy_deterministic": Phase7Setup("audit_policy_deterministic",
+                                              "audit_deterministic", False, None,
+                                              "deterministic controller"),
+    "audit_policy_learned": Phase7Setup("audit_policy_learned", "audit_learned", False, None,
+                                        "learned policy"),
+    "audit_policy_hybrid": Phase7Setup("audit_policy_hybrid", "audit_hybrid", False, None,
+                                       "hybrid policy"),
+    "audit_planner_nearest": Phase7Setup("audit_planner_nearest", "audit_deterministic", False,
+                                         None, "nearest target (Phase 4 rule)"),
+    "audit_planner_adaptive": Phase7Setup("audit_planner_adaptive", "audit_planner_adaptive",
+                                          False, None, "Phase 5 adaptive planner"),
+    "audit_planner_greedy": Phase7Setup("audit_planner_greedy", "audit_planner_greedy", False,
+                                        None, "Phase 6 greedy planner"),
+    "audit_planner_short_horizon": Phase7Setup("audit_planner_short_horizon",
+                                               "audit_planner_short_horizon", False, None,
+                                               "Phase 6 short-horizon planner"),
+    "audit_planner_frontier": Phase7Setup("audit_planner_frontier", "audit_deterministic", True,
+                                          "memory", "Phase 7 active frontier exploration "
+                                          "(no spawn points)"),
+}
+PHASE7_SETUPS.update(AUDIT_SETUPS)
 DEFAULT_GENERALIZATION_SETUPS: Final = ("phase7_active", "phase6_priors")
 STRATEGY_SETUPS: Final = (*(f"phase7_{s}" for s in STRATEGIES), "phase7_active")
 DEFAULT_STRATEGY: Final = "max_information"
@@ -204,7 +246,7 @@ def run_p7_job(job: P7Job) -> dict[str, Any]:
 
     settings = load_config(job.settings_path)
     setup = PHASE7_SETUPS[job.setup]
-    base = PHASE6_SETUPS[setup.base]
+    base = PHASE6_SETUPS.get(setup.base) or AUDIT_BASES[setup.base]
     policy = None
     if base.policy != "deterministic":
         if job.model_dir is None:
@@ -234,6 +276,14 @@ def run_p7_job(job: P7Job) -> dict[str, Any]:
     db = DatabaseManager(":memory:")
     db.initialize()
     profiler = Profiler()
+    planner = None
+    if base.planner != "none" and not setup.exploration:
+        from chest_hunter.agent.runner_3d import _layout_hash
+        from chest_hunter.runtime.configurations import make_planner
+        from chest_hunter.scenarios import seed_procedural_map
+
+        seed_procedural_map(db, job.map_id)
+        planner = make_planner(settings, base, db, job.map_id, _layout_hash(job.map_id))
     try:
         runner = Runner3D.from_settings(
             db, settings, mode="hybrid", seed=job.seed, episode=job.episode,
@@ -242,10 +292,12 @@ def run_p7_job(job: P7Job) -> dict[str, Any]:
             height=job.height, policy=base.policy, learned_policy=policy,
             policy_options=policy_options(settings, base) or None,
             supervisor=supervisor_config(settings, base), profiler=profiler,
-            exploration=exploration, faults=injector,
+            exploration=exploration, faults=injector, planner=planner,
             thresholds=thresholds_from_settings(settings) if setup.exploration else None)
         result = runner.run()
         row = episode_row(job, runner, result, profiler)
+        if planner is not None and hasattr(planner, "stats"):
+            row["planning_latency_mean_ms"] = planner.stats.to_dict().get("latency_mean_ms")
         from chest_hunter.runtime.configurations import AGENT_VERSION
 
         row.update({"strategy_used": strategy, "strategy_reason": why,
@@ -347,7 +399,7 @@ FIELDS: Final = (
     "frontiers_selected", "frontier_selection_ms_mean", "camera_scans", "inference_mean_ms",
     "learned_share", "frames_analysed", "agent_cpu_seconds", "agent_cpu_per_sim_second",
     "process_cpu_seconds", "wall_seconds", "peak_rss_mb", "strategy_used", "strategy_reason",
-    "agent_version", "model_version", "generator_version",
+    "agent_version", "model_version", "generator_version", "planning_latency_mean_ms",
     "fault_kind", "fault_injected", "fault_applied", "fault_detected", "fault_recovered",
     "fault_terminated_cleanly", "fault_start_s", "fault_details",
 )
@@ -595,8 +647,11 @@ def _validate(setups: Sequence[str], episodes: int, model_dir: Any) -> None:
                               f"{', '.join(PHASE7_SETUPS)}")
     if episodes < 1:
         raise ValidationError("episodes must be at least 1")
-    if model_dir is None and any(PHASE6_SETUPS[PHASE7_SETUPS[s].base].policy != "deterministic"
-                                 for s in setups):
+    def base(s: str) -> AgentSetup:
+        name = PHASE7_SETUPS[s].base
+        return PHASE6_SETUPS.get(name) or AUDIT_BASES[name]
+
+    if model_dir is None and any(base(s).policy != "deterministic" for s in setups):
         raise ValidationError("hybrid configurations need --model")
 
 

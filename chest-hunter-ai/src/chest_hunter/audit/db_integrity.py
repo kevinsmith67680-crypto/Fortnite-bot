@@ -26,6 +26,13 @@ from pathlib import Path
 from typing import Any
 
 
+def _one(db: Any, sql: str, params: tuple[Any, ...] = ()) -> Any:
+    row = db.query_one(sql, params)
+    if row is None:
+        raise RuntimeError(f"no row for {sql!r}")
+    return row
+
+
 def _episode(db: Any, settings: Any, *, seed: int, episode: int, max_ticks: int,
              map_id: str = "research_arena_3d", exploration: bool = False,
              interrupt_after: int | None = None) -> Any:
@@ -105,7 +112,7 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
           all(s["status"] != "running" and s["ended_at"] for s in sessions),
           sorted({s["status"] for s in sessions}))
     check("integrity_check ok",
-          db.query_one("PRAGMA integrity_check")[0] == "ok")
+          _one(db, "PRAGMA integrity_check")[0] == "ok")
     check("no foreign-key violations", not db.query_all("PRAGMA foreign_key_check"))
     dup = db.query_all("SELECT session_id, chest_location_id, COUNT(*) AS n "
                        "FROM chest_observations WHERE chest_opened = 1 "
@@ -123,7 +130,7 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     repo_mismatch = []
     for s in sessions:
         st = stats_repo.get_session_statistics(int(s["id"]))
-        raw = db.query_one("SELECT COUNT(*) AS n FROM chest_observations WHERE session_id = ? "
+        raw = _one(db, "SELECT COUNT(*) AS n FROM chest_observations WHERE session_id = ? "
                            "AND chest_opened = 1", (s["id"],))["n"]
         if int(st.chests_opened) != int(raw):
             repo_mismatch.append(int(s["id"]))
@@ -132,7 +139,7 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     # -- interrupted episode -------------------------------------------------------------------
     with contextlib.suppress(KeyboardInterrupt):
         _episode(db, settings, seed=seed, episode=99, max_ticks=max_ticks, interrupt_after=200)
-    last = db.query_one("SELECT status, ended_at FROM simulation_sessions ORDER BY id DESC "
+    last = _one(db, "SELECT status, ended_at FROM simulation_sessions ORDER BY id DESC "
                         "LIMIT 1")
     check("an interrupted episode's session ends aborted", last["status"] == "aborted"
           and last["ended_at"] is not None, dict(last))
@@ -140,7 +147,7 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     # -- active exploration persistence ----------------------------------------------------------
     runner, result = _episode(db, settings, seed=seed, episode=7, max_ticks=max_ticks,
                               map_id="p7_open_test_004", exploration=True)
-    rows = db.query_one("SELECT COUNT(*) AS n FROM chest_observations WHERE session_id = ?",
+    rows = _one(db, "SELECT COUNT(*) AS n FROM chest_observations WHERE session_id = ?",
                         (result.session_id,))["n"]
     check("active-exploration openings reach the database",
           rows >= (result.truth.get("opened_truth") or 0) > 0 or
@@ -155,12 +162,13 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     inv = DatabaseManager(workdir / "invalid.db")
     inv.initialize()
     repo = ChestRepository(inv)
-    rejected = {}
+    rejected: dict[str, Any] = {}
     for label, kwargs in (("probability 1.5", {"spawn_probability": 1.5}),
                           ("NaN coordinate", {"x": float("nan")}),
                           ("empty map id", {"map_id": " "}),
                           ("negative open time", {"estimated_open_seconds": -1.0})):
-        args = {"map_id": "m", "location_name": "L", "x": 1.0, "y": 2.0} | kwargs
+        args: dict[str, Any] = {"map_id": "m", "location_name": "L", "x": 1.0,
+                                "y": 2.0} | kwargs
         try:
             repo.add_chest(**args)
             rejected[label] = False
@@ -194,7 +202,7 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     con.close()
     mdb = DatabaseManager(mpath)
     mdb.initialize()
-    kept = mdb.query_one("SELECT COUNT(*) AS n FROM chest_locations")["n"]
+    kept = _one(mdb, "SELECT COUNT(*) AS n FROM chest_locations")["n"]
     check("migration from schema 1 keeps data", mdb.schema_version() == SCHEMA_VERSION
           and kept == 1, {"schema": mdb.schema_version(), "rows": kept})
     mdb.close()
@@ -216,8 +224,8 @@ def evaluate(settings: Any, workdir: Path, *, episodes: int = 6, max_ticks: int 
     for p in procs:
         p.join(timeout=60)
     cdb = DatabaseManager(cpath)
-    n = cdb.query_one("SELECT COUNT(*) AS n FROM simulation_sessions")["n"]
-    ok = cdb.query_one("PRAGMA integrity_check")[0] == "ok"
+    n = _one(cdb, "SELECT COUNT(*) AS n FROM simulation_sessions")["n"]
+    ok = _one(cdb, "PRAGMA integrity_check")[0] == "ok"
     cdb.close()
     check("two concurrent writer processes", ok and n == 4 and not any(errors),
           {"sessions": n, "integrity": ok, "errors": errors})

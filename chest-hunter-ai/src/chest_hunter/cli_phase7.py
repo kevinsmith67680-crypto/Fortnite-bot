@@ -211,6 +211,23 @@ def register(add: AddCommand) -> None:
                      "p7_complex_test_000_unfamiliar)")
     _common_benchmark(sub, "benchmark_results/phase7/acceptance", max_ticks=18000)
 
+    sub = add("audit-system", "Phase 8 full-system audit: inventory, Unreal static audit, "
+                              "end-to-end trace, ground-truth isolation, bridge security, "
+                              "vision, navigation, interaction, policy and planner "
+                              "comparisons, endurance, generalisation, resources, database.",
+              cmd_audit_system)
+    sub.add_argument("--episodes", type=_positive, default=40,
+                     help="episodes per configuration for the policy and planner comparisons")
+    sub.add_argument("--held-out-maps", action="store_true",
+                     help="include the generalisation results (benchmark_results/phase7)")
+    sub.add_argument("--profile-resources", action="store_true",
+                     help="profile 320x180@5, 480x270@5, 640x360@10 fps and adaptive vision")
+    sub.add_argument("--verify-database", action="store_true")
+    sub.add_argument("--model", metavar="DIR")
+    sub.add_argument("--workers", type=_positive, default=1)
+    sub.add_argument("--output", default="benchmark_results/phase8", metavar="DIR")
+    sub.add_argument("--quiet", action="store_true")
+
     sub = add("check-runtime", "Startup checks for a deployment: configuration, database schema, "
                                "model compatibility, observation size, bridge protocol and "
                                "environment version, output directories.", cmd_check_runtime)
@@ -368,6 +385,27 @@ def cmd_acceptance(args: argparse.Namespace, ctx: Any) -> int:
         resume=args.resume, progress=_progress(args.quiet))
     print((out / "report.md").read_text(encoding="utf-8"))
     return 0 if not summary["errors"] else 1
+
+
+def cmd_audit_system(args: argparse.Namespace, ctx: Any) -> int:
+    from chest_hunter.audit.system import Audit
+
+    out = Path(args.output)
+    audit = Audit(ctx.settings, out, episodes=args.episodes, workers=args.workers,
+                  held_out=args.held_out_maps, profile=args.profile_resources,
+                  verify_db=args.verify_database, model_dir=_model_dir(ctx, args.model),
+                  progress=_progress(args.quiet))
+    summary = audit.run()
+    r = summary["readiness"]
+    print(f"Audit written to {out} (commit {summary['commit']}).")
+    for name, sec in summary["sections"].items():
+        print(f"  {name}: {sec['status']} ({sec['seconds']} s)"
+              + (f" - {sec['error']}" if sec["error"] else ""))
+    print("Readiness gates:")
+    for gate, ok in r["gates"].items():
+        print(f"  [{'pass' if ok else 'FAIL'}] {gate}")
+    print(f"Verdict: {r['verdict']} - {r['reason']}")
+    return 0
 
 
 def cmd_check_runtime(args: argparse.Namespace, ctx: Any) -> int:

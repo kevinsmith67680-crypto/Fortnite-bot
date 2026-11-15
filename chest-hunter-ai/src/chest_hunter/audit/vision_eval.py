@@ -231,7 +231,8 @@ def evaluate(settings: Any, *, maps: Sequence[str] = DEFAULT_MAPS,
             cam = labels["camera_pose"]
             cpose = CameraPose(cam[0], cam[1], cam[2], cam[3], cam[4])
             area = w * h
-            visible, ignored = [], []
+            visible: list[dict[str, Any]] = []
+            ignored: list[dict[str, Any]] = []
             for lab in labels["chests"]:
                 (visible if lab["pixels"] >= MIN_PIXEL_SHARE * area else ignored).append(lab)
             started, cpu0 = time.perf_counter(), time.thread_time()

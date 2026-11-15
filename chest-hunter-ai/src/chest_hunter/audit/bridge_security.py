@@ -169,13 +169,15 @@ def evaluate() -> dict[str, Any]:
         check("wrong magic bytes close the connection", bad_magic)
         check("protocol version mismatch is refused", bad_version)
 
-        bad_actions = {"NaN": {"move_forward": float("nan")},
+        bad_actions: dict[str, dict[str, Any]] = {
+                       "NaN": {"move_forward": float("nan")},
                        "infinity": {"look_yaw": float("inf")},
                        "out of range": {"move_forward": 5.0},
                        "wrong type": {"interact": "yes"},
                        "unknown action key": {"teleport": [1, 2, 3]}}
         results: dict[str, Any] = {}
-        idle = {"move_forward": 0.0, "move_right": 0.0, "look_yaw": 0.0, "look_pitch": 0.0,
+        idle: dict[str, Any] = {"move_forward": 0.0, "move_right": 0.0, "look_yaw": 0.0,
+                                "look_pitch": 0.0,
                 "jump": False, "interact": False, "sprint": False, "crouch": False}
         for k, (label, act) in enumerate(bad_actions.items()):
             # each on a fresh connection: a refusal may legitimately close it (NaN and

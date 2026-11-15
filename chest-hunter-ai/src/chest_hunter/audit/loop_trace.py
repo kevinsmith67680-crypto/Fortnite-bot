@@ -56,8 +56,8 @@ def run_trace(settings: Any, out: Path, *, map_id: str = "p7_mixed_test_003", se
     decisions = {"n": 0, "moving": 0, "looking": 0}
     first: dict[str, int] = {}
     writer: Any = None
-    state = {"last_state": None, "last_goal": None, "opened": 0, "interacting": False,
-             "obs_time": None, "detections": 0}
+    state: dict[str, Any] = {"last_state": None, "last_goal": None, "opened": 0,
+                             "interacting": False, "obs_time": None, "detections": 0}
 
     def mark(stage: str) -> None:
         first.setdefault(stage, decisions["n"])
@@ -115,7 +115,7 @@ def run_trace(settings: Any, out: Path, *, map_id: str = "p7_mixed_test_003", se
             if writer is None:
                 h, w = frame.shape[:2]
                 writer = cv2.VideoWriter(str(out / "episode.mp4"),
-                                         cv2.VideoWriter_fourcc(*"mp4v"), 10.0, (w, h))
+                                         cv2.VideoWriter.fourcc(*"mp4v"), 10.0, (w, h))
             writer.write(frame)
 
     try:
@@ -135,8 +135,8 @@ def run_trace(settings: Any, out: Path, *, map_id: str = "p7_mixed_test_003", se
                 "SELECT id, map_id, status, started_at, ended_at, notes "
                 "FROM simulation_sessions")],
             "runs": [dict(r) for r in db.query_all("SELECT * FROM simulation_runs")],
-            "observations": db.query_one(
-                "SELECT COUNT(*) AS n FROM chest_observations")["n"],
+            "observations": int(db.execute(
+                "SELECT COUNT(*) AS n FROM chest_observations").fetchone()[0]),
         }
     finally:
         db.close()
