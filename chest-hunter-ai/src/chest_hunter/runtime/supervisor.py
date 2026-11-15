@@ -201,7 +201,9 @@ class Supervisor:
     def attach(self, controller: Any) -> None:
         self.controller = controller
         agent = getattr(controller, "agent", controller)
-        if not isinstance(agent, VisualAgent3D):
+        needed = ("supervisor_replan", "supervisor_abandon_target", "supervisor_relocalise",
+                  "supervisor_redirect", "supervisor_unstick", "world", "metrics")
+        if not all(hasattr(agent, n) for n in needed):
             raise TypeError("the supervisor watches the visual agent (hybrid / visual-nav "
                             "modes), not the oracle baseline")
         self.agent = agent
@@ -334,6 +336,7 @@ class Supervisor:
         if self._invalid_streak >= self.config.max_invalid_observations:
             self._queue("invalid_observations", f"{self._invalid_streak} invalid steps in a row",
                         {})
+            self._invalid_streak = 0          # the next rung needs another full streak
         if drop:
             return dataclasses.replace(result, observation=None)
         return result

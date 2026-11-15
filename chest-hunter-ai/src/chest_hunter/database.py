@@ -295,8 +295,41 @@ _SCHEMA_V5: tuple[str, ...] = (
     """,
 )
 
+# Version 6 (Phase 6): one experience summary per 3D episode, so later planning and reports
+# can use recovery outcomes, interaction failures and exploration coverage, not only the
+# presence observations and route records. Additive.
+_SCHEMA_V6: tuple[str, ...] = (
+    """
+    CREATE TABLE episode_experience (
+        session_id           INTEGER PRIMARY KEY
+            REFERENCES simulation_sessions (id) ON DELETE CASCADE,
+        map_id               TEXT    NOT NULL CHECK (length(trim(map_id)) > 0),
+        partition_key        TEXT    NOT NULL DEFAULT '',
+        outcome              TEXT    NOT NULL,
+        simulated_seconds    REAL    NOT NULL CHECK (simulated_seconds >= 0),
+        spawn_points         INTEGER NOT NULL CHECK (spawn_points >= 0),
+        spawn_points_resolved INTEGER NOT NULL CHECK (spawn_points_resolved >= 0),
+        coverage             REAL    NOT NULL CHECK (coverage >= 0 AND coverage <= 1),
+        openings             INTEGER NOT NULL CHECK (openings >= 0),
+        interaction_attempts INTEGER NOT NULL CHECK (interaction_attempts >= 0),
+        failed_interactions  INTEGER NOT NULL CHECK (failed_interactions >= 0),
+        routes_started       INTEGER NOT NULL CHECK (routes_started >= 0),
+        navigation_failures  INTEGER NOT NULL CHECK (navigation_failures >= 0),
+        recoveries           INTEGER NOT NULL CHECK (recoveries >= 0),
+        recovery_json        TEXT    NOT NULL,
+        supervisor_json      TEXT,
+        created_at           TEXT    NOT NULL
+    )
+    """,
+    """
+    CREATE INDEX idx_episode_experience_partition
+        ON episode_experience (map_id, partition_key)
+    """,
+)
+
 MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
-    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3), (4, _SCHEMA_V4), (5, _SCHEMA_V5))
+    (1, _SCHEMA_V1), (2, _SCHEMA_V2), (3, _SCHEMA_V3), (4, _SCHEMA_V4), (5, _SCHEMA_V5),
+    (6, _SCHEMA_V6))
 """Ordered ``(version, statements)`` pairs. Append new versions; never edit old ones."""
 
 SCHEMA_VERSION: int = MIGRATIONS[-1][0]
@@ -308,6 +341,7 @@ EXPECTED_TABLES: tuple[str, ...] = (
     "simulation_runs",
     "spawn_estimates",
     "route_memory",
+    "episode_experience",
 )
 
 

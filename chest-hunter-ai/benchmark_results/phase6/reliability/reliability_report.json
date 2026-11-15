@@ -1,0 +1,30 @@
+{
+ "tolerance": 0.25,
+ "gate": 0.6,
+ "bins": 10,
+ "validation_samples": 4068,
+ "test_samples": 3326,
+ "phase_calibration_ece_test": 0.0158,
+ "approach_align_samples_test": 893,
+ "reliable_fraction_test": 0.8936,
+ "raw_as_reliability": {
+  "ece": 0.1336,
+  "brier": 0.1132
+ },
+ "calibrated": {
+  "ece": 0.0597,
+  "brier": 0.0926
+ },
+ "auc_raw_score_for_reliability": 0.559,
+ "gate_above": {
+  "share": 0.9082,
+  "reliable_fraction": 0.9038
+ },
+ "gate_below": {
+  "share": 0.0918,
+  "reliable_fraction": 0.7927
+ },
+ "model": "bc-1794693965",
+ "dataset": "synthetic_expert_v1",
+ "note": "fitted on validation episodes, evaluated on test episodes; the demonstrations are synthetic (scripted expert)"
+}

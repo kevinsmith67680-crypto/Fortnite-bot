@@ -160,6 +160,17 @@ def register(add: AddCommand) -> None:
     sub.add_argument("--model", metavar="DIR")
     sub.add_argument("--output", required=True, metavar="DIR")
 
+    sub = add("calibrate-policy", "Measure how well the learned policy's phase output predicts "
+                                  "reliable commands on held-out episodes and fit a reliability "
+                                  "calibrator (validation episodes; reported on test episodes).",
+              cmd_calibrate_policy)
+    sub.add_argument("--model", metavar="DIR")
+    sub.add_argument("--dataset", metavar="DIR", help="demonstrations with splits.json "
+                     "(default: learning.dataset_dir/synthetic_expert_v1)")
+    sub.add_argument("--tolerance", type=_positive_float, default=0.25,
+                     help="largest command error counted as reliable (default 0.25)")
+    sub.add_argument("--output", required=True, metavar="DIR")
+
     sub = add("benchmark-phase6", "Paired comparison of the Phase 4 baseline, the Phase 5 hybrid "
                                   "and the Phase 6 configurations.", cmd_benchmark_phase6)
     sub.add_argument("--episodes", type=_positive, default=100)
@@ -335,3 +346,29 @@ def cmd_benchmark_phase6(args: argparse.Namespace, ctx: Any) -> int:
     print(format_phase6_report(summary))
     print(f"Results written to {args.output_dir}")
     return 0 if not summary["errors"] else 1
+
+
+def cmd_calibrate_policy(args: argparse.Namespace, ctx: Any) -> int:
+    from chest_hunter.learning.dataset import DemonstrationDataset
+    from chest_hunter.learning.reliability import evaluate
+
+    settings = ctx.settings
+    policy = load_policy(ctx, args.model)
+    root = Path(args.dataset) if args.dataset else \
+        Path(settings.learning_path(settings.learning.dataset_dir)) / "synthetic_expert_v1"
+    splits = json.loads((root / "splits.json").read_text(encoding="utf-8"))["episodes"]
+    data = DemonstrationDataset(root, check_images=False)
+    validation, test = data.subset(splits["validation"]), data.subset(splits["test"])
+    print(f"Calibrating {policy.version} on {len(validation)} validation and {len(test)} test "
+          f"samples of {root.name} (synthetic demonstrations) ...")
+    calibrator, report = evaluate(policy, validation, test, tolerance=args.tolerance)
+    out = Path(args.output)
+    out.mkdir(parents=True, exist_ok=True)
+    calibrator.save(out / "reliability.json")
+    report.update({"model": policy.version, "dataset": root.name,
+                   "note": "fitted on validation episodes, evaluated on test episodes; the "
+                           "demonstrations are synthetic (scripted expert)"})
+    (out / "reliability_report.json").write_text(json.dumps(report, indent=1) + "\n",
+                                                  encoding="utf-8")
+    print(json.dumps(report, indent=1))
+    return 0

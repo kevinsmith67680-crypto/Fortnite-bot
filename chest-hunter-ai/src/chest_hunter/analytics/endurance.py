@@ -242,17 +242,17 @@ class EnduranceRunner:
             from chest_hunter.simulation3d.environment3d import EnvSettings
             from chest_hunter.unreal_bridge.mock_server import MockUnrealServer
 
-            c3 = self.settings.simulation_3d
             base = EnvSettings(**{**{f: getattr(EnvSettings(), f)
                                      for f in EnvSettings.__dataclass_fields__},
                                   **self._env_overrides()})
             if self.server is not None:
                 with contextlib.suppress(Exception):
                     self.server.stop()
+            # oracle=True only lets the *runner* read end-of-episode ground truth for scoring;
+            # the agent's AgentPort cannot reach the privileged commands.
             self.server = MockUnrealServer(port=0, oracle=True, evaluation=False,
                                            base_settings=base).start()
             port = int(self.server.port)
-            del c3
         else:
             port = br.port
         if self.client is not None:

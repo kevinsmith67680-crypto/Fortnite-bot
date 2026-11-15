@@ -114,10 +114,15 @@ class PolicySelector:
 
     def __init__(self, agent: VisualAgent3D, policy: LearnedPolicy | None, *,
                  mode: str = "deterministic", limits: SafetyLimits | None = None,
-                 require_validation: bool = True) -> None:
+                 require_validation: bool = True, reliability: Any = None,
+                 reliability_threshold: float = 0.6) -> None:
         self.agent = agent
         self.policy = policy
         self.limits = limits or SafetyLimits()
+        #: Phase 6 (opt-in): a fitted learning.reliability.ReliabilityCalibrator; the hybrid
+        #: gate then uses its calibrated reliability instead of the raw phase output.
+        self.reliability = reliability
+        self.reliability_threshold = reliability_threshold
         self.require_validation = require_validation
         self.stats = SelectorStats()
         self.action = ActionCommand()
@@ -215,7 +220,7 @@ class PolicySelector:
                 if out is not None and self._oscillating(out):
                     out = None
                 if out is not None:
-                    if out.phase_probability("approach", "align") >= self.limits.confidence:
+                    if self._confident(out):
                         learned = self._safe(out, allow_interact=False)
                         self.action.move_forward = learned.move_forward
                         self.action.move_right = learned.move_right
@@ -347,6 +352,12 @@ class PolicySelector:
         return None
 
     # -- Phase 6 reliability monitors -------------------------------------------------------------
+
+    def _confident(self, out: PolicyOutput) -> bool:
+        score = out.phase_probability("approach", "align")
+        if self.reliability is None:
+            return score >= self.limits.confidence             # Phase 5 rule
+        return float(self.reliability.predict(score)) >= self.reliability_threshold
 
     def _oscillating(self, out: PolicyOutput) -> bool:
         """Repeated sign changes of the learned yaw or strafe command (a policy that keeps

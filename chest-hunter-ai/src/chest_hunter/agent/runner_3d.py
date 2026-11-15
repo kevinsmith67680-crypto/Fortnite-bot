@@ -406,6 +406,20 @@ class Runner3D:
                             unreachable_targets=m.unreachable_targets,
                             abandoned_targets=m.abandoned_targets, rewards=m.rewards,
                             navigation_failures=m.navigation_failures)
+            agent_now = getattr(self.controller, "agent", self.controller)
+            if isinstance(agent_now, VisualAgent3D):
+                try:                                    # Phase 6 experience summary
+                    from chest_hunter.exploration.experience import record_episode
+
+                    record_episode(self.db, session_id=session.id, map_id=self.map_id,
+                                   partition_key=(self.partition or {}).get("key", ""),
+                                   outcome=outcome if outcome in ("completed", "tick_limit",
+                                                                  "failed", "cancelled")
+                                   else "failed", sim_seconds=final_time, agent=agent_now,
+                                   supervisor=self.supervisor.summary()
+                                   if self.supervisor is not None else None)
+                except Exception as exc:             # never mask the episode's own outcome
+                    logger.warning("episode experience not recorded: %s", exc)
             if self.external_client is None:
                 client.close()
                 if self.server is not None:
