@@ -18,6 +18,7 @@ import time
 from typing import Any
 
 from chest_hunter.simulation3d.environment3d import Environment3D, EnvSettings
+from chest_hunter.simulation3d.generator7 import GENERATOR_VERSION
 from chest_hunter.unreal_bridge.protocol import (
     PROTOCOL_NAME,
     PROTOCOL_VERSION,
@@ -35,6 +36,8 @@ from chest_hunter.unreal_bridge.protocol import (
 logger = logging.getLogger(__name__)
 
 SERVER_NAME = "chest-hunter-reference-server"
+#: version of the simulated environment (reference arena + Phase 7 map generator)
+ENVIRONMENT_VERSION = f"reference-arena-7/{GENERATOR_VERSION}"
 #: Errors after which the byte stream cannot be trusted: the connection is closed.
 FATAL_CODES = frozenset({"bad_magic", "version_mismatch", "too_large", "bad_json", "bad_header"})
 
@@ -86,6 +89,9 @@ class BridgeSession:
             request, server=SERVER_NAME, engine="python-reference-arena",
             protocol=PROTOCOL_NAME, version=PROTOCOL_VERSION,
             maps=["research_arena_3d"],
+            environment_version=ENVIRONMENT_VERSION,
+            map_generators={"phase5_procedural": "proc_<split>_NNN",
+                            "phase7": f"p7_<category>_<split>_NNN (generator {GENERATOR_VERSION})"},
             observation_sizes=[list(s) for s in SUPPORTED_SIZES],
             features={"navigation_service": True, "navigation_raycast": True,
                       "oracle": self.oracle_enabled,

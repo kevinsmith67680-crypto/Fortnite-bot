@@ -283,6 +283,21 @@ class EnduranceSettings:
 
 
 @dataclass(frozen=True)
+class ExplorationSettings:
+    """Phase 7: active exploration, its persistent memory, and the benchmark defaults."""
+
+    mode: str = "spawn_points"              # spawn_points (Phase 4-6) | active (Phase 7)
+    strategy: str = "memory"                # memory (trained bandit's best) or a strategy name
+    memory_path: str = "training/exploration_memory_v1.json"
+    approach_confidence: float = 0.55
+    approach_hits: int = 2
+    inspect_confidence: float = 0.35
+    benchmark_max_ticks: int = 6000
+    benchmark_observation_width: int = 320
+    benchmark_observation_height: int = 180
+
+
+@dataclass(frozen=True)
 class LoggingSettings:
     level: str
 
@@ -309,10 +324,16 @@ class Settings:
     planning: PlanningSettings = field(default_factory=PlanningSettings)
     performance: PerformanceSettings = field(default_factory=PerformanceSettings)
     endurance: EnduranceSettings = field(default_factory=EnduranceSettings)
+    exploration: ExplorationSettings = field(default_factory=ExplorationSettings)
+    #: version of the configuration file format (Phase 7 deployment; 0 = unversioned file)
+    config_version: int = 0
 
     def template_dir(self) -> Path:
         """Absolute directory of the perception templates."""
         return _resolve_path(self.vision.template_dir, self.base_dir)
+
+    def exploration_memory_path(self) -> Path:
+        return _resolve_path(self.exploration.memory_path, self.base_dir)
 
     def learning_path(self, value: str) -> Path:
         """Resolve a ``learning`` path setting against the project directory."""
@@ -584,6 +605,20 @@ _ENDURANCE_FIELDS: Final = (
     ("reset_timeout_seconds", 30.0, _float_range(0.5, 3600.0)),
 )
 
+_EXPLORATION_FIELDS: Final = (
+    ("mode", "spawn_points", _choice("spawn_points", "active")),
+    ("strategy", "memory", _choice("memory", "nearest_frontier", "max_information",
+                                   "chest_prior", "cluster", "risk_adjusted")),
+    ("memory_path", "training/exploration_memory_v1.json", _non_empty_string),
+    ("approach_confidence", 0.55, _float_range(0.0, 1.0)),
+    ("approach_hits", 2, _int_range(1, 20)),
+    ("inspect_confidence", 0.35, _float_range(0.0, 1.0)),
+    ("benchmark_max_ticks", 6000, _int_range(300, 1_000_000)),
+    ("benchmark_observation_width", 320, _int_range(160, 1920)),
+    ("benchmark_observation_height", 180, _int_range(90, 1080)),
+)
+CONFIG_VERSION: Final = 7
+
 SUPPORTED_FRAME_SIZES: Final = ((320, 180), (480, 270), (640, 360), (800, 450))
 
 FIELD_UNITS: Final[dict[str, str]] = {
@@ -719,6 +754,13 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
     planning_section = _section(data, "planning", required=False)
     performance_section = _section(data, "performance", required=False)
     endurance_section = _section(data, "endurance", required=False)
+    exploration_section = _section(data, "exploration", required=False)
+    config_version = data.get("config_version", 0)
+    if not isinstance(config_version, int) or isinstance(config_version, bool) \
+            or not 0 <= config_version <= CONFIG_VERSION:
+        raise ValidationError(f"'config_version' must be an integer from 0 to {CONFIG_VERSION} "
+                              f"(this program reads configuration versions up to "
+                              f"{CONFIG_VERSION}); got {config_version!r}.")
 
     db_values = _parse_fields("database", database, (("path", _REQUIRED, lambda n, v: v),))
     db_path = db_values["path"]
@@ -797,7 +839,21 @@ def _parse_settings(data: Any, *, config_path: Path, base_dir: Path) -> Settings
                                                         _PERFORMANCE_FIELDS)),
         endurance=EnduranceSettings(**_parse_fields("endurance", endurance_section,
                                                     _ENDURANCE_FIELDS)),
+        exploration=_exploration(exploration_section),
+        config_version=config_version,
     )
+
+
+def _exploration(section: dict[str, Any]) -> ExplorationSettings:
+    values = _parse_fields("exploration", section, _EXPLORATION_FIELDS)
+    if values["inspect_confidence"] > values["approach_confidence"]:
+        raise ValidationError("'exploration': inspect_confidence must not exceed "
+                              "approach_confidence.")
+    if (values["benchmark_observation_width"], values["benchmark_observation_height"]) \
+            not in SUPPORTED_FRAME_SIZES:
+        raise ValidationError("'exploration': the benchmark observation size must be one of "
+                              + ", ".join(f"{w}x{h}" for w, h in SUPPORTED_FRAME_SIZES) + ".")
+    return ExplorationSettings(**values)
 
 
 def _resolve_path(value: str | os.PathLike[str], base_dir: Path) -> Path:

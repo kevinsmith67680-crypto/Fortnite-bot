@@ -112,15 +112,23 @@ def register(add: AddCommand) -> None:
               cmd_benchmark_generalization)
     sub.add_argument("--familiar", type=_non_negative, default=4)
     sub.add_argument("--unseen", type=_non_negative, default=4)
-    sub.add_argument("--episodes", type=_positive, default=6, help="episodes per map")
+    sub.add_argument("--episodes", type=_positive,
+                     help="Phase 5: episodes per map (default 6); with --held-out-maps: "
+                          "episodes per evaluation category and configuration (default 100)")
     sub.add_argument("--strategies", default="deterministic,learned,hybrid,hybrid_adaptive")
-    sub.add_argument("--seed", type=_non_negative, default=5000)
+    sub.add_argument("--seed", type=_non_negative,
+                     help="default 5000 (Phase 5) or 42 (--held-out-maps)")
     sub.add_argument("--model", metavar="DIR")
     sub.add_argument("--experience-db", metavar="PATH")
     sub.add_argument("--workers", type=_positive, default=1)
-    sub.add_argument("--max-ticks", type=_positive, default=18000)
-    sub.add_argument("--output-dir", metavar="DIR",
-                     help="default benchmark_results/phase5/generalization")
+    sub.add_argument("--max-ticks", type=_positive,
+                     help="default 18000 (Phase 5) or exploration.benchmark_max_ticks")
+    sub.add_argument("--output-dir", "--output", dest="output_dir", metavar="DIR",
+                     help="default benchmark_results/phase5/generalization, or "
+                          "benchmark_results/phase7 with --held-out-maps")
+    from chest_hunter.cli_phase7 import add_generalization_options
+
+    add_generalization_options(sub)
 
     sub = add("generate-maps", "Generate procedural 3D maps (training or held-out test split), "
                                "add their spawn points to the database and optionally export "
@@ -383,16 +391,21 @@ def cmd_benchmark_policies(args: argparse.Namespace, ctx: Any) -> int:
 
 
 def cmd_benchmark_generalization(args: argparse.Namespace, ctx: Any) -> int:
+    if getattr(args, "held_out_maps", False):
+        from chest_hunter.cli_phase7 import cmd_generalization_p7
+
+        return cmd_generalization_p7(args, ctx)
     from chest_hunter.analytics.generalization_benchmark import run_generalization_benchmark
     from chest_hunter.analytics.policy_comparison import format_report
 
     out = Path(args.output_dir) if args.output_dir else \
         ctx.settings.base_dir / "benchmark_results" / "phase5" / "generalization"
     summary = run_generalization_benchmark(
-        ctx.settings, familiar=args.familiar, unseen=args.unseen, episodes=args.episodes,
+        ctx.settings, familiar=args.familiar, unseen=args.unseen, episodes=args.episodes or 6,
         strategies=_strategies(args.strategies), model_dir=_model_dir(ctx, args.model),
         experience_db=_experience_db(ctx, args.experience_db), workers=args.workers,
-        max_ticks=args.max_ticks, output_dir=out, seed=args.seed, progress=print)
+        max_ticks=args.max_ticks or 18000, output_dir=out,
+        seed=5000 if args.seed is None else args.seed, progress=print)
     for group, result in summary["results"].items():
         print(f"\n{group} maps: {', '.join(summary['groups'][group])}")
         print(format_report(result))

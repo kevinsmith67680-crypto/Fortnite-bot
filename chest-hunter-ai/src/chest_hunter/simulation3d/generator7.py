@@ -9,7 +9,8 @@ Map ids: ``p7_<category>_<split>_<NNN>`` with an optional shift variant suffix
   narrow passages, heavy occlusion);
 * splits - ``train`` and ``test`` use disjoint seed ranges (:data:`SEED_BASE`). Held-out
   layouts are never generated from a training seed and vice versa;
-  :func:`assert_training_map` refuses test maps wherever data is collected for training;
+  :func:`assert_training_map` refuses test maps and every variant map (variants are
+  evaluation-only distribution shifts) wherever data is collected for training;
 * variants (distribution shifts used by the generalisation benchmark, applied on top of a
   base layout): ``obstacles`` (new obstacle arrangement, same buildings), ``light`` (lighting
   outside the training range), ``appearance`` (chest colour/brightness and surface textures
@@ -121,7 +122,11 @@ def parse(map_id_: str) -> MapSpec:
 
 
 def is_held_out(map_id_: str) -> bool:
-    return is_generated(map_id_) and parse(map_id_).split == "test"
+    """Test layouts and every shift variant (also of a training layout) are evaluation-only."""
+    if not is_generated(map_id_):
+        return False
+    spec = parse(map_id_)
+    return spec.split == "test" or spec.variant is not None
 
 
 def assert_training_map(map_id_: str) -> None:

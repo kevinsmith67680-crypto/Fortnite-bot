@@ -63,8 +63,18 @@ class RecoveryLog:
         self.pending.setdefault(target_key, []).append(cls)
 
     def resolve(self, target_key: object) -> None:
-        for cls in self.pending.pop(target_key, []):
-            self.resolved[cls] += 1
+        """Count the pending recoveries of a target as resolved. Keys are ``(kind,
+        location_id, track_id)`` (or ``("reach", key)``); a target with a spawn point is
+        matched by its location, since its track id changes whenever the chest is
+        re-acquired after being lost."""
+        keys = [target_key]
+        loc = _location(target_key)
+        if loc is not None:
+            keys += [k for k in self.pending if k != target_key and _location(k) == loc
+                     and _is_reach(k) == _is_reach(target_key)]
+        for key in keys:
+            for cls in self.pending.pop(key, []):
+                self.resolved[cls] += 1
 
     def can_use(self, cls: str) -> bool:
         return self.smart_used[cls] < CLASS_BUDGET[cls]
@@ -76,3 +86,16 @@ class RecoveryLog:
         return {cls: {"attempts": self.attempts[cls], "resolved": self.resolved[cls],
                       "smart_strategy_used": self.smart_used[cls]}
                 for cls in FAILURE_CLASSES if self.attempts[cls] or self.smart_used[cls]}
+
+
+def _is_reach(key: object) -> bool:
+    return isinstance(key, tuple) and len(key) == 2 and key[0] == "reach"
+
+
+def _location(key: object) -> object:
+    if _is_reach(key):
+        assert isinstance(key, tuple)
+        key = key[1]
+    if isinstance(key, tuple) and len(key) == 3:
+        return key[1]
+    return None

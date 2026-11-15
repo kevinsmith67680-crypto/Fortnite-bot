@@ -583,8 +583,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             # first estimate may have come from far away), so later sightings link to it
             prior.x, prior.y, prior.z = self.goal.position
         self.metrics.chests_opened += 1
-        if self.goal is not None:
-            self.metrics.recovery_log.resolve(self._target_key(self.goal))
+        # every recovery on the way to this spawn point (whatever track or goal it had then)
+        self.metrics.recovery_log.resolve((None, location_id, None))
+        self.metrics.recovery_log.resolve(("reach", (None, location_id, None)))
         if self.planner is not None:
             self.planner.opened(location_id)
         self._record(location_id, present=True, opened=True, seconds=seconds, reward=reward)

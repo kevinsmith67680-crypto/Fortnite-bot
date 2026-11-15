@@ -250,6 +250,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="database file, overriding database.path from the configuration",
     )
     common.add_argument(
+        "--log-format",
+        choices=("text", "json"),
+        default=argparse.SUPPRESS,
+        help="log line format on stderr: text (default) or json (one object per line)",
+    )
+    common.add_argument(
         "--log-level",
         type=_log_level,
         metavar="LEVEL",
@@ -488,9 +494,12 @@ def build_parser() -> argparse.ArgumentParser:
     from chest_hunter.cli_learning import add_simulate_options, register
     from chest_hunter.cli_phase6 import add_phase6_simulate_options
     from chest_hunter.cli_phase6 import register as register_phase6
+    from chest_hunter.cli_phase7 import add_phase7_simulate_options
+    from chest_hunter.cli_phase7 import register as register_phase7
 
     add_simulate_options(sub)
     add_phase6_simulate_options(sub)
+    add_phase7_simulate_options(sub)
 
     sub = add("benchmark-3d", "Oracle vs hybrid visual vs visual-navigation on paired 3D episodes "
                               "(reference arena).", _cmd_benchmark_3d)
@@ -517,6 +526,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     register(add)                                        # Phase 5 learning commands
     register_phase6(add)                                 # Phase 6 reliability commands
+    register_phase7(add)                                 # Phase 7 generalisation commands
     return parser
 
 
@@ -929,6 +939,9 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
     mode = {"visual": "hybrid", "hybrid": "hybrid", "visual-nav": "visual_nav",
             "oracle": "oracle"}[args.agent]
     seed = settings.simulation.default_seed if args.seed is None else args.seed
+    from chest_hunter.cli_phase7 import resolve_map
+
+    args.map = resolve_map(args, seed)                    # --map procedural (Phase 7)
     backend = args.backend or c3.backend
     on_decision = None
     dashboard = None
@@ -944,6 +957,9 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
         from chest_hunter.cli_phase6 import phase6_extras
 
         extras = phase6_extras(ctx, args, args.map or c3.default_map, extras)
+        from chest_hunter.cli_phase7 import phase7_extras
+
+        extras = phase7_extras(ctx, args, args.map or c3.default_map, extras)
     runner = Runner3D.from_settings(
         ctx.db, settings, mode=mode, seed=seed, episode=args.episode, backend=backend,
         host=args.host, port=args.port, width=args.observation_width,
@@ -1011,6 +1027,9 @@ def _cmd_simulate_3d(args: argparse.Namespace, ctx: CommandContext) -> int:
         rows.append(("Planner", f"{runner.planner.config.strategy}: {ps['decisions']} "
                                 f"decision(s), {ps['latency_mean_ms']} ms mean"))
     print(format_key_values(rows))
+    from chest_hunter.cli_phase7 import print_phase7_result
+
+    print_phase7_result(runner, result)
     if runner.profiler is not None:
         from chest_hunter.runtime.profiler import format_report
 
@@ -1170,7 +1189,9 @@ def _load_settings(args: argparse.Namespace) -> Settings:
 #: Commands that never read or write the database (no existing database is required).
 _COMMANDS_WITHOUT_DATABASE = frozenset({"init-db", "export-arena-3d", "record-demo",
                                         "train-policy", "export-policy", "evaluate-policy",
-                                        "benchmark-policies", "benchmark-generalization"})
+                                        "benchmark-policies", "benchmark-generalization",
+                                        "benchmark-robustness", "benchmark-exploration",
+                                        "train-exploration", "check-runtime"})
 
 
 def _require_database(db: DatabaseManager) -> None:
@@ -1183,6 +1204,22 @@ def _require_database(db: DatabaseManager) -> None:
         db.initialize()  # applies pending migrations, or refuses a newer schema
 
 
+def _install_termination_handler() -> None:
+    """Graceful shutdown: SIGTERM is handled like Ctrl+C (KeyboardInterrupt), so the running
+    episode stops, its ``finally`` blocks close the bridge connection, stop the reference
+    server and flush the recorder, and the process exits with EXIT_INTERRUPTED."""
+    import signal
+    import threading
+
+    if threading.current_thread() is not threading.main_thread():
+        return
+
+    def handler(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt(f"signal {signum}")
+
+    signal.signal(signal.SIGTERM, handler)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI and return a process exit code (never raises SystemExit)."""
     parser = build_parser()
@@ -1193,7 +1230,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         settings = _load_settings(args)
-        configure_logging(getattr(args, "log_level", None) or settings.logging.level)
+        configure_logging(getattr(args, "log_level", None) or settings.logging.level,
+                          log_format=getattr(args, "log_format", "text"))
+        _install_termination_handler()
         db = DatabaseManager(settings.database.path)
         try:
             if args.command not in _COMMANDS_WITHOUT_DATABASE:

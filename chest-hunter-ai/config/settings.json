@@ -1,4 +1,5 @@
 {
+  "config_version": 7,
   "database": {
     "path": "data/chest_locations.db"
   },
@@ -141,5 +142,16 @@
     "save_checkpoint_every": 10,
     "max_reset_attempts": 3,
     "reset_timeout_seconds": 30
+  },
+  "exploration": {
+    "mode": "spawn_points",
+    "strategy": "memory",
+    "memory_path": "training/exploration_memory_v1.json",
+    "approach_confidence": 0.55,
+    "approach_hits": 2,
+    "inspect_confidence": 0.35,
+    "benchmark_max_ticks": 6000,
+    "benchmark_observation_width": 320,
+    "benchmark_observation_height": 180
   }
 }
