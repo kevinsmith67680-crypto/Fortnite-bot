@@ -546,9 +546,14 @@ The Python agent and the Unreal runtime should be benchmarked separately.
   benchmark episodes, because those run in parallel. Online adaptation is measured in the
   generalisation benchmark.
 * **Credited by notification.** With smart recovery, an opening the agent was notified
-  about but could not see is credited after two look-backs. Such openings are counted
-  separately (`credited_by_notification`), and the benchmark checks every recorded opening
-  against ground truth.
+  about but could not see is credited after two look-backs.
+  * This corrects the agent's own count. It does not open more chests.
+  * In the arena benchmark it accounts for all of deterministic_adaptive's +6.4 % gain in
+    agent-counted throughput. Against ground truth the change is −0.1 % (not
+    significant).
+  * Such openings are counted separately (`credited_by_notification`). The benchmark
+    checks every recorded opening against ground truth, and none of the 500 episodes
+    counted an opening that did not happen.
 * **Procedural maps** have single-storey buildings, with elevation coming from plateaus. True
   spawn probabilities are independent uniform draws, so there is no spatial correlation
   for the planner to exploit.
