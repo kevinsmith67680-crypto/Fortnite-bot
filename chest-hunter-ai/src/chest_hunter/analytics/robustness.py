@@ -129,7 +129,8 @@ def run_robustness_benchmark(
     summary.update(_meta(settings, setup=setup, description=PHASE7_SETUPS[setup].description,
                          kinds=list(kinds), episodes_requested=episodes, seed=seed,
                          evaluation_seed=evaluation_seed(seed), max_ticks=max_ticks,
-                         observation=[width, height], workers=workers, baseline=baseline,
+                         observation=[width, height], workers=workers,
+                         paired_baselines=baseline,
                          wall_seconds=round(time.perf_counter() - started, 1), errors=errors))
     if output_dir is not None:
         write_outputs(rows, summary, Path(output_dir), format_robustness_report(summary))

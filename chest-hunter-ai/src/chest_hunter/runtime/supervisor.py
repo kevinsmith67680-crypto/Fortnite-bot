@@ -66,6 +66,9 @@ S = Agent3DState
 #: no-progress ladder (the backstop for everything else), an invalid-observation streak and
 #: transitions the state table refuses end the episode; the other incidents get bounded help
 #: and are left to the agent's own bounded mechanisms (and to the no-progress backstop).
+#: newly seen cells (2 m) that count as exploration progress for the loop detector
+EXPLORATION_PROGRESS_CELLS = 12
+
 LADDERS: Final[dict[str, tuple[str, ...]]] = {
     "state_timeout": ("replan", "abandon_target", "unstick", "relocalise", "redirect"),
     "stationary": ("replan", "unstick", "abandon_target", "relocalise",
@@ -180,6 +183,7 @@ class Supervisor:
         self._last_now = 0.0
         self._last_progress = 0.0
         self._progress_marks: tuple[int, ...] = (0, 0, 0, 0, 0)
+        self._covered_at_loop_clear = 0
         self._trail: deque[tuple[float, tuple[float, float, float], bool]] = deque(maxlen=400)
         self._goal_plans: Counter[int] = Counter()
         self._interaction_failures: Counter[int] = Counter()
@@ -402,6 +406,13 @@ class Supervisor:
             else:
                 self._last_progress = now
             self._progress_marks = marks
+        if covered - self._covered_at_loop_clear >= EXPLORATION_PROGRESS_CELLS:
+            # Exploring new ground is progress: the frontier -> scan -> frontier cycle of an
+            # exploring agent must not accumulate into a "loop" (Phase 8 audit F17: 4.9 false
+            # loop detections and 3.8 interventions per fault-free episode, and a 600 s
+            # episode aborted on the intervention budget).
+            self.loops.progress()
+            self._covered_at_loop_clear = covered
 
     def _mark_progress(self, why: str) -> None:
         agent = self.agent

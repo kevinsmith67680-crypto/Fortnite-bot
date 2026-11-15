@@ -86,6 +86,43 @@ class DefectRegressions(unittest.TestCase):
                 db.close()
 
 
+    def test_f17_exploration_progress_clears_the_loop_window(self) -> None:
+        # p7_indoor_test_007, evaluation seed, episode 29: 11 false "transition loop"
+        # detections and 6 interventions in 150 fault-free seconds before the fix.
+        import json
+
+        from chest_hunter.analytics.phase7_benchmark import P7Job, evaluation_seed, run_p7_job
+
+        row = run_p7_job(P7Job("phase7_active_deterministic", "baseline", "indoor",
+                               "p7_indoor_test_007", evaluation_seed(42), 29,
+                               str(ROOT / "config" / "settings.json"), None, None, 4500, 320,
+                               180, evaluate=False))
+        loops = json.loads(row["supervisor_detections"] or "{}").get("transition_loop", 0)
+        self.assertLessEqual(loops, 5, row["supervisor_detections"])
+        self.assertNotEqual(row["outcome"], "failed")
+
+    def test_f17_loop_window_cleared_by_new_coverage(self) -> None:
+        from types import SimpleNamespace
+
+        from chest_hunter.runtime.supervisor import (
+            EXPLORATION_PROGRESS_CELLS,
+            Supervisor,
+            SupervisorConfig,
+        )
+
+        sup = Supervisor(SupervisorConfig())
+        explorer = SimpleNamespace(map=SimpleNamespace(seen_count=0))
+        sup.agent = SimpleNamespace(  # type: ignore[assignment]
+            metrics=SimpleNamespace(chests_opened=0, targets_reached=0), world=SimpleNamespace(
+                priors={}), explorer=explorer, _known_targets=set(), now=0.0)
+        for state in ("NAVIGATING", "SCANNING") * 3:
+            sup.loops.observe(state)
+        self.assertIsNotNone(sup.loops.detect())
+        explorer.map.seen_count = EXPLORATION_PROGRESS_CELLS
+        sup._check_progress(1.0)
+        self.assertIsNone(sup.loops.detect())
+
+
 class AuditTools(unittest.TestCase):
     def test_static_scan_reports_with_evidence(self) -> None:
         from chest_hunter.audit.static_scan import scan
