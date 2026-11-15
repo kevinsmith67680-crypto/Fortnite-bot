@@ -1363,7 +1363,11 @@ from the `learning` configuration section (`deterministic`).
   see 16.5). The re-run played deterministic, hybrid_adaptive and deterministic_adaptive
   on the same 100 episodes (300 episodes, no errors, 3,907 s wall time). Its deterministic
   episodes matched the first run exactly, in every non-timing field of all 100 rows, so
-  the learned and hybrid rows from the first run remain paired with the same baseline.
+  the hybrid row from the first run remains paired with the same baseline.
+* **The learned rows come from a second re-run** after an opening-bookkeeping fix
+  (commit `7675196`; see 16.6). It played learned on the same 100 episodes (no errors,
+  2,990 s wall time). The changed code runs in learned mode only, and the deterministic
+  episodes in the matching generalisation re-run were identical to the first run.
 
 **Strategies:**
 
@@ -1381,7 +1385,7 @@ to the agent.
 | Strategy | Mean /min | Median | SD | 95 % CI | Paired Δ vs deterministic [95 % CI] | % change | Better / worse / tied |
 |---|---|---|---|---|---|---|---|
 | deterministic | **4.403** | 4.385 | 0.559 | [4.292, 4.514] | baseline | - | - |
-| learned | 0.844 | 0.800 | 0.137 | [0.817, 0.871] | −3.559 [−3.666, −3.452] | −80.8 % | 0 / 100 / 0 |
+| learned | 0.826 | 0.800 | 0.148 | [0.797, 0.855] | −3.577 [−3.683, −3.471] | −81.2 % | 0 / 100 / 0 |
 | hybrid | 3.350 | 3.359 | 0.532 | [3.245, 3.456] | −1.053 [−1.170, −0.935] | −23.9 % | 3 / 97 / 0 |
 | hybrid_adaptive | 3.281 | 3.257 | 0.611 | [3.160, 3.403] | −1.122 [−1.259, −0.984] | −25.5 % | 3 / 97 / 0 |
 | deterministic_adaptive | 4.388 | 4.347 | 0.485 | [4.292, 4.485] | −0.015 [−0.107, +0.078] (not significant) | −0.3 % | 53 / 47 / 0 |
@@ -1389,7 +1393,7 @@ to the agent.
 | Strategy | Agent-counted /min | Under- / over-counted (total) | % of available chests opened | Chests found | Spawn points resolved | Recovery attempts / ep | Simulated s / ep | Model share of decisions |
 |---|---|---|---|---|---|---|---|---|
 | deterministic | 4.133 | 126 / 0 | 85.9 % | 94.3 % | 100 % | 11.7 | 279.0 | 0 |
-| learned | 0.844 | 0 / 0 | 35.7 % | 55.9 % | 43.5 % | 10.6 | 600.0 (all at the limit) | 0.878 |
+| learned | 0.826 | 0 / 0 | 34.9 % | 56.2 % | 43.2 % | 10.8 | 600.0 (all at the limit) | 0.878 |
 | hybrid | 3.183 | 97 / 0 | 79.2 % | 94.1 % | 99.4 % | 25.5 | 342.9 | 0.248 |
 | hybrid_adaptive | 3.281 | 0 / 0 | 79.5 % | 93.3 % | 98.9 % | 25.5 | 353.1 | 0.216 |
 | deterministic_adaptive | 4.388 | 0 / 0 | 86.7 % | 93.6 % | 100 % | 10.1 | 282.0 | 0 |
@@ -1399,11 +1403,13 @@ to the agent.
 * **The deterministic controller remains the best strategy and stays the default.**
 * **The learned policy opened 81 % fewer chests per minute.**
   * All 100 episodes ran to the 600 s limit.
-  * It found 56 % of the available chests and resolved 44 % of the spawn points.
+  * It found 56 % of the available chests and resolved 43 % of the spawn points.
   * Every episode used all 25 stuck handovers to the deterministic controller.
   * Likely causes: the policy sees a single frame and has no memory or route plan, so it
     cannot head for unexplored spawn points. Its yaw prediction is worse than a constant.
     Small errors lead to states the expert never visited, where it has no training data.
+  * The bookkeeping fix did not change this: against the first run the change was
+    −0.018 /min [−0.052, +0.016] (−2.1 %, not significant).
 * **Hybrid control cost 23.9 %** (worse in 97 of 100 episodes).
   * It opened 1.6 fewer chests per episode (−7.8 %) and took 64 s longer (+22.9 %).
   * Its recovery attempts doubled. Over the 100 episodes, camera-alignment recoveries rose
@@ -1423,20 +1429,23 @@ to the agent.
   * The recovery fix barely changed the arena results: −0.009 /min (deterministic_adaptive)
     and −0.015 /min (hybrid_adaptive) against the first run, neither significant. The
     loop it fixes was found on a procedural map (16.5).
-* **No over-counting.** In all 800 arena episodes of both runs, every opening the agent
-  recorded was a real opening.
-* **Learned inference under benchmark load:** 0.89 ms mean and 1.15 ms p95 per
-  observation (averages of the per-episode values). In the 100 learned episodes, two
-  inferences exceeded the 20 ms limit and were discarded.
+* **No over-counting.** In all 900 arena episodes of the three runs, no episode counted
+  more openings than it really made. The check compares counts per episode, not which
+  spawn point was credited (16.6).
+* **Learned inference under benchmark load:** 0.89 ms mean and 1.16 ms p95 per
+  observation (averages of the per-episode values). In the 100 learned episodes, one
+  inference exceeded the 20 ms limit and was discarded (two in the first run).
 * **Speed:** one worker simulated 5–6× faster than real time on one core (45 CPU-s per
   279 simulated s for deterministic, 117 CPU-s per 600 s for learned). Perception
-  took about 6.2 ms per analysed frame. Peak memory was 140 MiB per worker.
+  took about 6.2 ms per analysed frame. Peak memory was at most 143 MiB per worker.
 
 Per-episode rows, the full summaries and the reports are in
 [`benchmark_results/phase5/policies`](benchmark_results/phase5/policies) (first run, all five
 strategies) and
 [`benchmark_results/phase5/policies_recovery_fix`](benchmark_results/phase5/policies_recovery_fix)
-(re-run after the fix).
+(re-run after the recovery fix) and
+[`benchmark_results/phase5/policies_learned_fix`](benchmark_results/phase5/policies_learned_fix)
+(learned, re-run after the bookkeeping fix).
 
 ### 16.5 Generalisation: familiar vs unseen maps
 
@@ -1455,13 +1464,16 @@ strategies) and
 * **The hybrid_adaptive row comes from a re-run** after the recovery fix described under
   "Ablation" below. The re-run also repeated deterministic and hybrid. All 96 of their
   episodes matched the first run exactly, so the pairing holds.
+* **The learned row comes from a re-run** after the opening-bookkeeping fix (commit
+  `7675196`), which also repeated deterministic. All 48 deterministic episodes matched the
+  first run exactly. 96 episodes, no errors.
 
 Chests actually opened per simulated minute (ground truth):
 
 | Strategy | Familiar maps, mean [95 % CI] | Unseen maps, mean [95 % CI] | Unseen − familiar [95 % CI] | Paired change vs deterministic, familiar | … unseen |
 |---|---|---|---|---|---|
 | deterministic | **3.673** [3.292, 4.054] | **3.422** [2.964, 3.880] | −0.251 [−0.832, +0.329] (−6.8 %) | baseline | baseline |
-| learned | 0.646 [0.566, 0.726] | 0.671 [0.578, 0.764] | +0.025 [−0.094, +0.144] (+3.9 %) | −82.4 % | −80.4 % |
+| learned | 0.683 [0.602, 0.765] | 0.650 [0.563, 0.737] | −0.033 [−0.149, +0.083] (−4.9 %) | −81.4 % | −81.0 % |
 | hybrid | 3.063 [2.781, 3.345] | 2.686 [2.409, 2.963] | −0.377 [−0.762, +0.008] (−12.3 %) | −16.6 % | −21.5 % |
 | hybrid_adaptive | 3.011 [2.733, 3.289] | 2.710 [2.427, 2.993] | −0.301 [−0.687, +0.085] (−10.0 %) | −18.0 % | −20.8 % |
 
@@ -1480,7 +1492,7 @@ change against deterministic in the last two columns is significant at 95 %.
     [−0.514, +0.262].
   * hybrid_adaptive: from −18.0 % to −20.8 %. Difference-in-differences −0.050 /min
     [−0.434, +0.334].
-  * learned: unchanged (−82.4 % and −80.4 %).
+  * learned: unchanged (−81.4 % and −81.0 %).
   * With 24 episodes per group, only large generalisation gaps would show up.
 * **No measurable online improvement over six episodes.**
   * Throughput rises over the sequence for every strategy, including deterministic,
@@ -1491,9 +1503,10 @@ change against deterministic in the last two columns is significant at 95 %.
   * The paired difference shows no trend over the episode sequence: −0.027 /min per
     episode [−0.157, +0.103] on familiar maps, −0.012 [−0.146, +0.123] on unseen maps.
 * **The learned policy reached the 600 s limit in all 48 episodes.** The procedural maps
-  are smaller, so it opened a larger share of their chests (59 % and 69 %) than in the
-  arena, but still only 0.65 per minute.
-* **No over-counting.** No episode recorded an opening that did not happen.
+  are smaller, so it opened a larger share of their chests (62 % and 67 %) than in the
+  arena, but still only 0.65–0.68 per minute.
+* **No over-counting.** In none of the 624 procedural-map episodes over all runs did the
+  agent count more openings than it really made.
 
 **Ablation: adaptive planning without the learned policy.** To separate the planner from
 the model, deterministic and deterministic_adaptive played 12 episodes per map in
@@ -1528,7 +1541,9 @@ sequence (seed 5000, online updates after every episode), 48 per group:
 Results: [`benchmark_results/phase5/generalization`](benchmark_results/phase5/generalization)
 (first run, four strategies),
 [`generalization_recovery_fix`](benchmark_results/phase5/generalization_recovery_fix)
-(re-run after the fix) and
+(re-run after the recovery fix),
+[`generalization_learned_fix`](benchmark_results/phase5/generalization_learned_fix)
+(deterministic and learned, re-run after the bookkeeping fix) and
 [`generalization_adaptive`](benchmark_results/phase5/generalization_adaptive) (ablation,
 after the fix).
 
@@ -1561,8 +1576,8 @@ after the fix).
     agent-counted throughput. Against ground truth the change is −0.3 % (not
     significant).
   * Such openings are counted separately (`credited_by_notification`). The benchmark
-    checks every recorded opening against ground truth, and none of the 800 arena
-    episodes or 528 procedural-map episodes counted an opening that did not happen.
+    compares each episode's count with ground truth. In none of the 900 arena episodes
+    or 624 procedural-map episodes did the agent count more openings than it made.
 * **Procedural maps** have single-storey buildings, with elevation coming from plateaus. True
   spawn probabilities are independent uniform draws, so there is no spatial correlation
   for the planner to exploit.
@@ -1571,7 +1586,7 @@ after the fix).
 * **Training in NumPy** is practical only for small models like this one. A larger model
   would need a framework (PyTorch or similar) and probably a GPU.
 * **The learned and hybrid policies are worse than the controller they imitate.**
-  * Learned: −81 % in the arena, −82 % and −80 % on familiar and unseen procedural maps.
+  * Learned: −81 % in the arena, and −81 % on both familiar and unseen procedural maps.
   * Hybrid: −24 % in the arena, −17 % and −22 % on the procedural maps.
   * The deterministic controller therefore stays the default (`learning.policy:
     deterministic`).
@@ -1585,14 +1600,30 @@ after the fix).
 * **Small samples for generalisation.** There are 4 maps per group and 24 episodes per
   strategy and group (48 in the ablation). Unpaired familiar-vs-unseen gaps below roughly
   0.4 /min cannot be resolved, and the maps differ in how many chests they hold.
-* **Four problems were found by the benchmarks and fixed** before the numbers above
-  (details in `docs/phase5_learning_architecture.md`, section 13.2):
+* **Five problems were found by the benchmarks and tests, and fixed** before the numbers
+  above (details in `docs/phase5_learning_architecture.md`, section 13.2):
   * the discovery metric was read from the wrong object;
   * a stale phase after a handover over-counted openings in learned mode;
   * the agent's own count was used as the primary metric;
-  * the approach-time rescan loop.
+  * the approach-time rescan loop;
+  * learned-mode opening bookkeeping. Under heavy load a test episode counted one
+    opening at two spawn points (3 counted, 2 opened). The first fix (`052d79f`) left
+    openings during handovers to the deterministic agent, which then under-counted 103
+    real openings in a 148-episode re-run; those results were discarded. The final fix
+    (`7675196`) credits every learned-mode opening once, at the spawn point nearest the
+    agent, and ends any interaction the deterministic agent had started for it. Its
+    re-run counted exactly in all 148 learned episodes.
 
-  The non-adaptive strategies reproduced exactly across the re-runs.
+  The baseline reproduced exactly in every re-run.
+* **Learned results depend on machine load.** An inference over 20 ms is discarded, and
+  after 10 consecutive failures the model is disabled for the episode, so on a busy
+  machine the deterministic agent drives more of the learned episodes. The arena
+  benchmark had one timeout in 100 learned episodes.
+* **Spawn-point attribution is not checked against ground truth.** The benchmark compares
+  how many openings were counted, not where. A chest opened next to the agent's goal can
+  be credited at the wrong spawn point with a correct count. A check of 36
+  deterministic episodes (300 credited openings) found none; it was seen only in
+  learned-mode stress tests with injected inference failures.
 * **Simulated time only.** All throughputs are per simulated minute in the Python
   reference arena, on one CPU core per worker. They say nothing about speed in Unreal, in a
   real game, or with GPU rendering.
