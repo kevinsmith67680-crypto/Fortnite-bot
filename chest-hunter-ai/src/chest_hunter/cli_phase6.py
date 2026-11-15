@@ -189,6 +189,8 @@ def register(add: AddCommand) -> None:
     sub.add_argument("--workers", type=_positive, default=1)
     sub.add_argument("--max-ticks", type=_positive, default=18000)
     sub.add_argument("--output-dir", metavar="DIR", default="benchmark_results/phase6/benchmark")
+    sub.add_argument("--resume", action="store_true",
+                     help="continue an interrupted run in --output-dir (rows.partial.jsonl)")
 
 
 # -- commands --------------------------------------------------------------------------------------
@@ -380,7 +382,8 @@ def cmd_benchmark_phase6(args: argparse.Namespace, ctx: Any) -> int:
         ctx.settings, setups=setups, map_ids=tuple(args.map or ["research_arena_3d"]),
         seed=args.seed, episodes=args.episodes, model_dir=_model_dir(ctx, args.model),
         experience_db=exp if exp.exists() else None, workers=args.workers,
-        max_ticks=args.max_ticks, output_dir=args.output_dir, progress=print)
+        max_ticks=args.max_ticks, output_dir=args.output_dir, resume=args.resume,
+        progress=print)
     print(format_phase6_report(summary))
     print(f"Results written to {args.output_dir}")
     return 0 if not summary["errors"] else 1

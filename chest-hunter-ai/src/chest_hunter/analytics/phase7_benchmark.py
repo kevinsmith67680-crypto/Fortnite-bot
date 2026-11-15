@@ -353,35 +353,70 @@ FIELDS: Final = (
 )
 
 
+def _job_key(j: P7Job) -> str:
+    return "|".join(str(x) for x in (j.setup, j.category, j.map_id, j.seed, j.episode,
+                                       j.fault_kind, j.strategy_override))
+
+
 def run_jobs(jobs: Sequence[P7Job], *, workers: int = 1,
-             progress: Callable[[str], None] | None = None
+             progress: Callable[[str], None] | None = None, journal: Any = None
              ) -> tuple[list[dict[str, Any]], list[str]]:
-    rows: list[dict[str, Any]] = []
+    """Play the jobs (in a process pool when ``workers > 1``). With a
+    :class:`~chest_hunter.analytics.journal.RowJournal`, every finished row is written at
+    once and jobs already in the journal are skipped (``--resume``)."""
     errors: list[str] = []
+    fresh: list[dict[str, Any]] = []
+    pending = [j for j in jobs if journal is None or not journal.done(_job_key(j))]
+    if journal is not None and progress and len(pending) < len(jobs):
+        progress(f"  resuming: {len(jobs) - len(pending)} job(s) already done")
+    done = 0
 
     def label(j: P7Job) -> str:
         return f"{j.setup}/{j.category}/{j.map_id}/{j.episode}" + (
             f"/{j.fault_kind}" if j.fault_kind else "")
 
+    def record(job: P7Job, row: dict[str, Any] | None, exc: BaseException | None) -> None:
+        nonlocal done
+        done += 1
+        if row is not None:
+            row = row | {"fault_kind": job.fault_kind}
+            if journal is not None:
+                journal.add(_job_key(job), row)
+            else:
+                fresh.append(row)
+        if exc is not None:                                   # report, keep the others
+            errors.append(f"{label(job)}: {type(exc).__name__}: {exc}")
+        if progress:
+            progress(f"  ... job {done}/{len(pending)} ({label(job)})")
+
     if workers <= 1:
-        for k, job in enumerate(jobs):
+        for job in pending:
             try:
-                rows.append(run_p7_job(job) | {"fault_kind": job.fault_kind})
-            except Exception as exc:                       # report, keep the other results
-                errors.append(f"{label(job)}: {type(exc).__name__}: {exc}")
-            if progress:
-                progress(f"  ... job {k + 1}/{len(jobs)} ({label(job)})")
-        return rows, errors
-    with ProcessPoolExecutor(max_workers=workers) as pool:
-        futures = [pool.submit(run_p7_job, job) for job in jobs]
-        for k, fut in enumerate(futures):
-            try:
-                rows.append(fut.result() | {"fault_kind": jobs[k].fault_kind})
+                record(job, run_p7_job(job), None)
             except Exception as exc:
-                errors.append(f"{label(jobs[k])}: {type(exc).__name__}: {exc}")
-            if progress:
-                progress(f"  ... job {k + 1}/{len(jobs)} ({label(jobs[k])})")
-    return rows, errors
+                record(job, None, exc)
+    else:
+        from concurrent.futures import as_completed
+
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(run_p7_job, job): job for job in pending}
+            for fut in as_completed(futures):
+                try:
+                    record(futures[fut], fut.result(), None)
+                except Exception as exc:
+                    record(futures[fut], None, exc)
+    if journal is not None:
+        wanted = {_job_key(j) for j in jobs}
+        return [r for k, r in journal.rows.items() if k in wanted], errors
+    return fresh, errors
+
+
+def _journal(output_dir: str | Path | None, params: dict[str, Any], resume: bool) -> Any:
+    if output_dir is None:
+        return None
+    from chest_hunter.analytics.journal import RowJournal
+
+    return RowJournal(Path(output_dir) / "rows.partial.jsonl", params, resume=resume)
 
 
 # -- statistics ------------------------------------------------------------------------------
@@ -580,7 +615,7 @@ def run_generalization_benchmark(
         categories: Sequence[str] = tuple(EVAL_CATEGORIES), episodes: int = 100, seed: int = 42,
         model_dir: str | Path | None = None, memory_path: str | Path | None = None,
         workers: int = 1, max_ticks: int = 6000, width: int = 320, height: int = 180,
-        start_episode: int = 0, output_dir: str | Path | None = None,
+        start_episode: int = 0, output_dir: str | Path | None = None, resume: bool = False,
         progress: Callable[[str], None] | None = None) -> dict[str, Any]:
     _validate(setups, episodes, model_dir)
     bad = [c for c in categories if c not in EVAL_CATEGORIES]
@@ -594,7 +629,12 @@ def run_generalization_benchmark(
         memory_path=str(memory_path) if memory_path else None, max_ticks=max_ticks, width=width,
         height=height, start_episode=start_episode)
     started = time.perf_counter()
-    rows, errors = run_jobs(jobs, workers=workers, progress=progress)
+    journal = _journal(output_dir, {"kind": "generalization", "setups": list(setups),
+                                    "categories": list(categories), "episodes": episodes,
+                                    "start": start_episode, "seed": seed,
+                                    "max_ticks": max_ticks, "observation": [width, height],
+                                    "memory": str(memory_path)}, resume)
+    rows, errors = run_jobs(jobs, workers=workers, progress=progress, journal=journal)
     rows.sort(key=lambda r: (int(r["episode"]), list(categories).index(r["category"]),
                              list(setups).index(r["setup"])))
     summary = summarise_generalization(rows, setups, categories)
@@ -616,7 +656,7 @@ def run_strategy_comparison(
         categories: Sequence[str] = ("unseen_layout",), episodes: int = 20, seed: int = 42,
         model_dir: str | Path | None = None, memory_path: str | Path | None = None,
         workers: int = 1, max_ticks: int = 6000, width: int = 320, height: int = 180,
-        output_dir: str | Path | None = None,
+        output_dir: str | Path | None = None, resume: bool = False,
         progress: Callable[[str], None] | None = None) -> dict[str, Any]:
     """Fixed strategies against the bandit-selected one on the same held-out episodes."""
     _validate(setups, episodes, model_dir)
@@ -626,7 +666,11 @@ def run_strategy_comparison(
         memory_path=str(memory_path) if memory_path else None, max_ticks=max_ticks, width=width,
         height=height)
     started = time.perf_counter()
-    rows, errors = run_jobs(jobs, workers=workers, progress=progress)
+    journal = _journal(output_dir, {"kind": "strategies", "setups": list(setups),
+                                    "categories": list(categories), "episodes": episodes,
+                                    "seed": seed, "max_ticks": max_ticks,
+                                    "memory": str(memory_path)}, resume)
+    rows, errors = run_jobs(jobs, workers=workers, progress=progress, journal=journal)
     per = {s: summarise_group([r for r in rows if r["setup"] == s]) for s in setups}
     ref = "phase7_active" if "phase7_active" in setups else setups[0]
     paired = {s: {m: _paired_diff([r for r in rows if r["setup"] == s],
@@ -714,7 +758,7 @@ def run_acceptance(settings: Settings, *, episodes: int = 10, seed: int = 42,
                    map_id: str = ACCEPTANCE_MAP, model_dir: str | Path | None = None,
                    memory_path: str | Path | None = None, workers: int = 1,
                    max_ticks: int = 18000, width: int = 320, height: int = 180,
-                   output_dir: str | Path | None = None,
+                   output_dir: str | Path | None = None, resume: bool = False,
                    progress: Callable[[str], None] | None = None) -> dict[str, Any]:
     """Phase 7 end-to-end acceptance on one held-out map (unknown layout, rooms, outdoor
     areas, several elevations, unfamiliar lighting and start).
@@ -742,7 +786,10 @@ def run_acceptance(settings: Settings, *, episodes: int = 10, seed: int = 42,
                               fault_kind=kind, fault_seed=e))
     jobs.append(P7Job("phase7_active", "repeat", family, map_id, eval_seed, 0, *common))
     started = time.perf_counter()
-    rows, errors = run_jobs(jobs, workers=workers, progress=progress)
+    journal = _journal(output_dir, {"kind": "acceptance", "map": map_id, "episodes": episodes,
+                                    "seed": seed, "max_ticks": max_ticks,
+                                    "memory": str(memory_path)}, resume)
+    rows, errors = run_jobs(jobs, workers=workers, progress=progress, journal=journal)
     rows.sort(key=lambda r: (int(r["episode"]), r["setup"], r["category"]))
 
     def group(setup: str, cat: str) -> list[dict[str, Any]]:

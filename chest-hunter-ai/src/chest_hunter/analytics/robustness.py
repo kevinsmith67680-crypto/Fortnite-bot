@@ -26,6 +26,7 @@ from chest_hunter.analytics.phase7_benchmark import (
     PRIMARY_METRIC,
     P7Job,
     _ci,
+    _journal,
     _meta,
     _paired_diff,
     _validate,
@@ -106,7 +107,7 @@ def run_robustness_benchmark(
         kinds: Sequence[str] = FAULT_KINDS, episodes: int = 100, seed: int = 42,
         model_dir: str | Path | None = None, memory_path: str | Path | None = None,
         workers: int = 1, max_ticks: int = 4500, width: int = 320, height: int = 180,
-        baseline: bool = True, output_dir: str | Path | None = None,
+        baseline: bool = True, output_dir: str | Path | None = None, resume: bool = False,
         progress: Callable[[str], None] | None = None) -> dict[str, Any]:
     _validate((setup,), episodes, model_dir)
     bad = [k for k in kinds if k not in FAULT_KINDS]
@@ -119,7 +120,10 @@ def run_robustness_benchmark(
                                 max_ticks=max_ticks, width=width, height=height,
                                 baseline=baseline)
     started = time.perf_counter()
-    rows, errors = run_jobs(jobs, workers=workers, progress=progress)
+    journal = _journal(output_dir, {"kind": "robustness", "setup": setup, "kinds": list(kinds),
+                                    "episodes": episodes, "seed": seed, "max_ticks": max_ticks,
+                                    "baseline": baseline, "memory": str(memory_path)}, resume)
+    rows, errors = run_jobs(jobs, workers=workers, progress=progress, journal=journal)
     rows.sort(key=lambda r: (int(r["episode"]), r["category"]))
     summary = summarise_robustness(rows, kinds)
     summary.update(_meta(settings, setup=setup, description=PHASE7_SETUPS[setup].description,

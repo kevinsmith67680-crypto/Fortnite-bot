@@ -209,7 +209,7 @@ def run_phase6_benchmark(settings: Settings, *, setups: Sequence[str] = DEFAULT_
                          experience_db: str | Path | None = None, workers: int = 1,
                          max_ticks: int = 18000, width: int = 640, height: int = 360,
                          output_dir: str | Path | None = None,
-                         baseline: str = "phase4_deterministic",
+                         baseline: str = "phase4_deterministic", resume: bool = False,
                          progress: Callable[[str], None] | None = None) -> dict[str, Any]:
     unknown = [s for s in setups if s not in PHASE6_SETUPS]
     if unknown:
@@ -227,29 +227,55 @@ def run_phase6_benchmark(settings: Settings, *, setups: Sequence[str] = DEFAULT_
                             model_dir=str(model_dir) if model_dir else None,
                             max_ticks=max_ticks, width=width, height=height)
     started = time.perf_counter()
-    rows: list[dict[str, Any]] = []
     errors: list[str] = []
+    journal = None
+    if output_dir is not None:
+        from chest_hunter.analytics.journal import RowJournal
+
+        journal = RowJournal(Path(output_dir) / "rows.partial.jsonl", {
+            "setups": list(setups), "maps": list(map_ids), "seed": seed, "episodes": episodes,
+            "max_ticks": max_ticks, "observation": [width, height],
+            "model_dir": str(model_dir) if model_dir else None}, resume=resume)
+
+    def key(job: Phase6Job) -> str:
+        return f"{job.setup}|{job.map_id}|{job.episode}"
+
+    pending = [j for j in jobs if journal is None or not journal.done(key(j))]
+    if journal is not None and progress and len(pending) < len(jobs):
+        progress(f"  resuming: {len(jobs) - len(pending)} job(s) already done")
+    done = 0
+
+    def record(job: Phase6Job, row: dict[str, Any] | None, exc: BaseException | None) -> None:
+        nonlocal done
+        done += 1
+        if row is not None and journal is not None:
+            journal.add(key(job), row)
+        elif row is not None:
+            fresh.append(row)
+        if exc is not None:                                   # report, keep the others
+            errors.append(f"{job.setup}/{job.map_id}/{job.episode}: "
+                          f"{type(exc).__name__}: {exc}")
+        if progress:
+            progress(f"  ... job {done}/{len(pending)} ({job.setup}, episode {job.episode})")
+
+    fresh: list[dict[str, Any]] = []
     if workers <= 1:
-        for k, job in enumerate(jobs):
+        for job in pending:
             try:
-                rows.append(run_phase6_job(job))
-            except Exception as exc:                       # report, keep the other results
-                errors.append(f"{job.setup}/{job.map_id}/{job.episode}: "
-                              f"{type(exc).__name__}: {exc}")
-            if progress:
-                progress(f"  ... job {k + 1}/{len(jobs)} ({job.setup}, episode {job.episode})")
+                record(job, run_phase6_job(job), None)
+            except Exception as exc:
+                record(job, None, exc)
     else:
+        from concurrent.futures import as_completed
+
         with ProcessPoolExecutor(max_workers=workers) as pool:
-            futures = [pool.submit(run_phase6_job, job) for job in jobs]
-            for k, fut in enumerate(futures):
+            futures = {pool.submit(run_phase6_job, job): job for job in pending}
+            for fut in as_completed(futures):
                 try:
-                    rows.append(fut.result())
+                    record(futures[fut], fut.result(), None)
                 except Exception as exc:
-                    errors.append(f"{jobs[k].setup}/{jobs[k].map_id}/{jobs[k].episode}: "
-                                  f"{type(exc).__name__}: {exc}")
-                if progress:
-                    progress(f"  ... job {k + 1}/{len(jobs)} ({jobs[k].setup}, "
-                             f"episode {jobs[k].episode})")
+                    record(futures[fut], None, exc)
+    rows = list(journal.rows.values()) if journal is not None else fresh
     rows.sort(key=lambda r: (r["map_id"], r["episode"], list(setups).index(r["strategy"])))
     summary = summarise_phase6(rows, setups, baseline=baseline)
     summary.update({

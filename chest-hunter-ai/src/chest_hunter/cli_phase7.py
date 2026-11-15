@@ -231,6 +231,8 @@ def _common_benchmark(sub: argparse.ArgumentParser, output: str, *,
     sub.add_argument("--max-ticks", type=_positive, default=max_ticks,
                      help="default: exploration.benchmark_max_ticks")
     sub.add_argument("--output", "--output-dir", dest="output", default=output, metavar="DIR")
+    sub.add_argument("--resume", action="store_true",
+                     help="continue an interrupted run in --output (rows.partial.jsonl)")
     sub.add_argument("--quiet", action="store_true")
 
 
@@ -246,6 +248,8 @@ def add_generalization_options(sub: argparse.ArgumentParser) -> None:
                      help="Phase 7: default phase7_active,phase6_priors")
     sub.add_argument("--exploration-memory", metavar="PATH")
     sub.add_argument("--start-episode", type=_non_negative, default=0)
+    sub.add_argument("--resume", action="store_true",
+                     help="Phase 7: continue an interrupted run (rows.partial.jsonl)")
     sub.add_argument("--quiet", action="store_true")
 
 
@@ -276,7 +280,8 @@ def cmd_generalization_p7(args: argparse.Namespace, ctx: Any) -> int:
         seed=42 if args.seed is None else args.seed, model_dir=_model_dir(ctx, args.model),
         memory_path=memory, workers=args.workers, max_ticks=args.max_ticks or e.benchmark_max_ticks,
         width=e.benchmark_observation_width, height=e.benchmark_observation_height,
-        start_episode=args.start_episode, output_dir=out, progress=_progress(args.quiet))
+        start_episode=args.start_episode, output_dir=out, resume=args.resume,
+        progress=_progress(args.quiet))
     print((out / "report.md").read_text(encoding="utf-8"))
     if summary["errors"]:
         print(f"{len(summary['errors'])} episode(s) failed with an exception; see summary.json")
@@ -302,7 +307,7 @@ def cmd_benchmark_robustness(args: argparse.Namespace, ctx: Any) -> int:
         model_dir=_model_dir(ctx, args.model), memory_path=memory, workers=args.workers,
         max_ticks=args.max_ticks or 4500, width=s.exploration.benchmark_observation_width,
         height=s.exploration.benchmark_observation_height, baseline=args.baseline,
-        output_dir=out, progress=_progress(args.quiet))
+        output_dir=out, resume=args.resume, progress=_progress(args.quiet))
     print((out / "report.md").read_text(encoding="utf-8"))
     print(f"Results written to {out}")
     return 0 if not summary["errors"] else 1
@@ -320,7 +325,7 @@ def cmd_benchmark_exploration(args: argparse.Namespace, ctx: Any) -> int:
         max_ticks=args.max_ticks or s.exploration.benchmark_max_ticks,
         width=s.exploration.benchmark_observation_width,
         height=s.exploration.benchmark_observation_height, output_dir=out,
-        progress=_progress(args.quiet))
+        resume=args.resume, progress=_progress(args.quiet))
     print((out / "report.md").read_text(encoding="utf-8"))
     return 0 if not summary["errors"] else 1
 
@@ -360,7 +365,7 @@ def cmd_acceptance(args: argparse.Namespace, ctx: Any) -> int:
         memory_path=_memory_arg(ctx, args.exploration_memory), workers=args.workers,
         max_ticks=args.max_ticks or 18000, width=s.exploration.benchmark_observation_width,
         height=s.exploration.benchmark_observation_height, output_dir=out,
-        progress=_progress(args.quiet))
+        resume=args.resume, progress=_progress(args.quiet))
     print((out / "report.md").read_text(encoding="utf-8"))
     return 0 if not summary["errors"] else 1
 
