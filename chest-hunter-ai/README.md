@@ -1714,8 +1714,8 @@ python -m pip install onnx onnxruntime                 # optional: enables the O
   ("Tcl_AsyncDelete: async handler deleted by the wrong thread"); this happened in some
   Python 3.12 runs under Xvfb.
 
-Verified with `python -m unittest discover -s tests` on Python 3.11 and 3.13 (545 tests
-pass, 6 GUI tests skipped without a display) and with `xvfb-run -a` on Python 3.12 (545
+Verified with `python -m unittest discover -s tests` on Python 3.11 and 3.13 (553 tests
+pass, 6 GUI tests skipped without a display) and with `xvfb-run -a` on Python 3.12 (553
 pass, none skipped). `mypy --strict` passes on all 99 source modules, and ruff reports
 nothing for the rule set E, F, W, B, UP, SIM, I (SIM117 excluded, line length 100).
 The Unreal C++ code is not built by these
