@@ -370,6 +370,46 @@ class OpeningAttribution(unittest.TestCase):
         self.assertEqual(len(agent.credited), 1)
         self.assertEqual(sel.stats.fallbacks["unattributed_opening"], 1)
 
+    def test_notification_after_a_deterministic_step_is_left_to_the_state_machine(self) -> None:
+        """Regression: when the state machine drove the step (a fallback, a stuck handover
+        or a disabled model), its own verification credits the opening. The selector must
+        not attribute the same notification as well, or one chest is counted at two spawn
+        points (seen under heavy CPU load, when inference timeouts disabled the model)."""
+        agent = FakeAgent(Agent3DState.INTERACTING)
+        agent.world.priors = {1: Prior(1, (1.0, 0.5, 0.0))}
+        agent.cues = Cues(True, False)
+        sel = PolicySelector(agent, FakePolicy(output(interact_prob=0.9)), mode="learned")
+        event = {"type": "chest_opened_notification", "reward": True}
+        agent.obs = None                                     # no frame: deterministic decision
+        sel.tick()
+        sel.on_step(Step(Telemetry(events=[event], sim_time=1.0)))
+        self.assertEqual(agent.credited, [])
+        self.assertEqual(sel.stats.notifications_to_state_machine, 1)
+        agent.obs = Obs(2)                                   # the learned policy drives again
+        sel.tick()
+        sel.on_step(Step(Telemetry(events=[event], sim_time=2.0)))
+        self.assertEqual([c[0] for c in agent.credited], [1])
+        self.assertEqual(sel.stats.openings_attributed, 1)
+
+    def test_disabled_model_leaves_every_opening_to_the_state_machine(self) -> None:
+        """A whole learned-mode episode in which every inference fails: the state machine
+        drives throughout and is the only one to credit openings."""
+        db = DatabaseManager(":memory:")
+        db.initialize()
+        self.addCleanup(db.close)
+        seed_arena_3d(db)
+        runner = Runner3D.from_settings(db, settings(), mode="hybrid", seed=4,
+                                        backend="reference", max_ticks=1500, width=320,
+                                        height=180, evaluate=True, policy="learned",
+                                        learned_policy=FakePolicy(RuntimeError("model down")))
+        result = runner.run()
+        stats = runner.selector.stats
+        self.assertTrue(stats.disabled_reason)
+        self.assertGreater(result.chests_opened, 0)
+        self.assertEqual(stats.openings_attributed, 0)
+        self.assertGreater(stats.notifications_to_state_machine, 0)
+        self.assertLessEqual(result.chests_opened, result.truth["opened_truth"])
+
     def test_all_resolved_ends_the_episode(self) -> None:
         agent = FakeAgent()
         agent.world.all_resolved = True

@@ -6,7 +6,8 @@ Modes:
 * ``learned`` - the imitation policy drives every decision. The deterministic agent keeps
   running perception and bookkeeping (world model, empty-spot votes, database records);
   openings are credited when the agent's own "chest opened" notification arrives next to
-  a spawn point. On any model failure the decision falls back to the deterministic agent.
+  a spawn point after a learned action. On any model failure the decision falls back to
+  the deterministic agent, whose own verification then handles any notification.
 * ``hybrid`` - the deterministic agent drives; in the local visual-servoing states
   (approaching and aligning with a visible chest) its movement and camera commands are
   replaced by the learned ones when the model is validated and confident.
@@ -65,6 +66,7 @@ class SelectorStats:
     disabled_reason: str | None = None
     learned_recoveries: int = 0
     openings_attributed: int = 0
+    notifications_to_state_machine: int = 0
     stale_interactions_released: int = 0
     latencies_ms: list[float] = field(default_factory=list)
 
@@ -80,6 +82,7 @@ class SelectorStats:
             "interaction_holds": self.interaction_holds, "disabled_reason": self.disabled_reason,
             "learned_recoveries": self.learned_recoveries,
             "openings_attributed": self.openings_attributed,
+            "notifications_to_state_machine": self.notifications_to_state_machine,
             "stale_interactions_released": self.stale_interactions_released,
             "latency_mean_ms": round(sum(lat) / len(lat), 4) if lat else None,
             "latency_p95_ms": round(lat[int(0.95 * (len(lat) - 1))], 4) if lat else None,
@@ -216,7 +219,15 @@ class PolicySelector:
         elif not self.action.interact:
             self._hold_started = None
         for event in result.telemetry.events:
-            if event.get("type") == "chest_opened_notification":
+            if event.get("type") != "chest_opened_notification":
+                continue
+            if self._fsm_current:
+                # The state machine produced this step's action (a stuck handover, a model
+                # fallback or a disabled model): the notification belongs to its own
+                # interaction, and its verification credits the opening. Attributing it here
+                # as well could count one chest at two spawn points.
+                self.stats.notifications_to_state_machine += 1
+            else:
                 self._attribute_opening(bool(event.get("reward")))
 
     # -- internals ----------------------------------------------------------------------------
