@@ -10,8 +10,8 @@ opened per minute.**
 | 1. Data foundation | Done | SQLite database of chest spawn points, simulation sessions and observations; CLI; tests |
 | 2. Autonomous navigation | Done | Grid-world simulator, A* pathfinding, route planning, continuous movement, 10-state agent, Tkinter GUI, headless runs, benchmarking |
 | 3. Computer vision and visual navigation | Done | Simulated camera, OpenCV chest/obstacle/prompt detection, object tracking, visual localisation, occupancy mapping, frontier exploration, closed-loop interaction with visual verification, debug overlays, oracle-vs-visual benchmark |
-| 5. Imitation learning, adaptive exploration, generalisation | Done on the Python reference arena; **no human demonstrations recorded, Unreal untested** | Demonstration recorder (teleoperation + synthetic scripted), dataset pipeline, NumPy behaviour cloning, ONNX FP32/INT8 export and CPU inference, policy selector with safety layer, Bayesian spawn estimates, route memory, adaptive planner, classified recovery, procedural maps, paired policy and generalisation benchmarks (section 16) |
 | 4. 3D agent and Unreal Engine 5 integration | Python side done and tested; **Unreal project prepared but not compiled or run** | Localhost bridge protocol, client and protocol-identical reference server; 3D reference arena (capsule physics, spring-arm camera, perspective renderer, NavMesh-style graph); perspective chest detection, distance estimation, 3D tracking; NavMesh-hybrid and NavMesh-free navigation; 14-state closed-loop controller; UE5 C++ project sources; 50-episode benchmark (section 15) |
+| 5. Imitation learning, adaptive exploration, generalisation | Done on the Python reference arena; **no human demonstrations recorded, Unreal untested** | Demonstration recorder (teleoperation + synthetic scripted), dataset pipeline, NumPy behaviour cloning, ONNX FP32/INT8 export and CPU inference, policy selector with safety layer, Bayesian spawn estimates, route memory, adaptive planner, classified recovery, procedural maps, paired policy and generalisation benchmarks (section 16) |
 
 > The simulator is entirely self-contained. The project never talks to a game
 > client, game service or network. It never reads or writes game memory or
@@ -1322,7 +1322,9 @@ from the `learning` configuration section (`deterministic`).
     * a 20 ms inference limit;
     * fallback to deterministic control on errors or invalid output, with the model
       disabled after 10 consecutive failures;
-    * bounded handovers when a learned policy is stuck.
+    * bounded handovers when a learned policy is stuck;
+    * when the deterministic controller takes over again, an interaction or opening
+      check it was paused in is dropped (stale timers could credit an unopened chest).
 
 ### 16.3 Adaptive exploration
 
@@ -1391,14 +1393,16 @@ xvfb-run -a python -m unittest discover -s tests       # including the GUI tests
 python -m pip install onnx onnxruntime                 # optional: enables the ONNX export tests
 ```
 
-* **Coverage.** 540 tests:
+* **Coverage.** 545 tests:
   * Phase 1: 127; Phase 2: 109; Phase 3: 80.
   * Phase 4: 143. That is 141 test methods holding all 194 original cases (parametrised
     cases became sub-tests), plus 2 database migration tests.
-  * Phase 5: 81. They cover:
+  * Phase 5: 86. They cover:
     * the recorder and exact replay, and the dataset pipeline;
     * a numerical gradient check, training, and ONNX FP32/INT8 parity;
-    * the policy selector's safety layer;
+    * the policy selector's safety layer, and opening bookkeeping across handovers
+      (no spawn point credited twice, stale phases dropped);
+    * benchmark summaries with ground truth as the primary metric;
     * the Bayesian estimator, route memory, planner and recovery classes;
     * procedural maps and episodes on unseen maps;
     * CLI, configuration and migration 4;
@@ -1461,7 +1465,11 @@ python -m pip install onnx onnxruntime                 # optional: enables the O
 * **GUI tests** are skipped automatically when Tkinter or a display is
   missing.
 
-@@TEST_RESULTS@@ The Unreal C++ code is not built by these
+Verified with `python -m unittest discover -s tests` on Python 3.11 and 3.13 (545 tests
+pass, 6 GUI tests skipped without a display) and with `xvfb-run -a` on Python 3.12 (545
+pass, none skipped). `mypy --strict` passes on all 99 source modules, and ruff reports
+nothing for the rule set E, F, W, B, UP, SIM, I (SIM117 excluded, line length 100).
+The Unreal C++ code is not built by these
 tests (see section 15); `tests/test_unreal_sources.py` compiles only the shared
 SplitMix64/UnitRoll functions with the host C++ compiler.
 

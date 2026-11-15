@@ -57,13 +57,17 @@ frontier scoring, route memory, adaptive planner). New modules: `agent/recovery_
 learning metrics) and `cli_learning.py`.
 
 Changes to Phase 4 code are opt-in hooks: an optional `planner`, `smart_recovery`
-(default off), `credit_opening()` and extra metrics. Two corrections were made:
+(default off), `credit_opening()`, `release_interaction()` and extra metrics. Three
+corrections were made:
 
 * `INTERACTING → EXPLORING` was missing from the transition table. When a goal disappeared
   in the middle of an interaction (for example, credited by late verification), the episode
   crashed. A Phase 5 test found this; it never occurred in the Phase 4 benchmark.
 * `reward_received` was recorded as "a reward happened earlier in this episode" instead of
   this opening's own notification. Only the database flag changes, not behaviour.
+* A spawn point that is already marked opened is never counted again (one chest per spawn
+  point and episode). The Phase 4 controller never did this; the guard matters when two
+  controllers share the bookkeeping (section 9).
 
 **The deterministic Phase 4 controller is unchanged.** Re-running Phase 4 benchmark
 episodes on the final code gives identical results in every non-timing field.
@@ -250,6 +254,15 @@ disabled for the episode. In learned mode, a learned policy that keeps the agent
 for 4 s gets up to 25 bounded handovers to the deterministic controller. Model failures
 never propagate into the simulation loop (tested). The selector can be switched at run
 time from the dashboard.
+
+**Handing control back.** While the learned policy drives, the deterministic state machine
+is paused, not reset. When it takes over again (a handover, a fallback or a switch away
+from *learned*), an INTERACTING or VERIFYING_OPEN phase it was left in is dropped: its hold
+timer, aim point and verification counters belong to an earlier situation, and its reward
+counter may hold notifications for chests the learned policy opened. The first full
+benchmark run showed why: before this rule, 26 of 100 learned episodes credited one spawn
+point that was never opened, after a resumed verification saw an opened-looking chest
+along its stale aim line (`stale_interactions_released` counts the dropped phases).
 
 ## 10. Adaptive exploration
 
