@@ -449,7 +449,15 @@ python -m chest_hunter init-db
 python -m chest_hunter check-runtime
 ```
 
-RESULTS_CLEAN_ENV
+**Verified.**
+
+* A fresh clone was installed into new Python 3.12.3 and 3.11.18 virtual environments with
+  exactly these commands. The pinned install took 12 s; Python 3.11 resolves numpy 2.4.6.
+* In the 3.12 environment, `check-runtime` reported 16 checks, 0 failed and 1 warning (no
+  exploration memory in that clone). A `simulate-3d --exploration active --map procedural`
+  episode then ran.
+* The **full test suite passed in both clean environments** at commit `fc5877d`: 772 tests on
+  3.12 under Xvfb (none skipped), and 772 on 3.11 (7 GUI tests skipped without a display).
 
 A packaged Unreal build (not the Editor) is enough for Unreal runs. Start it with the
 research server enabled, then run `check-runtime --backend unreal` and the usual commands
@@ -507,7 +515,69 @@ Every failure or warning comes with a remedy. The exit code is non-zero if a che
   * Frame timing, GPU load and the Unreal graphics workload were **not measured** (no Unreal,
     no GPU).
 
-RESULTS_BENCHMARK
+## 15. Benchmark results
+
+All of these were measured on the Python reference arena, not Unreal.
+
+### 15.1 Generalisation (`benchmark_results/phase7/`)
+
+**Run.** `benchmark-generalization --episodes 100 --held-out-maps --workers 4`.
+
+* 2 configurations × 8 categories × 100 episodes = **1,600 episodes. 0 errors, 0 failed
+  episodes**, 0 over-reported openings.
+* 6000 ticks (200 simulated s) per episode, 320×180, evaluation seed 900042.
+* 7,280 s of wall clock on 4 workers.
+* **Code version.** The agent code was that of commit `e1124bd`, i.e. *before* the Phase 8
+  fixes F11/F14: openings whose lid was not seen were not credited and cost a few seconds of
+  re-alignment. Throughput is scored on ground truth, so that defect affects time spent, not
+  what is counted.
+
+Throughput is ground-truth chests opened per simulated minute (mean, 95 % CI).
+
+**Generalisation gap.** G = (E_familiar − E_category) / E_familiar, with a bootstrap 95 %
+interval (pairs resampled together where the category is paired):
+
+| Category | Phase 7 throughput | Phase 7 G | Phase 6 (spawn points given) | Phase 6 G |
+|---|---|---|---|---|
+| familiar layouts, new seeds | 1.58 [1.43, 1.73] | – | 3.35 [3.19, 3.50] | – |
+| new obstacle arrangements (paired) | 1.59 | −0.01 [−0.10, +0.07] | 3.26 | +0.03 [−0.03, +0.08] |
+| unseen buildings / rooms | 1.50 | +0.05 [−0.08, +0.17] | 3.36 | −0.01 [−0.08, +0.06] |
+| different lighting (paired) | 1.40 | **+0.11 [+0.04, +0.18]** | 2.91 | **+0.13 [+0.08, +0.18]** |
+| different chest appearance (paired) | 1.13 | **+0.28 [+0.21, +0.36]** | 2.20 | **+0.34 [+0.27, +0.42]** |
+| different camera start (paired) | 1.55 | +0.02 [−0.06, +0.09] | 3.39 | −0.01 [−0.06, +0.04] |
+| more complex elevations (paired) | 1.65 | −0.05 [−0.12, +0.03] | 3.32 | +0.01 [−0.04, +0.06] |
+| combined shifts | 0.99 | **+0.37 [+0.25, +0.49]** | 1.70 | **+0.49 [+0.41, +0.57]** |
+
+Detection and navigation (Phase 7 agent; per-frame evaluation labels, pooled):
+
+| Category | Precision | Recall | Chest-distance error | Pose error | Nav. success | Coverage |
+|---|---|---|---|---|---|---|
+| familiar | 88 % | 89 % | 0.74 m | 0.03 m | 0.98 | 0.51 |
+| unseen layout | 94 % | 88 % | 0.77 m | 0.03 m | 0.98 | 0.50 |
+| lighting | 94 % | 80 % | 0.80 m | 0.03 m | 0.97 | 0.51 |
+| appearance | **58 %** | **57 %** | 0.86 m | 0.04 m | 0.98 | 0.49 |
+| combined | **60 %** | **46 %** | 0.93 m | 0.03 m | 0.96 | 0.45 |
+
+What the numbers say:
+
+* **The agent generalises to new layouts, obstacle arrangements, start poses and extra
+  elevations.** No significant gap appears for either agent.
+* **Lighting outside the trained range costs about 11–13 %**, through recall.
+* **Chest colours outside the trained range cost about 30 %** for both agents, because the
+  colour segmentation no longer recognises the chest. This is the main generalisation
+  weakness, and it is in perception, not exploration.
+* **Phase 7 throughput is about 1.7 chests/min below Phase 6** on paired episodes,
+  significant in every category. The Phase 6 agent is told where chests can spawn; the
+  Phase 7 agent must find them, and it covers about half of the reachable area in 200 s.
+* **Indoor complexes are the hardest family for exploration**: 0.79 (familiar) and 1.04
+  (unseen) against 3.1 with spawn points. The best families are complex (1.93 / 1.81) and
+  open (1.78 / 1.76).
+* **Exploration memory.** The trained memory chose `max_information` for open, indoor and
+  mixed maps and `risk_adjusted` for complex maps (600 / 200 episodes).
+* **Cost.** Frontier selection took 17.5 ms on average. The agent's own CPU was 1.6 % of one
+  core per simulated second, against 1.5 % for the Phase 6 agent.
+
+RESULTS_ROBUSTNESS
 
 ## 16. End-to-end acceptance test
 
