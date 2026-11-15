@@ -381,6 +381,10 @@ class NavGrid3D:
     def same_component(self, a: Node, b: Node) -> bool:
         return self._component.get(a) == self._component.get(b)
 
+    def reachable_area(self, start: tuple[float, float, float]) -> float:
+        """Walkable area (m^2, all levels) connected to ``start``."""
+        return len(self.reachable_from(start)) * self.res * self.res
+
     def reachable_from(self, start: tuple[float, float, float]) -> set[Node]:
         """Every node connected to ``start`` (flood fill; used for validation)."""
         s = self.project(start)

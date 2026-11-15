@@ -104,10 +104,13 @@ def procedural_chests(map_id: str) -> tuple[DemoChest, ...]:
     The database receives the generator's *uninformative prior* (``DATABASE_PRIOR``), not the
     hidden true spawn probabilities: learning those from observations is the point of the
     Phase 5 spawn estimator."""
+    from chest_hunter.simulation3d import generator7
     from chest_hunter.simulation3d.procedural import build_procedural_arena, database_prior
 
+    arena = generator7.build_arena(map_id) if generator7.is_generated(map_id) \
+        else build_procedural_arena(map_id)
     return tuple(DemoChest(s.region, s.name, s.x, s.y, s.z, database_prior(s), 2.0)
-                 for s in build_procedural_arena(map_id).spawns)
+                 for s in arena.spawns)
 
 
 def seed_procedural_map(db: DatabaseManager, map_id: str, *,

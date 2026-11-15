@@ -22,6 +22,7 @@ import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
 
 import numpy as np
 
@@ -85,8 +86,19 @@ class WorldModel3D:
     def __init__(self, priors: Sequence[SpawnPrior3D], *,
                  estimator: DistanceEstimator | None = None,
                  tracker: Tracker3D | None = None, empty_confirmations: int = 2,
-                 vote_range: float = 9.0) -> None:
+                 vote_range: float = 9.0, discover: bool = False, thresholds: Any = None,
+                 max_dynamic: int = 200) -> None:
         self.priors = {p.location_id: p for p in priors}
+        #: Phase 7 discovery mode (no prior chest coordinates): chest tracks become dynamic
+        #: spawn points (negative ids). ``thresholds`` classifies tracks into approach /
+        #: inspect / ignore (exploration.active.ConfidenceThresholds).
+        self.discover = discover
+        self.thresholds = thresholds
+        self.max_dynamic = max_dynamic
+        self.dynamic_created = 0
+        self._next_dynamic = -1
+        #: Discovery mode: set by the agent once no reachable unexplored area is left.
+        self.exploration_done = not discover
         self.estimator = estimator or DistanceEstimator()
         self.tracker = tracker or Tracker3D()
         self.empty_confirmations = empty_confirmations
@@ -180,8 +192,50 @@ class WorldModel3D:
             linked.empty_votes = 0
             self.seen_locations.add(linked.location_id)
             if linked.status in (PriorStatus3D.UNKNOWN, PriorStatus3D.EMPTY) \
-                    and track.category == "chest":
+                    and track.category == "chest" \
+                    and (not self.discover or self.classify(track) == "approach"):
                 linked.status = PriorStatus3D.CHEST_SEEN
+        if self.discover:
+            self._discover()
+
+    def _discover(self) -> None:
+        """Discovery mode: a chest track with no spawn point nearby gets a dynamic one,
+        to be approached (high confidence) or inspected again (medium confidence)."""
+        for track in self.tracker.tracks:
+            if track.location_id is not None or track.category != "chest":
+                continue
+            if self.dynamic_created >= self.max_dynamic:
+                return
+            cls = self.classify(track)
+            if cls == "ignore":
+                continue
+            existing = self.nearest_prior(track.xyz)
+            if existing is not None:
+                # A second track of a chest that already has a spawn point (typically an
+                # opened chest seen again from another side): link it, never duplicate it.
+                track.location_id = existing.location_id
+                continue
+            x, y, z = track.xyz
+            prior = SpawnPrior3D(self._next_dynamic, f"Discovered {-self._next_dynamic}", x, y,
+                                 z, float(track.confidence))
+            self._next_dynamic -= 1
+            self.dynamic_created += 1
+            self.priors[prior.location_id] = prior
+            track.location_id = prior.location_id
+            prior.track_id = track.track_id
+            self.note_floor(z)
+
+    def classify(self, track: Track3D) -> str:
+        if self.thresholds is None:
+            return "approach" if track.state is not TrackState3D.TENTATIVE else "inspect"
+        return str(self.thresholds.classify(track))
+
+    def note_floor(self, z: float) -> None:
+        """A floor height the agent has stood on or seen a chest on (discovery mode has no
+        spawn points to take floor heights from)."""
+        z = round(z, 2)
+        if all(abs(z - f) > 0.15 for f in self.floors) and len(self.floors) < 32:
+            self.floors = sorted([*self.floors, z])
 
     def nearest_prior(self, point: tuple[float, float, float], *,
                       exclude_tracked: bool = False) -> SpawnPrior3D | None:
@@ -251,6 +305,8 @@ class WorldModel3D:
         for t in self.tracker.confirmed():
             if t.category != "chest" or t.location_id is None:
                 continue
+            if self.discover and self.classify(t) != "approach":
+                continue                       # not confident yet: inspect, do not approach
             prior = self.priors.get(t.location_id)
             if prior is not None and not prior.resolved:
                 out.append(t)
@@ -261,7 +317,7 @@ class WorldModel3D:
 
     @property
     def all_resolved(self) -> bool:
-        return all(p.resolved for p in self.priors.values())
+        return self.exploration_done and all(p.resolved for p in self.priors.values())
 
     def counts(self) -> dict[str, int]:
         out: dict[str, int] = {}

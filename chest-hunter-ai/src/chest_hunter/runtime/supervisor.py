@@ -80,6 +80,7 @@ LADDERS: Final[dict[str, tuple[str, ...]]] = {
     "invalid_observations": ("relocalise", "abort"),
     "model_failure": ("fallback_deterministic",),
     "inference_latency": ("fallback_deterministic",),
+    "localisation_jump": ("relocalise",),
 }
 #: Incidents keyed by the goal's spawn point (others are episode-wide).
 PER_TARGET: Final = frozenset({"state_timeout", "stationary", "repeated_target",
@@ -178,7 +179,7 @@ class Supervisor:
         self._state_time = 0.0
         self._last_now = 0.0
         self._last_progress = 0.0
-        self._progress_marks: tuple[int, int, int, int] = (0, 0, 0, 0)
+        self._progress_marks: tuple[int, ...] = (0, 0, 0, 0, 0)
         self._trail: deque[tuple[float, tuple[float, float, float], bool]] = deque(maxlen=400)
         self._goal_plans: Counter[int] = Counter()
         self._interaction_failures: Counter[int] = Counter()
@@ -211,6 +212,10 @@ class Supervisor:
         agent.reject_invalid = True
         agent.on_transition = self._on_transition
         agent.on_invalid_transition = self._on_invalid_transition
+        if hasattr(agent, "on_localisation_jump"):
+            agent.on_localisation_jump = lambda moved: self._queue(
+                "localisation_jump", f"odometry jumped {moved:.1f} m in one step",
+                {"moved_m": round(moved, 2)})
         self._last_now = agent.now
         self._last_progress = agent.now
         self._last_mode = self.selector.mode if self.selector is not None else None
@@ -325,6 +330,8 @@ class Supervisor:
                 problems.append(f"frame shape {getattr(frame, 'shape', None)}")
             elif int(frame.max()) == int(frame.min()):
                 problems.append("blank frame")
+            elif _zero_rows(frame) >= 0.15 * frame.shape[0]:
+                problems.append("frame with zeroed bands")
         if not problems:
             self._invalid_streak = 0
             return result
@@ -385,7 +392,10 @@ class Supervisor:
         m = agent.metrics
         resolved = sum(1 for p in agent.world.priors.values() if p.resolved
                        or p.status is PriorStatus3D.CHEST_SEEN)
-        marks = (m.chests_opened, resolved, m.targets_reached, len(agent._known_targets))
+        explorer = getattr(agent, "explorer", None)
+        covered = explorer.map.seen_count if explorer is not None else 0
+        marks = (m.chests_opened, resolved, m.targets_reached, len(agent._known_targets),
+                 covered)
         if marks != self._progress_marks:
             if marks[0] > self._progress_marks[0] or marks[1] > self._progress_marks[1]:
                 self._mark_progress("opened or resolved")
@@ -579,3 +589,9 @@ class Supervisor:
     def summary(self) -> dict[str, Any]:
         return {"mode": self.config.mode, **self.stats.to_dict(),
                 "events": self.events.summary()}
+
+
+def _zero_rows(frame: np.ndarray) -> int:
+    """Rows that are exactly black across the whole width (a rendered frame with sensor
+    noise practically never has one; a corrupted transfer has bands of them)."""
+    return int(np.count_nonzero(frame.reshape(frame.shape[0], -1).max(axis=1) == 0))

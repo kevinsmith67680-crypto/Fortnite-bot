@@ -204,7 +204,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
 
     def __init__(self, port: Any, priors: list[SpawnPrior3D], *, rules: dict[str, Any],
                  detector: ChestDetector3D, navigation: str = "navmesh",
-                 config: Agent3DConfig | None = None, recorder: Recorder | None = None) -> None:
+                 config: Agent3DConfig | None = None, recorder: Recorder | None = None,
+                 explorer: Any = None, thresholds: Any = None) -> None:
         self.decisions = 0
         super().__init__(initial=S.INITIALIZING, completed=S.COMPLETED, failed=S.FAILED,
                          transitions=TRANSITIONS_3D, timed=TIMED_3D,
@@ -214,7 +215,18 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self.rules = rules
         self.detector = detector
         self.recorder = recorder
-        self.world = WorldModel3D(priors, vote_range=self.cfg.vote_range_m)
+        #: Phase 7 active exploration (exploration.active.ActiveExplorer): no prior chest
+        #: coordinates; frontiers, camera sectors and dynamic spawn points instead.
+        self.explorer = explorer
+        self.world = WorldModel3D(priors, vote_range=self.cfg.vote_range_m,
+                                  discover=explorer is not None, thresholds=thresholds)
+        #: Phase 7 localisation monitor (odometry only: no absolute pose in the 3D arena).
+        self.localisation_jumps = 0
+        self.localisation_confidence = 1.0
+        self._explore_check_at = 0.0
+        self._look_yaw = 0.0
+        self._look_until = -1.0
+        self.on_localisation_jump: Callable[[float], None] | None = None
         self.navigator: NavMeshNavigator | LocalNavigator = (
             NavMeshNavigator(port) if navigation == "navmesh"
             else LocalNavigator(port, floors=tuple(round(p.z, 2) for p in priors)))
@@ -242,6 +254,7 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._maneuver_until = -1.0
         self._maneuver_bearing = 0.0
         self._attempts: dict[object, int] = {}
+        self._align_failures: dict[object, int] = {}
         self._total_recoveries = 0
         self.recovery_budget = (self.cfg.max_attempts + 1) * (len(priors) + 5)
         self._unreachable_keys: set[int] = set()
@@ -347,7 +360,19 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         tel = result.telemetry
         if self.telemetry is not None:
             a, b = self.telemetry.odometry.position, tel.odometry.position
-            self.metrics.travel_distance += math.hypot(b[0] - a[0], b[1] - a[1])
+            moved = math.hypot(b[0] - a[0], b[1] - a[1])
+            dt = max(1e-6, tel.sim_time - self.telemetry.sim_time)
+            limit = float(self.rules.get("sprint_speed", 8.0)) * dt * 1.5 + 0.3
+            if moved > limit:                  # odometry jumped further than the agent can move
+                self.localisation_jumps += 1
+                self.localisation_confidence *= 0.3
+                if self.on_localisation_jump is not None:
+                    self.on_localisation_jump(moved)
+            else:
+                self.metrics.travel_distance += moved
+                self.localisation_confidence = min(1.0, self.localisation_confidence + 0.002)
+            if self.explorer is not None and self.state is S.NAVIGATING:
+                self.explorer.travel_seconds += dt
         self.telemetry = tel
         self.now = tel.sim_time
         self._trail.append((self.now, tel.odometry.position))
@@ -389,6 +414,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._known_targets |= targets
         with prof.section("interaction_cues"):
             self.cues = detect_cues(obs.frame, self._target_bbox())
+        if self.explorer is not None:
+            with prof.section("exploration_update"):
+                self._update_exploration(obs, dets, update.estimates)
         self._late_verification()
         if self.telemetry is not None:
             self._analysed_pose = self._pose_now()
@@ -532,8 +560,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
 
     def _record(self, location_id: int | None, *, present: bool, opened: bool, seconds: float,
                 reward: bool | None) -> None:
-        if location_id is None:
-            return
+        if location_id is None or location_id < 0:   # Phase 7 dynamic spawn points: not in
+            return                                    # the database's location table
         self.metrics.locations_recorded += 1
         if self.recorder is not None:
             self.recorder(location_id, present=present, opened=opened, seconds=seconds,
@@ -550,6 +578,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 self.goal = None
             return False
         prior.status = PriorStatus3D.OPENED
+        if location_id < 0 and self.goal is not None and self.goal.location_id == location_id:
+            # a discovered spawn point moves to where the chest was actually opened (its
+            # first estimate may have come from far away), so later sightings link to it
+            prior.x, prior.y, prior.z = self.goal.position
         self.metrics.chests_opened += 1
         if self.goal is not None:
             self.metrics.recovery_log.resolve(self._target_key(self.goal))
@@ -756,6 +788,8 @@ class VisualAgent3D(StateMachine[Agent3DState]):
             else:
                 key = p.probability / (straight * 1.25 / speed + 1.0)
             candidates.append((key, p))
+        if not candidates and self.explorer is not None:
+            return self._explore_frontier()
         if not candidates:
             if self.world.all_resolved:
                 return self._complete("all spawn points resolved")
@@ -790,6 +824,100 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self.goal = Goal3D("inspect", prior.xyz, prior.location_id)
         self.world.objective = f"inspect {prior.name}"
         return S.PLANNING_ROUTE
+
+    # -- Phase 7 active exploration ----------------------------------------------------------
+
+    def _hfov(self) -> float:
+        if self.obs is None:
+            return 90.0
+        intr = self.obs.intrinsics
+        return math.degrees(2.0 * math.atan(intr.width / 2.0 / intr.fx))
+
+    def _update_exploration(self, obs: Observation3D, dets: list[Detection3D],
+                            estimates: list[RangeEstimate | None]) -> None:
+        ex = self.explorer
+        pos = obs.odometry.position
+        self.world.note_floor(pos[2])
+        if ex.needs_fan(pos):
+            try:
+                distances = self.port.nav_raycast(pos, ex.bearings(),
+                                                  max_distance=ex.cfg.ray_reach_m)
+            except Exception:                  # the service may be unavailable: skip a fan
+                distances = None
+            if distances is not None:
+                ex.add_fan(pos, distances)
+        cam = obs.camera_pose()
+        ex.observe((cam.x, cam.y, cam.z), pos[2], cam.yaw_deg, self._hfov(), obs.sim_time)
+        while ex.discoveries_noted < self.world.dynamic_created:
+            prior = self.world.priors.get(-(ex.discoveries_noted + 1))
+            if prior is None:
+                break
+            ex.note_discovery(prior.xyz)
+        for det, est in zip(dets, estimates, strict=False):
+            if est is not None and det.category == "chest":
+                ex.note_detection(est.position, pos, det.confidence, confirmed=False)
+
+    def _explore_frontier(self) -> Agent3DState:
+        """No spawn point to inspect: choose the next exploration frontier (or finish)."""
+        ex = self.explorer
+        pos = self.position
+        speed = float(self.rules.get("max_speed", 5.0))
+
+        class _OffMesh(Exception):
+            pass
+
+        def length(point: tuple[float, float, float]) -> float | None:
+            value = self.navigator.path_length(pos, point, tolerance=2.0)
+            if value is None and self.navigator.last_status == "start_off_navmesh":
+                raise _OffMesh
+            return value
+
+        tentative = [t.xyz for t in self.world.tracker.tracks
+                     if t.category == "chest" and self.world.classify(t) != "approach"]
+        try:
+            with self.profiler.section("frontier_selection"):
+                target = ex.select(pos, speed, length, tentative)
+        except _OffMesh:
+            return self._wait_to_land(S.EXPLORING)
+        if target is None:
+            self.world.exploration_done = True
+            if self.world.all_resolved:
+                return self._complete("exploration complete: no reachable unexplored area left")
+            stale = [p for p in self.world.unresolved() if p.status is PriorStatus3D.CHEST_SEEN]
+            for p in stale:
+                p.status = PriorStatus3D.UNKNOWN
+                p.inspections += 1
+            if stale:
+                return self._complete_or_scan()
+            return self._complete("exploration complete; remaining detections unreachable")
+        self.goal = Goal3D("explore", target.point, None)
+        self.world.objective = f"explore {target.region} ({target.gain:.0f} cells)"
+        return S.PLANNING_ROUTE
+
+    def _navigate_explore(self, goal: Goal3D, follower: PathFollower,
+                          pos: tuple[float, float, float]) -> Agent3DState | None:
+        ex = self.explorer
+        if self.world.chest_targets() and self._new_target:
+            return S.TARGET_DETECTED
+        if ex is None:
+            return S.EXPLORING
+        if self.now - self._phase_start > 1.5 and self.now >= self._explore_check_at:
+            self._explore_check_at = self.now + 1.5
+            if not ex.target_still_useful():
+                self._route_end(True)
+                return S.EXPLORING                  # the area was seen on the way: replan
+        if math.dist(pos[:2], goal.position[:2]) <= ex.cfg.arrive_radius_m or follower.done:
+            self._route_end(True)
+            if ex.target is not None:
+                ex.reached(ex.target)
+            self._scan = ex.scan_plan(pos, self._cam_yaw, self.now)
+            self._scan_pitch = None
+            self.goal = None
+            if self._scan:
+                self.metrics.scans += 1
+                return self._go(S.SCANNING)
+            return S.EXPLORING
+        return None
 
     def _complete_or_scan(self) -> Agent3DState:
         self._scan = ScanPlanner.full_turn(self._cam_yaw, self.cfg.scan_step_deg)
@@ -848,8 +976,16 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         goal = self.goal
         if goal is None:
             return S.EXPLORING
-        tolerance = 1.4 if goal.kind == "chest" else 2.5
+        tolerance = {"chest": 1.4, "explore": 2.0}.get(goal.kind, 2.5)
         plan = self.navigator.plan(self.position, goal.position, tolerance=tolerance)
+        if plan is None and goal.kind == "explore" \
+                and self.navigator.last_status != "start_off_navmesh":
+            self.metrics.navigation_failures += 1
+            if self.explorer is not None and self.explorer.target is not None:
+                self.explorer.unreachable(self.explorer.target)
+            self.goal = None
+            self._after_observe = S.EXPLORING
+            return self._go(S.OBSERVING)
         if plan is None and self.navigator.last_status == "start_off_navmesh":
             return self._wait_to_land(S.PLANNING_ROUTE)
         if plan is None:
@@ -906,6 +1042,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                     and abs(goal.position[2] - pos[2]) <= 0.6:
                 self._route_end(True)
                 return self._go(S.APPROACHING)
+        elif goal.kind == "explore":
+            nxt = self._navigate_explore(goal, follower, pos)
+            if nxt is not None:
+                return nxt
         else:
             prior = self.world.priors.get(goal.location_id) if goal.location_id else None
             if prior is None or prior.resolved or prior.status is PriorStatus3D.CHEST_SEEN:
@@ -936,9 +1076,33 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._move(bearing, speed)
         if goal.kind == "chest" and self._near_goal(12.0):
             self._aim_at(goal.position)
+        elif goal.kind == "explore" and self.explorer is not None:
+            self._look(self._explore_look_yaw(bearing), self.cfg.cruise_pitch_deg)
         else:
             self._look(bearing, self.cfg.cruise_pitch_deg)
         return None
+
+    def _explore_look_yaw(self, bearing: float) -> float:
+        """Phase 7 visual inspection while travelling: look towards the most informative
+        sector within 75 degrees of the travel direction (movement is relative to the camera,
+        so the agent can walk one way and look another). The choice is held for 1.5 s."""
+        if self.now < self._look_until:
+            return self._look_yaw
+        ex = self.explorer
+        sectors = ex.sectors
+        gains = ex.unseen_by_sector(self.position)
+        best, best_key = bearing, (-1.0, 0.0)
+        for k in range(sectors.n):
+            centre = sectors.centre(k)
+            off = abs(angle_difference_deg(centre, bearing))
+            if off > 75.0 or gains[k] < 2.0:
+                continue
+            key = (gains[k], -off)
+            if key > best_key:
+                best, best_key = centre, key
+        self._look_yaw = best
+        self._look_until = self.now + 1.5
+        return best
 
     def _approach(self) -> Agent3DState | None:
         goal = self.goal
@@ -1187,10 +1351,17 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         reason = self.recovery_reason or "unknown"
         self.recovery_reason = None
         self.metrics.recovery_reasons[reason] = self.metrics.recovery_reasons.get(reason, 0) + 1
+        # Discovery mode starts with no spawn points: the budget grows with the chests found.
+        self.recovery_budget = max(self.recovery_budget,
+                                   (self.cfg.max_attempts + 1) * (len(self.world.priors) + 5))
         if self._total_recoveries > self.recovery_budget:
             return self._fail(f"recovery budget of {self.recovery_budget} exhausted ({reason})")
         goal = self.goal
         cls = classify(reason)
+        if cls == "path_blocked" and isinstance(self.navigator, NavMeshNavigator):
+            # a cached path the agent could not follow must not be handed out again (the
+            # world may have changed: a new obstacle, a closed door)
+            self.navigator.clear_cache()
         if goal is not None:
             self.metrics.recovery_log.record(("reach", self._target_key(goal))
                                              if cls == "path_blocked" else self._target_key(goal),
@@ -1207,7 +1378,18 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self._attempts[key] = self._attempts.get(key, 0) + 1
         interaction = reason in ("interaction_failed", "interaction_interrupted",
                                  "verification_inconclusive", "alignment_failed")
-        if self._attempts[key] > self.cfg.max_attempts:
+        give_up = self._attempts[key] > self.cfg.max_attempts
+        if reason == "alignment_failed" and goal.location_id is not None \
+                and goal.location_id < 0:
+            # A discovered chest whose prompt never appears from two sides is most likely
+            # not an unopened chest (a misdetection, or an opened one seen again).
+            self._align_failures[key] = self._align_failures.get(key, 0) + 1
+            give_up = give_up or self._align_failures[key] >= 2
+        if give_up:
+            if goal.kind == "explore" and self.explorer is not None:
+                self.explorer.note_failure(goal.position)
+                if self.explorer.target is not None:
+                    self.explorer.unreachable(self.explorer.target)
             prior = self.world.priors.get(goal.location_id) if goal.location_id else None
             if prior is not None and not prior.resolved:
                 prior.status = PriorStatus3D.FAILED if interaction else PriorStatus3D.ABANDONED

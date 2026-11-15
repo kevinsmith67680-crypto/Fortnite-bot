@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 import random
 from dataclasses import asdict, dataclass, field
-from typing import Final
+from typing import Any, Final
 
 from chest_hunter.simulation3d.geometry import Box, box
 
@@ -70,6 +70,9 @@ class Arena3D:
     #: ``chest_value`` (chest brightness factor), ``chest_hue_shift`` (degrees). Empty for
     #: the hand-made arena, whose rendering is therefore unchanged.
     appearance: dict[str, float] = field(default_factory=dict)
+    #: Phase 7: generator version, category, settings and validation results (empty for the
+    #: hand-made arena and the Phase 5 procedural maps).
+    meta: dict[str, Any] = field(default_factory=dict)
 
 
 # -- building blocks ---------------------------------------------------------------------
@@ -432,4 +435,6 @@ def arena_to_json(arena: Arena3D) -> str:
     }
     if arena.appearance:
         data["appearance"] = dict(arena.appearance)
+    if arena.meta:
+        data["generator"] = dict(arena.meta)
     return json.dumps(data, indent=1)

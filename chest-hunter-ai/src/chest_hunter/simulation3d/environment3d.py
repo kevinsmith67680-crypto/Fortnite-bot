@@ -78,14 +78,18 @@ def cached_arena(map_id: str) -> tuple[Arena3D, World3D, NavGrid3D]:
 
     ``research_arena_3d`` is the hand-made arena; ``proc_train_NNN`` / ``proc_test_NNN`` are
     procedural variations (:mod:`chest_hunter.simulation3d.procedural`)."""
+    from chest_hunter.simulation3d import generator7
     from chest_hunter.simulation3d.arena import ARENA_3D_ID
     from chest_hunter.simulation3d.procedural import build_procedural, is_procedural
 
     if is_procedural(map_id):
         return build_procedural(map_id)
+    if generator7.is_generated(map_id):
+        return generator7.build(map_id)
     if map_id != ARENA_3D_ID:
         raise ValueError(f"unknown 3D map {map_id!r}; available: {ARENA_3D_ID}, "
-                         "proc_train_NNN, proc_test_NNN")
+                         "proc_train_NNN, proc_test_NNN, "
+                         "p7_<open|indoor|mixed|complex>_<train|test>_NNN[_<variant>]")
     arena = build_research_arena_3d()
     world = World3D(arena.boxes, bounds=arena.bounds)
     return arena, world, NavGrid3D(world)
@@ -158,7 +162,9 @@ class Environment3D:
         self.intrinsics = CameraIntrinsics(s.width, s.height, s.hfov_deg)
         self.renderer = Renderer3D(self.world, self.intrinsics, noise_std=s.noise_std,
                                    lighting_variation=s.lighting_variation,
-                                   seed=seed * 7919 + episode)
+                                   seed=seed * 7919 + episode,
+                                   surface_value=float(self.arena.appearance.get(
+                                       "surface_value", 1.0)))
         self._rng = random.Random(f"env3d:{seed}:{episode}")
         appearance = self.arena.appearance
         self.base_lighting = float(appearance.get("lighting", 1.0))
@@ -179,6 +185,7 @@ class Environment3D:
             chest.boxes = tuple(chest_boxes(sp.x, sp.y, sp.z, sp.yaw_deg, opened=False)) \
                 if present else ()
             self.chests.append(chest)
+        self.extra_obstacles: list[Box] = []
         self.character = Character3D(*a.start, a.start_yaw_deg, s.character)
         self._odo_drift = np.zeros(2)
         self._odo_rng = np.random.default_rng(splitmix64(self.seed * 1_000_003 + self.episode))
@@ -211,7 +218,14 @@ class Environment3D:
         return self.stopped or self.tick >= self.settings.max_ticks
 
     def _dynamic_boxes(self) -> list[Box]:
-        return [b for c in self.chests for b in c.boxes]
+        return [b for c in self.chests for b in c.boxes] + list(self.extra_obstacles)
+
+    def add_obstacle(self, obstacle: Box) -> None:
+        """Phase 7 robustness tests (environment side, never reachable by the agent): an
+        obstacle appears mid-episode. It collides, is rendered, and the navigation service
+        routes around it from now on, as a dynamic NavMesh would."""
+        self.extra_obstacles.append(obstacle)
+        self.nav_blocked = self.nav.dynamic_cells(self._dynamic_boxes())
 
     # -- stepping ----------------------------------------------------------------------------
 
@@ -342,6 +356,8 @@ class Environment3D:
                 faces += box_faces(b, owner=c.spawn_index + 1)
         if self._chest_tint is not None:
             faces = [replace(f, colour=self._chest_tint(f.colour)) for f in faces]
+        for b in self.extra_obstacles:
+            faces += box_faces(b)
         faces += self._character_faces()
         bills = self._billboards()
         lighting = 1.0 + self._rng.uniform(-1.0, 1.0) * self.settings.lighting_variation

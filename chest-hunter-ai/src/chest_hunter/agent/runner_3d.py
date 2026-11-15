@@ -19,6 +19,7 @@ Modes:
 from __future__ import annotations
 
 import logging
+import math
 import resource
 import sys
 import time
@@ -109,7 +110,8 @@ class Runner3D:
                  planner: Any = None, policy_options: dict[str, Any] | None = None,
                  collect_truth: bool = False, supervisor: Any = None, profiler: Any = None,
                  client: BridgeClient | None = None,
-                 partition: dict[str, Any] | None = None) -> None:
+                 partition: dict[str, Any] | None = None, exploration: Any = None,
+                 thresholds: Any = None, faults: Any = None) -> None:
         mode = mode.replace("-", "_")
         if mode not in MODES_3D:
             raise ValidationError(f"mode must be one of {', '.join(MODES_3D)}; got {mode!r}")
@@ -154,6 +156,14 @@ class Runner3D:
         self.external_client = client
         #: Phase 6 experience partition, stored with the run (runtime.configurations).
         self.partition = partition
+        #: Phase 7: active exploration (an exploration.active.ExplorationConfig or a
+        #: callable returning an ActiveExplorer). The agent then gets *no* spawn points:
+        #: it explores frontiers and turns the chests it sees into its own targets.
+        self.exploration = exploration
+        self.thresholds = thresholds
+        #: Phase 7 robustness tests: a runtime.faults.FaultInjector for this episode.
+        self.faults = faults
+        self.explorer: Any = None
         self.selector: Any = None
         self.controller: Any = None
         self.evaluator: Evaluator3D | None = None
@@ -180,9 +190,10 @@ class Runner3D:
     # -- setup ---------------------------------------------------------------------------------
 
     def _priors(self) -> list[SpawnPrior3D]:
+        from chest_hunter.simulation3d.generator7 import is_generated
         from chest_hunter.simulation3d.procedural import is_procedural
 
-        if is_procedural(self.map_id):
+        if is_procedural(self.map_id) or is_generated(self.map_id):
             from chest_hunter.scenarios import seed_procedural_map
 
             seed_procedural_map(self.db, self.map_id)       # idempotent; uninformative prior
@@ -280,9 +291,24 @@ class Runner3D:
                                            decision_ticks=self.config.decision_ticks)
             else:
                 detector = ChestDetector3D(_templates(self.settings), method=self.detector_method)
-                visual = VisualAgent3D(agent_port, priors, rules=client.rules,
+                agent_priors = priors
+                if self.exploration is not None:
+                    from chest_hunter.exploration.active import (
+                        ActiveExplorer,
+                        ConfidenceThresholds,
+                        ExplorationConfig,
+                    )
+
+                    self.explorer = self.exploration() if callable(self.exploration) \
+                        else ActiveExplorer(self.exploration if isinstance(
+                            self.exploration, ExplorationConfig) else None)
+                    agent_priors = []                 # no prior chest coordinates
+                    if self.thresholds is None:
+                        self.thresholds = ConfidenceThresholds()
+                visual = VisualAgent3D(agent_port, agent_priors, rules=client.rules,
                                        detector=detector, navigation=navigation,
-                                       config=self.config, recorder=record)
+                                       config=self.config, recorder=record,
+                                       explorer=self.explorer, thresholds=self.thresholds)
                 if self.planner is not None:
                     self.planner.attach(visual, map_id=self.map_id)
                 controller = visual
@@ -311,6 +337,8 @@ class Runner3D:
                 supervisor.attach(controller)
                 self.supervisor = supervisor
             controller.initialize(telemetry)
+            if self.faults is not None and self.mode != "oracle":
+                self.faults.attach(self)
             if self.demo_recorder is not None:
                 self.demo_recorder.start(
                     episode_id=self.demo_episode_id, map_id=self.map_id, seed=self.seed,
@@ -391,6 +419,8 @@ class Runner3D:
                 self.demo_recorder.stop(outcome={"outcome": "failed", "reason": reason})
             raise
         finally:
+            if self.faults is not None:
+                self.faults.detach()
             recorder.flush()
             m = self.controller.metrics if self.controller is not None else Metrics3D()
             final_time = clock.time
@@ -447,15 +477,48 @@ class Runner3D:
         names = {p.name: p.location_id for p in priors}
         # the visual agent itself, also when a PolicySelector wraps it
         agent = getattr(self.controller, "agent", self.controller)
+        seen = sorted(p.name for p in priors if isinstance(agent, VisualAgent3D)
+                      and p.location_id in agent.world.seen_locations)
+        if isinstance(agent, VisualAgent3D) and agent.world.discover:
+            # Phase 7: the agent's own (dynamic) spawn points matched to real chests, for
+            # scoring only (evaluation channel, after the episode).
+            from chest_hunter.localization.world_model_3d import PriorStatus3D
+
+            found = [d for d in agent.world.priors.values() if d.location_id < 0 and (
+                d.location_id in agent.world.seen_locations or d.status in (
+                    PriorStatus3D.CHEST_SEEN, PriorStatus3D.OPENED, PriorStatus3D.FAILED))]
+            seen = sorted({c["name"] for c in present for d in found
+                           if math.dist(c["position"][:2], d.xyz[:2]) <= 2.0
+                           and abs(c["position"][2] - d.z) <= 1.0})
+        coverage = None
+        if self.explorer is not None:
+            coverage = _true_coverage(nav, start, self.explorer)
         return {"present": len(present), "available": len(reachable),
                 "opened_truth": sum(1 for c in present if c["opened"]),
                 "available_names": sorted(c["name"] for c in reachable),
                 "opened_names": sorted(c["name"] for c in present if c["opened"]),
-                "seen_names": sorted(p.name for p in priors
-                                     if isinstance(agent, VisualAgent3D)
-                                     and p.location_id in agent.world.seen_locations),
+                "seen_names": seen, "true_coverage": coverage,
                 "location_ids_opened": sorted(names[c["name"]] for c in present
                                               if c["opened"] and c["name"] in names)}
+
+
+def _true_coverage(nav: Any, start: tuple[float, float, float], explorer: Any) -> float | None:
+    """Share of the reachable walkable area (evaluation-only navigation graph) that the
+    agent's camera covered, on the explorer's 2 m grid (scoring only)."""
+    nodes = nav.reachable_from(start)
+    if not nodes:
+        return None
+    cmap = explorer.map
+    cells: set[tuple[int, int, int]] = set()
+    for node in nodes:
+        x, y, z = nav.node_position(node)
+        cells.add(cmap.key(x, y, z))
+    seen = 0
+    for key in cells:
+        c = cmap.cells.get(key)
+        if c is not None and c.views > 0:
+            seen += 1
+    return round(seen / len(cells), 4)
 
 
 def _layout_hash(map_id: str) -> str | None:

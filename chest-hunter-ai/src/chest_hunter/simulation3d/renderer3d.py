@@ -100,7 +100,7 @@ class Renderer3D:
 
     def __init__(self, world: World3D, intr: CameraIntrinsics, *, noise_std: float = 5.0,
                  lighting_variation: float = 0.08, fog_start: float = 45.0,
-                 fog_end: float = 140.0, seed: int = 0) -> None:
+                 fog_end: float = 140.0, seed: int = 0, surface_value: float = 1.0) -> None:
         self.world = world
         self.intr = intr
         self.noise_std = noise_std
@@ -111,6 +111,8 @@ class Renderer3D:
         self._static_v = np.array([f.vertices for f in static], dtype=np.float64).reshape(-1, 4, 3)
         self._static_n = np.array([f.normal for f in static], dtype=np.float64).reshape(-1, 3)
         self._static_c = np.array([f.colour for f in static], dtype=np.float64).reshape(-1, 3)
+        if surface_value != 1.0:              # Phase 7 texture variation (static surfaces only)
+            self._static_c = np.clip(self._static_c * surface_value, 0.0, 255.0)
         self._static_owner = np.zeros(len(static), dtype=np.int32)
         bx0, by0, bx1, by1 = world.bounds
         gz = world.ground_z
