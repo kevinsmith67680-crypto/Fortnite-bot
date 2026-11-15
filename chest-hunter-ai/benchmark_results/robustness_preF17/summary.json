@@ -1,0 +1,543 @@
+{
+ "per_fault": {
+  "frame_loss": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 10,
+   "detection": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 10,
+    "mean": 1.52,
+    "median": 1.4,
+    "std": 0.6746,
+    "ci_low": 1.0374,
+    "ci_high": 2.0026,
+    "min": 0.8,
+    "max": 2.4
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 10,
+     "mean": 0.0,
+     "median": 0.0,
+     "std": 0.1886,
+     "ci_low": -0.1349,
+     "ci_high": 0.1349,
+     "min": -0.4,
+     "max": 0.4
+    },
+    "better": 1,
+    "worse": 1,
+    "tied": 8,
+    "significant_at_95": false
+   }
+  },
+  "corrupted_frame": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 10,
+   "detection": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 10,
+    "mean": 1.52,
+    "median": 1.2,
+    "std": 0.9578,
+    "ci_low": 0.8348,
+    "ci_high": 2.2052,
+    "min": 0.4,
+    "max": 3.2
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 10,
+     "mean": -0.2,
+     "median": -0.2,
+     "std": 0.6325,
+     "ci_low": -0.6524,
+     "ci_high": 0.2524,
+     "min": -1.6,
+     "max": 0.8
+    },
+    "better": 2,
+    "worse": 5,
+    "tied": 3,
+    "significant_at_95": false
+   }
+  },
+  "false_detection": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 10,
+   "detection": {
+    "rate": null,
+    "note": "not applicable: the agent cannot tell this fault apart from the world"
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 10,
+    "mean": 1.92,
+    "median": 1.6,
+    "std": 0.8176,
+    "ci_low": 1.3351,
+    "ci_high": 2.5049,
+    "min": 0.4,
+    "max": 3.2
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 10,
+     "mean": -0.0,
+     "median": 0.0,
+     "std": 0.3266,
+     "ci_low": -0.2336,
+     "ci_high": 0.2336,
+     "min": -0.4,
+     "max": 0.8
+    },
+    "better": 1,
+    "worse": 2,
+    "tied": 7,
+    "significant_at_95": false
+   }
+  },
+  "missed_detection": {
+   "episodes": 10,
+   "injected": 8,
+   "applied": 8,
+   "detection": {
+    "rate": null,
+    "note": "not applicable: the agent cannot tell this fault apart from the world"
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 8,
+    "yes": 8
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 8,
+    "yes": 8
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 8,
+    "mean": 2.05,
+    "median": 2.2,
+    "std": 0.8124,
+    "ci_low": 1.3708,
+    "ci_high": 2.7292,
+    "min": 0.8,
+    "max": 3.2
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 8,
+     "mean": 0.1,
+     "median": 0.0,
+     "std": 0.1852,
+     "ci_low": -0.0548,
+     "ci_high": 0.2548,
+     "min": 0.0,
+     "max": 0.4
+    },
+    "better": 2,
+    "worse": 0,
+    "tied": 6,
+    "significant_at_95": false
+   }
+  },
+  "localisation_drift": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 10,
+   "detection": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 10,
+    "mean": 1.84,
+    "median": 1.8,
+    "std": 0.506,
+    "ci_low": 1.4781,
+    "ci_high": 2.2019,
+    "min": 1.2,
+    "max": 2.8
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 10,
+     "mean": -0.2,
+     "median": 0.0,
+     "std": 0.3887,
+     "ci_low": -0.4781,
+     "ci_high": 0.0781,
+     "min": -0.8,
+     "max": 0.4
+    },
+    "better": 1,
+    "worse": 4,
+    "tied": 5,
+    "significant_at_95": false
+   }
+  },
+  "unexpected_obstacle": {
+   "episodes": 10,
+   "injected": 9,
+   "applied": 9,
+   "detection": {
+    "rate": 0.7778,
+    "of": 9,
+    "yes": 7
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 9,
+    "yes": 9
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 9,
+    "yes": 9
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 9,
+    "mean": 1.6444,
+    "median": 1.2,
+    "std": 0.8589,
+    "ci_low": 0.9842,
+    "ci_high": 2.3047,
+    "min": 0.8,
+    "max": 3.2
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 9,
+     "mean": -0.1778,
+     "median": -0.4,
+     "std": 0.4522,
+     "ci_low": -0.5253,
+     "ci_high": 0.1698,
+     "min": -0.8,
+     "max": 0.8
+    },
+    "better": 1,
+    "worse": 5,
+    "tied": 3,
+    "significant_at_95": false
+   }
+  },
+  "interaction_failure": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 6,
+   "detection": {
+    "rate": 1.0,
+    "of": 6,
+    "yes": 6
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 6,
+    "yes": 6
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 6,
+    "yes": 6
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 6,
+    "mean": 2.5333,
+    "median": 2.2,
+    "std": 0.8641,
+    "ci_low": 1.6265,
+    "ci_high": 3.4401,
+    "min": 1.6,
+    "max": 3.6
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 6,
+     "mean": -0.0667,
+     "median": 0.0,
+     "std": 0.1633,
+     "ci_low": -0.238,
+     "ci_high": 0.1047,
+     "min": -0.4,
+     "max": 0.0
+    },
+    "better": 0,
+    "worse": 1,
+    "tied": 5,
+    "significant_at_95": false
+   }
+  },
+  "bridge_disconnect": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 10,
+   "detection": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "recovery": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 10,
+    "mean": 1.56,
+    "median": 1.4,
+    "std": 0.8733,
+    "ci_low": 0.9353,
+    "ci_high": 2.1847,
+    "min": 0.8,
+    "max": 3.2
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 10,
+     "mean": -0.0,
+     "median": 0.0,
+     "std": 0.1886,
+     "ci_low": -0.1349,
+     "ci_high": 0.1349,
+     "min": -0.4,
+     "max": 0.4
+    },
+    "better": 1,
+    "worse": 1,
+    "tied": 8,
+    "significant_at_95": false
+   }
+  },
+  "slow_inference": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 8,
+   "detection": {
+    "rate": 1.0,
+    "of": 8,
+    "yes": 8
+   },
+   "recovery": {
+    "rate": 0.375,
+    "of": 8,
+    "yes": 3
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 8,
+    "yes": 8
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 8,
+    "mean": 1.85,
+    "median": 1.6,
+    "std": 0.674,
+    "ci_low": 1.2865,
+    "ci_high": 2.4135,
+    "min": 1.2,
+    "max": 3.2
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 8,
+     "mean": 0.0,
+     "median": 0.0,
+     "std": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0,
+     "min": 0.0,
+     "max": 0.0
+    },
+    "better": 0,
+    "worse": 0,
+    "tied": 8,
+    "significant_at_95": false
+   }
+  },
+  "unreachable_target": {
+   "episodes": 10,
+   "injected": 10,
+   "applied": 10,
+   "detection": {
+    "rate": 0.6,
+    "of": 10,
+    "yes": 6
+   },
+   "recovery": {
+    "rate": 0.9,
+    "of": 10,
+    "yes": 9
+   },
+   "terminated_cleanly": {
+    "rate": 1.0,
+    "of": 10,
+    "yes": 10
+   },
+   "failed_episodes": 0,
+   "end_reasons_of_failures": [],
+   "throughput_truth_per_min": {
+    "n": 10,
+    "mean": 1.56,
+    "median": 1.6,
+    "std": 0.8733,
+    "ci_low": 0.9353,
+    "ci_high": 2.1847,
+    "min": 0.0,
+    "max": 2.8
+   },
+   "paired_throughput_minus_baseline": {
+    "difference": {
+     "n": 10,
+     "mean": -0.12,
+     "median": 0.0,
+     "std": 0.5673,
+     "ci_low": -0.5258,
+     "ci_high": 0.2858,
+     "min": -1.2,
+     "max": 0.8
+    },
+    "better": 2,
+    "worse": 3,
+    "tied": 5,
+    "significant_at_95": false
+   }
+  }
+ },
+ "overall": {
+  "faulted_episodes": 100,
+  "applied": 91,
+  "recovery": {
+   "rate": 0.9341,
+   "of": 91,
+   "yes": 85
+  },
+  "terminated_cleanly": {
+   "rate": 1.0,
+   "of": 91,
+   "yes": 91
+  },
+  "failed_episodes": 0
+ },
+ "baseline": {
+  "episodes": 100,
+  "throughput_truth_per_min": {
+   "n": 100,
+   "mean": 1.7831,
+   "median": 1.6,
+   "std": 0.8711,
+   "ci_low": 1.6103,
+   "ci_high": 1.956,
+   "min": 0.0,
+   "max": 3.6
+  },
+  "failed_episodes": 0
+ },
+ "primary_metric": "throughput_truth_per_min",
+ "agent_version": "7.0.0",
+ "generator_version": "7.0",
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+ "time_basis": "throughput per simulated minute; CPU and wall seconds are real time",
+ "config": "/home/user/Fortnite-bot/chest-hunter-ai/config/settings.json",
+ "setup": "phase7_active",
+ "description": "Phase 7 active exploration, no spawn points; strategy from the trained exploration memory (max_information when it has none)",
+ "kinds": [
+  "frame_loss",
+  "corrupted_frame",
+  "false_detection",
+  "missed_detection",
+  "localisation_drift",
+  "unexpected_obstacle",
+  "interaction_failure",
+  "bridge_disconnect",
+  "slow_inference",
+  "unreachable_target"
+ ],
+ "episodes_requested": 100,
+ "seed": 42,
+ "evaluation_seed": 900042,
+ "max_ticks": 4500,
+ "observation": [
+  320,
+  180
+ ],
+ "workers": 4,
+ "paired_baselines": true,
+ "wall_seconds": 0.0,
+ "errors": []
+}
