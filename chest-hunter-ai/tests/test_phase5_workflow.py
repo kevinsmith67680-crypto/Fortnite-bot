@@ -200,7 +200,9 @@ class Teleoperation(unittest.TestCase):
             self.assertEqual(float(arrays["action"][0, 0]), 1.0)
             self.assertEqual(float(arrays["action"][-1, 2]), 1.0)
             self.assertTrue(replay_episode(directory, client).exact)
-            session.root.destroy()
+            session.close()
+            self.assertIsNone(session.root)
+            session.close()                            # idempotent
 
 
 class LearningDashboard(unittest.TestCase):

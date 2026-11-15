@@ -15,6 +15,7 @@ replays exactly.
 from __future__ import annotations
 
 import contextlib
+import gc
 import time
 from typing import Any
 
@@ -69,12 +70,14 @@ class TeleopSession:
                                  "navigation": "navmesh", "decision_ticks": decision_ticks,
                                  "controller": "human-teleop"}, initial_observation=True)
         self._fresh_obs: Observation3D | None = self.obs
-        self.root = tk_root or tk.Tk()
+        self._owns_root = tk_root is None
+        self.root: Any = tk_root or tk.Tk()
         self.root.title("Chest Hunter - demonstration recording (keys act on this window only)")
-        self.view = tk.Label(self.root, bg="#000000")
+        self.view: Any = tk.Label(self.root, bg="#000000")
         self.view.pack()
-        self.status = tk.StringVar(value="recording")
-        tk.Label(self.root, textvariable=self.status, anchor="w").pack(fill="x")
+        self.status: Any = tk.StringVar(value="recording")
+        self._status_label: Any = tk.Label(self.root, textvariable=self.status, anchor="w")
+        self._status_label.pack(fill="x")
         self.root.bind("<KeyPress>", self._down)
         self.root.bind("<KeyRelease>", self._up)
         self.root.protocol("WM_DELETE_WINDOW", self.stop)
@@ -148,6 +151,24 @@ class TeleopSession:
             self.recorder.stop(outcome={"outcome": "stopped_by_operator", "steps": self.steps})
         with contextlib.suppress(self.tk.TclError):
             self.root.quit()
+
+    def close(self) -> None:
+        """Stop (the recording is saved) and destroy the window, releasing every Tk object
+        on this thread: Tk must not be torn down by the garbage collector on another one."""
+        if self.root is None:
+            return
+        self.stop()
+        self._photo = None
+        with contextlib.suppress(self.tk.TclError):
+            if self._owns_root:
+                self.root.destroy()
+            else:
+                self.view.destroy()
+                self._status_label.destroy()
+                self.root.unbind("<KeyPress>")
+                self.root.unbind("<KeyRelease>")
+        self.view = self.status = self._status_label = self.root = None
+        gc.collect()
 
     def run(self) -> None:
         period_ms = int(1000 * self.decision_ticks / 30)

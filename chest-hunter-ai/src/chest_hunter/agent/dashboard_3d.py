@@ -18,6 +18,7 @@ runner evaluates, nothing more: ground truth is never shown here).
 from __future__ import annotations
 
 import contextlib
+import gc
 import math
 import time
 from typing import Any
@@ -232,21 +233,22 @@ class Dashboard3D:
         import tkinter as tk
 
         self.tk = tk
-        self.root = tk.Tk()
+        # Tk objects are typed ``Any``: close() drops them (see there).
+        self.root: Any = tk.Tk()
         self.root.title("Chest Hunter 3D - debug dashboard")
         self.root.configure(bg="#1f1f1f")
-        self.camera = tk.Label(self.root, bg="#000000")
+        self.camera: Any = tk.Label(self.root, bg="#000000")
         self.camera.grid(row=0, column=0, rowspan=2, padx=6, pady=6)
-        self.map = tk.Label(self.root, bg="#000000")
+        self.map: Any = tk.Label(self.root, bg="#000000")
         self.map.grid(row=0, column=1, padx=6, pady=6, sticky="n")
-        self.info = tk.StringVar(value="waiting for the first observation...")
+        self.info: Any = tk.StringVar(value="waiting for the first observation...")
         tk.Label(self.root, textvariable=self.info, justify="left", anchor="nw", bg="#1f1f1f",
                  fg="#e6e6e6", font=("TkFixedFont", 9)).grid(row=1, column=1, sticky="nw", padx=6)
-        self.learning = tk.StringVar(value="")
+        self.learning: Any = tk.StringVar(value="")
         tk.Label(self.root, textvariable=self.learning, justify="left", anchor="nw", bg="#1f1f1f",
                  fg="#bfe3ff", font=("TkFixedFont", 9)).grid(row=2, column=1, sticky="nw",
                                                              padx=6)
-        self.policy_choice = tk.StringVar(value="deterministic")
+        self.policy_choice: Any = tk.StringVar(value="deterministic")
         bar = tk.Frame(self.root, bg="#1f1f1f")
         bar.grid(row=2, column=0, sticky="w", padx=6)
         tk.Label(bar, text="Policy:", bg="#1f1f1f", fg="#e6e6e6").pack(side="left")
@@ -308,5 +310,18 @@ class Dashboard3D:
         self.root.update()
 
     def close(self) -> None:
+        """Destroy the window and drop every Python reference to the Tk interpreter.
+
+        Tk may only be torn down on the thread that created it. A Tk image or variable kept
+        alive by a reference cycle (runner hook -> dashboard -> runner) would otherwise be
+        deleted later by the garbage collector on whatever thread runs it, for example a
+        bridge server thread, and Tcl then aborts the whole process."""
+        if self.root is None:
+            return
+        self._runner = None
+        self._images = []
         with contextlib.suppress(self.tk.TclError):
             self.root.destroy()
+        self.camera = self.map = self.info = self.learning = self.policy_choice = None
+        self.root = None
+        gc.collect()                       # leftover cycles: collect them on this thread

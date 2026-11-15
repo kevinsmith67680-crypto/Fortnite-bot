@@ -262,7 +262,10 @@ def _record_human(args: argparse.Namespace, ctx: Any, map_id: str, output: Path)
                   "P pause, Esc stop and save. Keys act on the recording window only.")
             session = TeleopSession(client, recorder, episode_id=episode_id, map_id=map_id,
                                     seed=args.seed, max_ticks=args.max_ticks or 18000)
-            session.run()
+            try:
+                session.run()
+            finally:
+                session.close()
     finally:
         if server is not None:
             server.stop()
