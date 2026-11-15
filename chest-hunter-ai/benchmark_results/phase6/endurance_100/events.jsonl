@@ -1,0 +1,1 @@
+{"action": "abandon_target", "data": {"period": ["EXPLORING", "PLANNING_ROUTE", "NAVIGATING", "SCANNING"], "repetitions": 3, "rung": 1}, "detail": "EXPLORING -> PLANNING_ROUTE -> NAVIGATING -> SCANNING x3", "episode": 12, "goal_location": null, "kind": "transition_loop", "seq": 1, "severity": "warning", "sim_time": 46.5333, "state": "EXPLORING", "wall_time": 15.1428}

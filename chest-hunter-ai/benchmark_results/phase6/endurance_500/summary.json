@@ -1,0 +1,114 @@
+{
+ "config": {
+  "max_ticks_per_episode": 1500,
+  "seed": 42,
+  "policy": "deterministic",
+  "planner": "short_horizon",
+  "supervisor": true,
+  "adaptive_compute": true,
+  "maps": [
+   "research_arena_3d"
+  ],
+  "width": 320,
+  "height": 180,
+  "backend": "reference",
+  "preserve_estimates": false,
+  "allow_test_maps": false,
+  "checkpoint_every": 10,
+  "max_reset_attempts": 3,
+  "model_dir": null,
+  "episodes": 500
+ },
+ "agent_version": "7.0.0",
+ "policy_version": "deterministic",
+ "output_dir": "benchmark_results/phase6/endurance_500",
+ "stopped_early": null,
+ "episodes_completed_in_run": 500,
+ "episodes_requested": 500,
+ "wall_seconds_this_session": 9329.2,
+ "environment_resets_failed": 0,
+ "warnings": [],
+ "aggregate": {
+  "episodes": 500,
+  "outcomes": {
+   "tick_limit": 500
+  },
+  "completion_rate": 0.0,
+  "failed": 0,
+  "communication_failures": 0,
+  "supervisor_interventions": 8,
+  "supervisor_aborts": 0,
+  "recovery_success_rate": 0.8527,
+  "opened_truth_total": 2214,
+  "over_reported_total": 0
+ },
+ "throughput_truth_per_min": {
+  "n": 500,
+  "mean": 5.3136,
+  "median": 6.0,
+  "std": 1.1196,
+  "ci_low": 5.2152,
+  "ci_high": 5.412,
+  "min": 2.4,
+  "max": 7.2
+ },
+ "episode_sim_seconds": {
+  "n": 500,
+  "mean": 50.0,
+  "median": 50.0,
+  "std": 0.0,
+  "ci_low": 50.0,
+  "ci_high": 50.0,
+  "min": 50.0,
+  "max": 50.0
+ },
+ "episode_sim_seconds_max": 50.0,
+ "cpu_seconds_per_episode": {
+  "n": 500,
+  "mean": 4.5119,
+  "median": 4.458,
+  "std": 0.6219,
+  "ci_low": 4.4572,
+  "ci_high": 4.5665,
+  "min": 2.939,
+  "max": 7.094
+ },
+ "memory": {
+  "warmup_episodes": 50,
+  "episodes_fitted": 450,
+  "rss_mb_first": 97.27,
+  "rss_mb_after_warmup": 102.3,
+  "rss_mb_last": 105.34,
+  "rss_mb_max": 109.11,
+  "rss_growth_mb_per_100_episodes": 0.535,
+  "gc_objects_growth_per_100_episodes": 198.2,
+  "open_fds_min_max": [
+   9,
+   9
+  ],
+  "threads_min_max": [
+   3,
+   3
+  ],
+  "criterion": "growth below 2.0 MB per 100 episodes after warm-up (at least 20 episodes fitted)",
+  "bounded": true
+ },
+ "previous_agent_released": {
+  "checked": 499,
+  "released": 499,
+  "not_released": 0
+ },
+ "resources": {
+  "samples": 501,
+  "process_cpu_percent_mean": 56.28,
+  "process_rss_mb_first": 56.03,
+  "process_rss_mb_last": 105.34,
+  "process_rss_mb_peak": 109.11,
+  "gpu": {
+   "available": false,
+   "reason": "no GPU tool (nvidia-smi) on this machine"
+  }
+ },
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+ "time_basis": "throughput per simulated minute; CPU and wall seconds are real time"
+}

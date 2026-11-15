@@ -1,0 +1,114 @@
+{
+ "config": {
+  "max_ticks_per_episode": 1500,
+  "seed": 42,
+  "policy": "deterministic",
+  "planner": "short_horizon",
+  "supervisor": true,
+  "adaptive_compute": true,
+  "maps": [
+   "research_arena_3d"
+  ],
+  "width": 320,
+  "height": 180,
+  "backend": "reference",
+  "preserve_estimates": false,
+  "allow_test_maps": false,
+  "checkpoint_every": 10,
+  "max_reset_attempts": 3,
+  "model_dir": null,
+  "episodes": 1000
+ },
+ "agent_version": "7.0.0",
+ "policy_version": "deterministic",
+ "output_dir": "benchmark_results/phase6/endurance_1000",
+ "stopped_early": null,
+ "episodes_completed_in_run": 1000,
+ "episodes_requested": 1000,
+ "wall_seconds_this_session": 11561.7,
+ "environment_resets_failed": 0,
+ "warnings": [],
+ "aggregate": {
+  "episodes": 1000,
+  "outcomes": {
+   "tick_limit": 1000
+  },
+  "completion_rate": 0.0,
+  "failed": 0,
+  "communication_failures": 0,
+  "supervisor_interventions": 16,
+  "supervisor_aborts": 0,
+  "recovery_success_rate": 0.8681,
+  "opened_truth_total": 4472,
+  "over_reported_total": 0
+ },
+ "throughput_truth_per_min": {
+  "n": 1000,
+  "mean": 5.3664,
+  "median": 6.0,
+  "std": 1.1142,
+  "ci_low": 5.2973,
+  "ci_high": 5.4355,
+  "min": 2.4,
+  "max": 7.2
+ },
+ "episode_sim_seconds": {
+  "n": 1000,
+  "mean": 50.0,
+  "median": 50.0,
+  "std": 0.0,
+  "ci_low": 50.0,
+  "ci_high": 50.0,
+  "min": 50.0,
+  "max": 50.0
+ },
+ "episode_sim_seconds_max": 50.0,
+ "cpu_seconds_per_episode": {
+  "n": 1000,
+  "mean": 4.3816,
+  "median": 4.3325,
+  "std": 0.5617,
+  "ci_low": 4.3467,
+  "ci_high": 4.4164,
+  "min": 2.96,
+  "max": 7.095
+ },
+ "memory": {
+  "warmup_episodes": 100,
+  "episodes_fitted": 900,
+  "rss_mb_first": 96.98,
+  "rss_mb_after_warmup": 102.98,
+  "rss_mb_last": 110.25,
+  "rss_mb_max": 110.56,
+  "rss_growth_mb_per_100_episodes": 0.466,
+  "gc_objects_growth_per_100_episodes": 205.9,
+  "open_fds_min_max": [
+   9,
+   9
+  ],
+  "threads_min_max": [
+   3,
+   3
+  ],
+  "criterion": "growth below 2.0 MB per 100 episodes after warm-up (at least 20 episodes fitted)",
+  "bounded": true
+ },
+ "previous_agent_released": {
+  "checked": 999,
+  "released": 999,
+  "not_released": 0
+ },
+ "resources": {
+  "samples": 1001,
+  "process_cpu_percent_mean": 76.24,
+  "process_rss_mb_first": 56.02,
+  "process_rss_mb_last": 110.25,
+  "process_rss_mb_peak": 110.56,
+  "gpu": {
+   "available": false,
+   "reason": "no GPU tool (nvidia-smi) on this machine"
+  }
+ },
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+ "time_basis": "throughput per simulated minute; CPU and wall seconds are real time"
+}
