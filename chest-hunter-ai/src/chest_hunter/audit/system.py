@@ -39,6 +39,19 @@ def _git_commit(root: Path) -> str | None:
         return None
 
 
+def _source_version(root: Path) -> str | None:
+    """Git tree id of ``src/`` at HEAD, or None when the source cannot be identified (no git,
+    or uncommitted changes under ``src/``)."""
+    try:
+        tree = subprocess.run(["git", "rev-parse", "HEAD:./src"], cwd=root, capture_output=True,
+                              text=True, check=True).stdout.strip()
+        dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", "src"], cwd=root,
+                               capture_output=True).returncode != 0
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return None if dirty or not tree else tree
+
+
 def _write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, indent=1, default=str) + "\n", encoding="utf-8")
 
@@ -163,11 +176,20 @@ class Audit:
     def _comparison(self, setups: tuple[str, ...], name: str) -> dict[str, Any]:
         from chest_hunter.analytics.phase7_benchmark import run_strategy_comparison
 
+        # Resume an interrupted comparison only with the same source code: rows written by
+        # other code would otherwise be reported as this run's measurements (F23).
+        out = self.out / name
+        out.mkdir(parents=True, exist_ok=True)
+        marker = out / "source_version.txt"
+        version = _source_version(self.root)
+        resume = version is not None and marker.exists() \
+            and marker.read_text(encoding="utf-8").strip() == version
+        marker.write_text(f"{version or 'unidentified'}\n", encoding="utf-8")
         summary = run_strategy_comparison(
             self.settings, setups=setups, categories=("unseen_layout",),
             episodes=self.episodes, model_dir=self.model_dir, workers=self.workers,
             max_ticks=self.settings.exploration.benchmark_max_ticks,
-            output_dir=self.out / name, resume=True)
+            output_dir=out, resume=resume)
         rows = []
         for setup, e in summary["per_setup"].items():
             rows.append({"configuration": setup, "episodes": e["episodes"],

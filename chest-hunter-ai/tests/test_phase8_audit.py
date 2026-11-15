@@ -177,6 +177,37 @@ class DefectRegressions(unittest.TestCase):
         # benchmark's 600 s episode.
         self.assertEqual(row["outcome"], "completed", row["end_reason"])
 
+    def test_f23_comparison_rows_from_other_code_are_not_reused(self) -> None:
+        # The audit re-run after F22 resumed the policy and planner row journals of the
+        # previous run and reported 320 rows played by the code before the fix.
+        from unittest import mock
+
+        from chest_hunter.audit import system
+
+        class Stop(Exception):
+            pass
+
+        calls: list[bool] = []
+
+        def fake(settings: Any, **kw: Any) -> Any:
+            calls.append(kw["resume"])
+            raise Stop
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            audit = system.Audit(_settings(), out, episodes=1, workers=1, held_out=True,
+                                 profile=False, verify_db=False, model_dir=None)
+            (out / "policy_comparison").mkdir()
+            (out / "policy_comparison" / "source_version.txt").write_text("v1\n")
+            patch_run = mock.patch(
+                "chest_hunter.analytics.phase7_benchmark.run_strategy_comparison", fake)
+            for version in ("v2", "v2", None, None):
+                with mock.patch.object(system, "_source_version", return_value=version), \
+                        patch_run, self.assertRaises(Stop):
+                    audit._comparison(("phase7_active",), "policy_comparison")
+        # other code: fresh; same code: resumed; unidentifiable code: never resumed
+        self.assertEqual(calls, [False, True, False, False])
+
     def test_f2_a_phase7_map_can_be_exported_for_unreal(self) -> None:
         # Before the fix export-arena-3d exported only research_arena_3d; the Phase 7 maps
         # (including the acceptance map) could not reach the Unreal project at all.
