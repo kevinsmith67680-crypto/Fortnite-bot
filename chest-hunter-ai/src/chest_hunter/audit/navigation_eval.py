@@ -161,12 +161,17 @@ def run_nav_task(task: NavTask) -> dict[str, Any]:
         runner = Runner3D.from_settings(
             db, settings, mode="hybrid", seed=task.seed, map_id=task.map_id,
             backend="reference", max_ticks=task.max_ticks, width=320, height=180,
+            evaluate=True,
             config=Agent3DConfig(smart_recovery=True), exploration=lambda: explorer,
             thresholds=ignore_chests, supervisor=SupervisorConfig(), on_decision=hook)
         result = runner.run()
+        agent = getattr(runner.controller, "agent", runner.controller)
+        ch = runner.server.session.env.character               # evaluation side
+        final_error = math.dist(agent.position[:2], (ch.x, ch.y))
     finally:
         db.close()
     m = result.metrics
+    vision = result.vision or {}
     sup = result.supervisor or {}
     travelled = explorer.travel_at_reach
     shortest = task.shortest_m
@@ -197,6 +202,10 @@ def run_nav_task(task: NavTask) -> dict[str, Any]:
         "routes_planned": m.routes_started, "navigation_failures": m.navigation_failures,
         "supervisor_interventions": int(sup.get("interventions_total", 0)),
         "outcome": result.outcome, "sim_seconds": round(result.sim_seconds, 2),
+        "pose_error_mean_m": vision.get("pose_error_mean_m"),
+        "pose_error_max_m": vision.get("pose_error_max_m"),
+        "final_position_error_m": round(final_error, 4),
+        "travelled_m": round(m.travel_distance, 2),
     }
 
 
@@ -236,7 +245,18 @@ def evaluate(settings: Any, *, maps: Sequence[str] = DEFAULT_MAPS, per_map: int 
             "failures": [{k: r[k] for k in ("map_id", "goal", "outcome", "recovery_reasons")}
                          for r in rs if not r["reached"]]}
     reachable = [r for r in rows if r["terrain"] != "unreachable"]
-    return {"tasks": len(rows), "per_terrain": per,
+    loc: dict[str, Any] = {}
+    for terrain in TERRAINS:
+        rs = [r for r in rows if r["terrain"] == terrain and r["pose_error_mean_m"] is not None]
+        if rs:
+            loc[terrain] = {
+                "pose_error_mean_m": _stats([r["pose_error_mean_m"] for r in rs]),
+                "pose_error_max_m": _stats([r["pose_error_max_m"] for r in rs]),
+                "final_error_m": _stats([r["final_position_error_m"] for r in rs]),
+                "error_per_100m": _stats([100 * r["final_position_error_m"] / r["travelled_m"]
+                                          for r in rs if r["travelled_m"] > 5]),
+                "failures_over_1m": sum(1 for r in rs if (r["pose_error_max_m"] or 0) > 1.0)}
+    return {"tasks": len(rows), "per_terrain": per, "localisation": loc,
             "overall_success_rate": round(sum(r["reached"] for r in reachable)
                                           / len(reachable), 4) if reachable else None,
             "maps": list(maps), "seed": seed,

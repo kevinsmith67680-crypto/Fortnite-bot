@@ -24,6 +24,9 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
+#: an opening this close to the end of the episode may still be being verified
+TRUNCATION_WINDOW_S = 6.0
+
 SCENARIOS: dict[str, tuple[str, float, float, str | None] | None] = {
     # name: (fault kind, duration s, intensity, trigger state) | None (no fault)
     "clean": None,
@@ -150,13 +153,23 @@ def run_interaction_job(job: InteractionJob) -> dict[str, Any]:
     credited = {p.location_id for p in agent.world.priors.values()
                 if p.status is PriorStatus3D.OPENED}
     truth = set(result.truth.get("location_ids_opened", []))
+    # when each true opening happened (evaluation side): an uncredited opening in the last
+    # seconds of the episode is truncation (still verifying when time ran out)
+    env = runner.server.session.env if runner.server is not None else None
+    by_name = {p.name: p.location_id for p in agent.world.priors.values()}
+    opened_at = {by_name.get(env.chests[e["spawn_index"]].name): float(e["sim_time"])
+                 for e in env.opened_log} if env is not None else {}
+    missed = truth - credited
+    truncated = {loc for loc in missed
+                 if result.sim_seconds - opened_at.get(loc, -1e9) < TRUNCATION_WINDOW_S}
     m = result.metrics
     a = injector.assess(result) if injector is not None else {}
     return {"scenario": job.scenario, "episode": job.episode, "outcome": result.outcome,
             "interaction_attempts": m.interaction_attempts,
             "failed_interactions": m.failed_interactions,
             "credited": len(credited), "truth_opened": len(truth),
-            "false_success": len(credited - truth), "false_failure": len(truth - credited),
+            "false_success": len(credited - truth),
+            "false_failure": len(missed - truncated), "truncated_by_episode_end": len(truncated),
             "credited_by_notification": m.credited_by_notification,
             "fault_applied": a.get("applied"), "fault_recovered": a.get("recovered")}
 
@@ -177,12 +190,15 @@ def agent_crosscheck(settings: Any, *, episodes: int = 6, seed: int = 21,
         credited = sum(r["credited"] for r in rs)
         truth = sum(r["truth_opened"] for r in rs)
         fs, ff = sum(r["false_success"] for r in rs), sum(r["false_failure"] for r in rs)
+        trunc = sum(r["truncated_by_episode_end"] for r in rs)
         attempts = sum(r["interaction_attempts"] for r in rs)
         per[s] = {"episodes": len(rs), "interaction_attempts": attempts,
                   "credited_openings": credited, "true_openings": truth,
                   "false_successes": fs, "false_failures": ff,
+                  "uncredited_at_episode_end": trunc,
                   "false_success_rate": round(fs / credited, 4) if credited else None,
-                  "false_failure_rate": round(ff / truth, 4) if truth else None,
+                  "false_failure_rate": round(ff / (truth - trunc), 4) if truth - trunc
+                  else None,
                   "interaction_success_rate": round(truth / attempts, 4) if attempts else None,
                   "credited_by_notification": sum(r["credited_by_notification"] for r in rs),
                   "faults_applied": sum(1 for r in rs if r["fault_applied"]),
