@@ -1344,7 +1344,81 @@ from the `learning` configuration section (`deterministic`).
 
 ### 16.4 Policy benchmark (research arena, 100 paired episodes)
 
-@@P5_POLICY_TABLE@@
+**Setup:**
+
+* `research_arena_3d`, 100 episodes per strategy from base seed 42. Every strategy plays
+  the same 100 episodes (the same chest draws and start), so the comparisons are paired.
+* Limit of 18,000 ticks (600 simulated seconds) per episode, 640×360 camera.
+* Model `bc_synthetic_v1` (trained on synthetic demonstrations only). The adaptive
+  strategies read the training-time history in `training/experience.db`.
+* 4 worker processes on the 4-vCPU development machine. All 500 episodes completed with
+  no errors, in 8,259 s wall time.
+
+**Strategies:**
+
+* `deterministic`: the Phase 4 controller (baseline).
+* `learned`: the model drives.
+* `hybrid`: the model steers the approach to a chest when it is confident.
+* `hybrid_adaptive`: hybrid plus adaptive planning and classified recovery.
+* `deterministic_adaptive`: an ablation, the Phase 4 controller plus adaptive planning and
+  classified recovery.
+
+The **primary metric** is chests actually opened per simulated minute. Openings are
+counted from the simulator's ground truth, which is used only for scoring and never shown
+to the agent.
+
+| Strategy | Mean /min | Median | SD | 95 % CI | Paired Δ vs deterministic [95 % CI] | % change | Better / worse / tied |
+|---|---|---|---|---|---|---|---|
+| deterministic | **4.403** | 4.385 | 0.559 | [4.292, 4.514] | baseline | - | - |
+| learned | 0.844 | 0.800 | 0.137 | [0.817, 0.871] | −3.559 [−3.666, −3.452] | −80.8 % | 0 / 100 / 0 |
+| hybrid | 3.350 | 3.359 | 0.532 | [3.245, 3.456] | −1.053 [−1.170, −0.935] | −23.9 % | 3 / 97 / 0 |
+| hybrid_adaptive | 3.296 | 3.322 | 0.570 | [3.183, 3.409] | −1.107 [−1.229, −0.984] | −25.1 % | 3 / 97 / 0 |
+| deterministic_adaptive | 4.397 | 4.383 | 0.488 | [4.301, 4.494] | −0.005 [−0.100, +0.089] (not significant) | −0.1 % | 53 / 47 / 0 |
+
+| Strategy | Agent-counted /min | Under- / over-counted (total) | % of available chests opened | Chests found | Spawn points resolved | Recovery attempts / ep | Simulated s / ep | Model share of decisions |
+|---|---|---|---|---|---|---|---|---|
+| deterministic | 4.133 | 126 / 0 | 85.9 % | 94.3 % | 100 % | 11.7 | 279.0 | 0 |
+| learned | 0.844 | 0 / 0 | 35.7 % | 55.9 % | 43.5 % | 10.6 | 600.0 (all at the limit) | 0.878 |
+| hybrid | 3.183 | 97 / 0 | 79.2 % | 94.1 % | 99.4 % | 25.5 | 342.9 | 0.248 |
+| hybrid_adaptive | 3.296 | 0 / 0 | 80.0 % | 93.6 % | 99.5 % | 26.1 | 352.9 | 0.216 |
+| deterministic_adaptive | 4.397 | 0 / 0 | 86.8 % | 93.6 % | 100 % | 10.1 | 281.8 | 0 |
+
+**What the results show:**
+
+* **The deterministic controller remains the best strategy and stays the default.**
+* **The learned policy opened 81 % fewer chests per minute.**
+  * All 100 episodes ran to the 600 s limit.
+  * It found 56 % of the available chests and resolved 44 % of the spawn points.
+  * Every episode used all 25 stuck handovers to the deterministic controller.
+  * Likely causes: the policy sees a single frame and has no memory or route plan, so it
+    cannot head for unexplored spawn points. Its yaw prediction is worse than a constant.
+    Small errors lead to states the expert never visited, where it has no training data.
+* **Hybrid control cost 23.9 %** (worse in 97 of 100 episodes).
+  * It opened 1.6 fewer chests per episode (−7.8 %) and took 64 s longer (+22.9 %).
+  * Its recovery attempts doubled. Over the 100 episodes, camera-alignment recoveries rose
+    from 802 to 1,556, and it had 405 path-blocked recoveries, against none for
+    deterministic.
+  * The learned approach steering is less precise than the analytic controller it copies.
+* **Adaptive planning did not open more chests.**
+  * Against deterministic, the change was −0.005 /min [95 % CI −0.100, +0.089], −0.1 %.
+    Against hybrid, it was −0.054 /min [−0.193, +0.085], −1.6 %. Neither is significant.
+  * deterministic_adaptive's agent-counted throughput is 6.4 % higher (significant), but
+    that is bookkeeping only. Classified recovery confirmed 155 openings by notification,
+    where the plain controller under-counted 126.
+  * It travelled 10.7 % further in about the same time. It entered the Phase 4 RECOVERING
+    state 74 % less often (2.9 against 11.4 times per episode), because the classified
+    strategies (look-backs, rescans) handle those cases first.
+* **No over-counting.** In all 500 episodes, every opening the agent recorded was a real
+  opening.
+* **Learned inference under benchmark load:** 0.89 ms mean and 1.15 ms p95 per
+  observation (averages of the per-episode values). In the 100 learned episodes, two
+  inferences exceeded the 20 ms limit and were discarded.
+* **Speed:** one worker simulated 5–6× faster than real time on one core (45 CPU-s per
+  279 simulated s for deterministic, 117 CPU-s per 600 s for learned). Perception
+  took about 6.2 ms per analysed frame. Peak memory was 140 MiB per worker.
+
+Per-episode rows, the full summary and the report are in
+[`benchmark_results/phase5/policies`](benchmark_results/phase5/policies).
 
 ### 16.5 Generalisation: familiar vs unseen maps
 

@@ -347,7 +347,167 @@ builder.
 
 ## 13. Performance benchmarks
 
-@@BENCHMARK_RESULTS@@
+All numbers in this section come from the **Python reference arena**, not Unreal Engine.
+Throughput is per **simulated** minute; CPU and wall times are real time. Machine: the
+4-vCPU Intel Xeon 2.1 GHz development machine, no GPU, Python 3.13, 4 worker processes
+running in parallel. The benchmarks ran on commit `f544bf6`.
+
+### 13.1 Policy benchmark (research arena)
+
+```bash
+python -m chest_hunter benchmark-policies --episodes 100 --workers 4 \
+    --strategies deterministic,learned,hybrid,hybrid_adaptive,deterministic_adaptive \
+    --model training/checkpoints/bc_synthetic_v1 --experience-db training/experience.db \
+    --output-dir benchmark_results/phase5/policies
+```
+
+* **Episodes:** `research_arena_3d`, base seed 42, 100 episodes per strategy. Every
+  strategy plays the same 100 episodes (same chest draws and start pose), so all
+  comparisons are paired by episode.
+* **Limits:** 18,000 ticks (600 simulated s) per episode, 640×360 camera.
+* **History:** the adaptive strategies read the training-time history (6 episodes, seed
+  1000) and do not update it during this benchmark.
+* **Outcome:** all 500 episodes completed, with no errors, in 8,259 s wall time.
+
+**Primary metric: chests actually opened per simulated minute.** Openings are taken from
+the simulator's ground truth, which is used only for scoring. The agent's own count is
+reported as a secondary metric, because it can miss real openings (under-counting) or,
+in principle, count openings that did not happen (over-counting). The 95 % intervals use
+the t distribution. Paired differences are per episode.
+
+| Strategy | Mean /min | Median | SD | 95 % CI | Paired Δ vs deterministic [95 % CI] | % change | Better / worse / tied |
+|---|---|---|---|---|---|---|---|
+| deterministic | **4.403** | 4.385 | 0.559 | [4.292, 4.514] | baseline | - | - |
+| learned | 0.844 | 0.800 | 0.137 | [0.817, 0.871] | −3.559 [−3.666, −3.452] | −80.8 % | 0 / 100 / 0 |
+| hybrid | 3.350 | 3.359 | 0.532 | [3.245, 3.456] | −1.053 [−1.170, −0.935] | −23.9 % | 3 / 97 / 0 |
+| hybrid_adaptive | 3.296 | 3.322 | 0.570 | [3.183, 3.409] | −1.107 [−1.229, −0.984] | −25.1 % | 3 / 97 / 0 |
+| deterministic_adaptive | 4.397 | 4.383 | 0.488 | [4.301, 4.494] | −0.005 [−0.100, +0.089] (not significant) | −0.1 % | 53 / 47 / 0 |
+
+Secondary metric, chests counted by the agent per simulated minute:
+
+| Strategy | Mean /min | 95 % CI | Paired Δ vs deterministic [95 % CI] | % change | Under- / over-counted (total) | Credited by notification |
+|---|---|---|---|---|---|---|
+| deterministic | 4.133 | [4.015, 4.250] | baseline | - | 126 / 0 | 0 |
+| learned | 0.844 | [0.817, 0.871] | −3.289 [−3.403, −3.174] | −79.6 % | 0 / 0 | 0 |
+| hybrid | 3.183 | [3.072, 3.293] | −0.950 [−1.076, −0.824] | −23.0 % | 97 / 0 | 0 |
+| hybrid_adaptive | 3.296 | [3.183, 3.409] | −0.836 [−0.963, −0.710] | −20.2 % | 0 / 0 | 165 |
+| deterministic_adaptive | 4.397 | [4.301, 4.494] | **+0.265 [+0.163, +0.367]** | **+6.4 %** | 0 / 0 | 155 |
+
+The +6.4 % for deterministic_adaptive is **bookkeeping, not more chests**. The classified
+recovery confirms openings the agent was notified about but did not see clearly, which
+the plain controller leaves uncounted. Measured against ground truth, the two
+strategies are indistinguishable. In all 500 episodes no strategy recorded an opening
+that did not happen.
+
+Other measurements (means per episode unless noted):
+
+| Strategy | % of available chests opened | Chests found | Navigation success | Interaction success | Spawn points resolved | Travel / chest | RECOVERING entries | Simulated s |
+|---|---|---|---|---|---|---|---|---|
+| deterministic | 85.9 % | 94.3 % | 0.996 | 0.937 | 100 % | 43.7 m | 11.4 | 279.0 |
+| learned | 35.7 % | 55.9 % | 0.775 | 0.661 | 43.5 % | 90.6 m | 10.3 | 600.0 |
+| hybrid | 79.2 % | 94.1 % | 1.000 | 0.936 | 99.4 % | 49.4 m | 25.2 | 342.9 |
+| hybrid_adaptive | 80.0 % | 93.6 % | 0.999 | 0.990 | 99.5 % | 50.3 m | 16.6 | 352.9 |
+| deterministic_adaptive | 86.8 % | 93.6 % | 0.940 | 0.998 | 100 % | 44.6 m | 2.9 | 281.8 |
+
+How the columns are defined:
+
+* *Chests found*: available chests the agent saw, from its own world model.
+* *Interaction success*: openings the agent counted, divided by its interaction attempts.
+  Under-counting therefore lowers it.
+* *RECOVERING entries*: how often the Phase 4 recovery state was entered.
+
+Recovery attempts by class (totals over 100 episodes):
+
+| Class | deterministic | learned | hybrid | hybrid_adaptive | deterministic_adaptive |
+|---|---|---|---|---|---|
+| camera_alignment_failure | 802 | 29 | 1,556 | 1,013 | 169 |
+| interaction_failure | 339 | 11 | 559 | 835 | 602 |
+| path_blocked | 0 | 988 | 405 | 388 | 0 |
+| target_lost | 0 | 0 | 0 | 312 | 178 |
+| target_unreachable | 29 | 29 | 32 | 47 | 54 |
+| localisation_uncertainty | 0 | 0 | 0 | 10 | 6 |
+| model_inference_failure | 0 | 0 | 0 | 0 | 0 |
+
+Selector fallbacks (totals over 100 episodes):
+
+* **learned:**
+  * `no_observation` 100: the first decision of each episode, before the first frame.
+  * `stuck_recovery` 2,500: exactly the cap of 25 handovers in every episode.
+  * `timeout` 2: inferences over 20 ms, discarded.
+* **hybrid:** `low_confidence` 22,061. These are approach or align decisions where
+  P < 0.6, which the controller handled itself.
+* **hybrid_adaptive:** `low_confidence` 11,580.
+
+**Why the learned and hybrid policies underperform:**
+
+* **learned:**
+  * Every episode reached the 600 s limit.
+  * The policy found only 56 % of the available chests. Its travel per chest was twice
+    the controller's, and it used up all 25 stuck handovers in every episode.
+  * Causes:
+    * The policy sees one frame and has no memory and no route plan. Once no chest is
+      in view, it has no information about where the unexplored spawn points are.
+    * Its yaw output is worse than a constant on held-out data (section 6).
+    * Behaviour cloning compounds small errors into states the expert never visited.
+      The 988 path-blocked recoveries are consistent with this.
+  * After the 25 handovers are used, a stuck learned policy stays stuck until the limit.
+* **hybrid:**
+  * The model steers only the approach and alignment, but its steering is less precise
+    than the analytic controller it imitates.
+  * Camera-alignment recoveries doubled (1,556 against 802), and path-blocked recoveries
+    appeared (405).
+  * Episodes took 64 s longer (+22.9 %, paired 95 % CI +52.7 to +75.1 s), and opened
+    1.6 fewer chests (−7.8 %, CI −2.0 to −1.2).
+
+Because of these results, the deterministic controller stays the default policy (the
+`learning.policy` setting).
+
+**Adaptive planning:**
+
+* Neither ablation shows a measurable gain in chests opened: deterministic_adaptive
+  against deterministic is above; hybrid_adaptive against hybrid is −0.054 /min
+  [−0.193, +0.085], −1.6 %.
+* deterministic_adaptive travelled 10.7 % further (+88 m [+76, +100] per episode) in the
+  same simulated time (+2.9 s [−0.8, +6.5]).
+* It entered the RECOVERING state 74 % less often, because look-backs and rescans
+  resolve those situations first.
+* On this hand-made arena the configured spawn probabilities are already correct, so the
+  spawn estimates have nothing to correct (section 15).
+
+**Resources (real time, 4 workers sharing 4 vCPUs):**
+
+| Strategy | CPU s / episode | CPU s per simulated s | Wall s / episode | Perception ms / analysed frame | Inference ms mean / p95 | Peak RSS per worker |
+|---|---|---|---|---|---|---|
+| deterministic | 45.3 | 0.162 | 45.7 | 6.2 | - | 140 MiB |
+| learned | 117.4 | 0.196 | 118.4 | 5.9 | 0.89 / 1.15 | 140 MiB |
+| hybrid | 58.9 | 0.172 | 59.5 | 6.5 | 0.86 / 1.11 | 140 MiB |
+| hybrid_adaptive | 59.9 | 0.170 | 60.4 | 6.4 | 0.86 / 1.11 | 140 MiB |
+| deterministic_adaptive | 44.4 | 0.158 | 44.9 | 6.2 | - | 140 MiB |
+
+So one worker simulates about 5–6× faster than real time on one core of this machine.
+That is simulator throughput, not the speed of any real game. Inference latency is the
+per-episode mean and p95 of `LearnedPolicy.predict` (preprocessing plus ONNX Runtime
+FP32), averaged over episodes, measured while all four cores were busy.
+
+### 13.2 Reproducibility, and what the first run found
+
+The benchmark was run twice with identical settings. The first run exposed three
+bookkeeping errors, all fixed (commit `31f34d4`) before the second run:
+
+1. **Discovery reported 0 for the selector strategies.** The ground-truth summary looked
+   for the agent's world model on the selector wrapper instead of the wrapped agent.
+2. **Over-counting in learned mode.** 26 of 100 learned episodes credited one spawn point
+   that was never opened. A stale verification phase was resumed after a handover
+   (section 9).
+3. **A misleading primary metric.** The first run ranked strategies by the agent's own
+   count. deterministic_adaptive then appeared 6.4 % better, but ground truth showed
+   −0.1 %. Ground truth is now the primary metric.
+
+The deterministic and deterministic_adaptive strategies do not use the selector. Their
+100 episodes each were **identical in both runs** (every non-timing column of every row),
+so the fixes did not change the baseline.
+
+@@GEN_RESULTS@@
 
 ## 14. Hardware requirements
 
