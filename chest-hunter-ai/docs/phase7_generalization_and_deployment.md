@@ -314,6 +314,13 @@ bootstrap (2 000 resamples; pairs are resampled together for paired categories).
 **Means and paired differences.** These have t-based 95 % intervals. The number of completed
 episodes is reported per cell.
 
+**Interruptions.** Every benchmark writes each finished episode row to
+`rows.partial.jsonl` in its output directory as soon as the episode ends. This covers the
+Phase 6 benchmark too. `--resume` plays only the missing jobs and refuses a journal written
+with other parameters. The Phase 6 benchmark had to be re-run for this reason: its first run
+was stopped by the session's 2-hour limit for background jobs after 540 of 700 jobs, and at
+that time the rows were held in memory only.
+
 ## 9. Robustness testing
 
 `benchmark-robustness --failure-injection` (the flag is required). Episode `e` injects
