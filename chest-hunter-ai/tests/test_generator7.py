@@ -132,6 +132,18 @@ class VariantTest(unittest.TestCase):
         self.assertNotEqual((base.start, base.start_yaw_deg),
                             (start.start, start.start_yaw_deg))
 
+    def test_unfamiliar_variant_keeps_the_chest_appearance(self) -> None:
+        look = g7.build_arena("p7_complex_test_000_unfamiliar").appearance
+        lo, hi = g7.TRAIN_LIGHTING
+        self.assertFalse(lo <= look["lighting"] <= hi)
+        lo, hi = g7.TRAIN_CHEST_HUE
+        self.assertTrue(lo <= look["chest_hue_shift"] <= hi)
+        base = g7.build_arena("p7_complex_test_000")
+        acc = g7.build_arena("p7_complex_test_000_unfamiliar")
+        self.assertNotEqual(base.start, acc.start)
+        self.assertGreater(len({round(s.z, 1) for s in acc.spawns}), 2)
+        self.assertTrue(g7.is_held_out(acc.map_id))
+
     def test_elevation_variant_adds_raised_levels(self) -> None:
         base = g7.build_arena("p7_open_train_005")
         high = g7.build_arena("p7_open_train_005_elevation")

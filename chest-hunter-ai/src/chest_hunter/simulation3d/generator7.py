@@ -15,7 +15,8 @@ Map ids: ``p7_<category>_<split>_<NNN>`` with an optional shift variant suffix
   base layout): ``obstacles`` (new obstacle arrangement, same buildings), ``light`` (lighting
   outside the training range), ``appearance`` (chest colour/brightness and surface textures
   outside the training range), ``start`` (another start position and camera direction),
-  ``elevation`` (extra raised levels with chests), ``combined`` (all of them).
+  ``elevation`` (extra raised levels with chests), ``combined`` (all of them),
+  ``unfamiliar`` (everything except the chest appearance: the end-to-end acceptance map).
 
 Everything is deterministic for a map id: separate seeded streams for the layout, the
 obstacles, the appearance and the start pose. Every map is validated with its navigation
@@ -52,10 +53,11 @@ from chest_hunter.simulation3d.navmesh import NavGrid3D
 GENERATOR_VERSION: Final = "7.0"
 CATEGORIES: Final = ("open", "indoor", "mixed", "complex")
 SPLITS: Final = ("train", "test")
-VARIANTS: Final = ("obstacles", "light", "appearance", "start", "elevation", "combined")
+VARIANTS: Final = ("obstacles", "light", "appearance", "start", "elevation", "combined",
+                    "unfamiliar")
 SEED_BASE: Final = {"train": 20_000, "test": 70_000}
 _ID = re.compile(r"^p7_(open|indoor|mixed|complex)_(train|test)_(\d{3})"
-                 r"(?:_(obstacles|light|appearance|start|elevation|combined))?$")
+                 r"(?:_(obstacles|light|appearance|start|elevation|combined|unfamiliar))?$")
 
 #: Appearance ranges of the training distribution; the shift variants leave them.
 TRAIN_LIGHTING: Final = (0.85, 1.12)
@@ -471,7 +473,7 @@ def _appearance(rng: random.Random, variant: str | None) -> dict[str, float]:
             "chest_value": rng.uniform(*TRAIN_CHEST_VALUE),
             "chest_hue_shift": rng.uniform(*TRAIN_CHEST_HUE),
             "surface_value": rng.uniform(*TRAIN_SURFACE_VALUE)}
-    if variant in ("light", "combined"):
+    if variant in ("light", "combined", "unfamiliar"):
         look["lighting"] = rng.choice((rng.uniform(0.62, 0.72), rng.uniform(1.22, 1.32)))
     if variant in ("appearance", "combined"):
         look["chest_value"] = rng.choice((rng.uniform(0.78, 0.84), rng.uniform(1.14, 1.2)))
@@ -483,19 +485,20 @@ def _appearance(rng: random.Random, variant: str | None) -> dict[str, float]:
 def _generate(spec: MapSpec, settings: GeneratorSettings, attempt: int) -> Arena3D:
     variant = spec.variant
     layout = random.Random(f"p7:{spec.base_id}:layout:{attempt}")
-    obstacle_key = "obstacles2" if variant in ("obstacles", "combined") else "obstacles"
+    obstacle_key = "obstacles2" if variant in ("obstacles", "combined", "unfamiliar") \
+        else "obstacles"
     obstacles = random.Random(f"p7:{spec.base_id}:{obstacle_key}:{attempt}")
     b = _Builder(spec, settings)
     BUILDERS[spec.category](b, layout, obstacles)
-    if variant in ("elevation", "combined"):
+    if variant in ("elevation", "combined", "unfamiliar"):
         extra = random.Random(f"p7:{spec.base_id}:elevation:{attempt}")
         for k in range(2):
             b.plateau(extra, f"Extra Level {k + 1}", (1.5, 2.25)[k])
     if settings.unreachable_fraction > 0 and layout.random() < min(1.0, 4 * settings
                                                                    .unreachable_fraction):
         b.sealed_room(layout, "Sealed Room")
-    start_rng = random.Random(f"p7:{spec.base_id}:start" + (":shift" if variant in
-                                                          ("start", "combined") else ""))
+    shifted = variant in ("start", "combined", "unfamiliar")
+    start_rng = random.Random(f"p7:{spec.base_id}:start" + (":shift" if shifted else ""))
     spot = b.space.spot(start_rng, 1.0, 1.0, 1.5)
     if spot is None and b.rooms:
         r = b.rooms[0]

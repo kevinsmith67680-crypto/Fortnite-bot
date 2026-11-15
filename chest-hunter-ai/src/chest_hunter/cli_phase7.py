@@ -202,6 +202,15 @@ def register(add: AddCommand) -> None:
     sub.add_argument("--max-ticks", type=_positive)
     sub.add_argument("--quiet", action="store_true")
 
+    sub = add("acceptance-phase7", "End-to-end acceptance on a held-out procedural map: the "
+                                   "Phase 7 and Phase 6 agents, with and without injected "
+                                   "failures, plus a reproducibility re-run.",
+              cmd_acceptance)
+    sub.add_argument("--episodes", type=_positive, default=10)
+    sub.add_argument("--map", metavar="MAP_ID", help="a held-out map (default "
+                     "p7_complex_test_000_unfamiliar)")
+    _common_benchmark(sub, "benchmark_results/phase7/acceptance", max_ticks=18000)
+
     sub = add("check-runtime", "Startup checks for a deployment: configuration, database schema, "
                                "model compatibility, observation size, bridge protocol and "
                                "environment version, output directories.", cmd_check_runtime)
@@ -338,6 +347,22 @@ def cmd_train_exploration(args: argparse.Namespace, ctx: Any) -> int:
     print(json.dumps(result, indent=1, default=str))
     print(f"Memory saved to {path}; per-episode training log appended to {log}")
     return 0 if not result["errors"] else 1
+
+
+def cmd_acceptance(args: argparse.Namespace, ctx: Any) -> int:
+    from chest_hunter.analytics.phase7_benchmark import ACCEPTANCE_MAP, run_acceptance
+
+    s = ctx.settings
+    out = Path(args.output)
+    summary = run_acceptance(
+        s, episodes=args.episodes, seed=args.seed, map_id=args.map or ACCEPTANCE_MAP,
+        model_dir=_model_dir(ctx, args.model),
+        memory_path=_memory_arg(ctx, args.exploration_memory), workers=args.workers,
+        max_ticks=args.max_ticks or 18000, width=s.exploration.benchmark_observation_width,
+        height=s.exploration.benchmark_observation_height, output_dir=out,
+        progress=_progress(args.quiet))
+    print((out / "report.md").read_text(encoding="utf-8"))
+    return 0 if not summary["errors"] else 1
 
 
 def cmd_check_runtime(args: argparse.Namespace, ctx: Any) -> int:

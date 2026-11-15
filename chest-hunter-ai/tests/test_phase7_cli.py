@@ -33,7 +33,8 @@ class ParserTest(unittest.TestCase):
         a = self.parser.parse_args(["profile-agent", "--episodes", "20", "--report",
                                     "benchmark_results/resource_profile.json"])
         self.assertEqual(a.report, "benchmark_results/resource_profile.json")
-        for cmd in (["train-exploration"], ["benchmark-exploration"], ["check-runtime"]):
+        for cmd in (["train-exploration"], ["benchmark-exploration"], ["check-runtime"],
+                    ["acceptance-phase7", "--episodes", "2"]):
             self.parser.parse_args(cmd)
 
     def test_phase5_generalisation_defaults_are_unchanged(self) -> None:

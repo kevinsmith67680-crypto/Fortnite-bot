@@ -315,6 +315,7 @@ def episode_row(job: P7Job, runner: Any, result: Any, profiler: Any) -> dict[str
         "recovery_success_rate": round(resolved / attempts, 4) if attempts else None,
         "recoveries": m.recoveries, "abandoned_targets": m.abandoned_targets,
         "supervisor_interventions": int(sup.get("interventions_total", 0)),
+        "supervisor_detections": json.dumps(sup.get("detections", {}), sort_keys=True),
         "supervisor_aborted": bool(sup.get("aborted")),
         "travel_distance_m": round(m.travel_distance, 1),
         "frontiers_selected": explorer.stats.selections if explorer else None,
@@ -341,7 +342,8 @@ FIELDS: Final = (
     "detection_precision", "detection_recall", "chest_distance_error_m", "pose_error_mean_m",
     "navigation_success_rate", "navigation_failures", "routes_started", "recovery_attempts",
     "recovery_resolved", "recovery_success_rate", "recoveries", "abandoned_targets",
-    "supervisor_interventions", "supervisor_aborted", "travel_distance_m",
+    "supervisor_interventions", "supervisor_detections", "supervisor_aborted",
+    "travel_distance_m",
     "frontiers_selected", "frontier_selection_ms_mean", "camera_scans", "inference_mean_ms",
     "learned_share", "frames_analysed", "agent_cpu_seconds", "agent_cpu_per_sim_second",
     "process_cpu_seconds", "wall_seconds", "peak_rss_mb", "strategy_used", "strategy_reason",
@@ -700,6 +702,131 @@ def train_exploration_memory(
             "bandit_choice": {f: memory_strategy(memory, f) for f in CATEGORIES},
             "wall_seconds": round(time.perf_counter() - started, 1),
             "rows": rows}
+
+
+# -- end-to-end acceptance -------------------------------------------------------------------------
+
+ACCEPTANCE_MAP: Final = "p7_complex_test_000_unfamiliar"
+ACCEPTANCE_TARGETS: Final = {"interaction_success": 0.90, "coverage": 0.85}
+
+
+def run_acceptance(settings: Settings, *, episodes: int = 10, seed: int = 42,
+                   map_id: str = ACCEPTANCE_MAP, model_dir: str | Path | None = None,
+                   memory_path: str | Path | None = None, workers: int = 1,
+                   max_ticks: int = 18000, width: int = 320, height: int = 180,
+                   output_dir: str | Path | None = None,
+                   progress: Callable[[str], None] | None = None) -> dict[str, Any]:
+    """Phase 7 end-to-end acceptance on one held-out map (unknown layout, rooms, outdoor
+    areas, several elevations, unfamiliar lighting and start).
+
+    Per episode: the Phase 7 agent and the Phase 6 agent (given the spawn points), each once
+    without a fault and once with fault ``FAULT_KINDS[e % 10]``, all on the same map, seed and
+    episode. Episode 0 of the Phase 7 agent is played a second time to check reproducibility.
+    """
+    from chest_hunter.runtime.faults import FAULT_KINDS
+    from chest_hunter.simulation3d.generator7 import is_held_out, parse
+
+    if not is_held_out(map_id):
+        raise ValidationError(f"{map_id} is not a held-out map")
+    _validate(("phase7_active", "phase6_priors"), episodes, model_dir)
+    family = parse(map_id).category
+    eval_seed = evaluation_seed(seed)
+    common = (str(settings.config_path), str(model_dir) if model_dir else None,
+              str(memory_path) if memory_path else None, max_ticks, width, height)
+    jobs: list[P7Job] = []
+    for e in range(episodes):
+        kind = FAULT_KINDS[e % len(FAULT_KINDS)]
+        for setup in ("phase7_active", "phase6_priors"):
+            jobs.append(P7Job(setup, "clean", family, map_id, eval_seed, e, *common))
+            jobs.append(P7Job(setup, "fault", family, map_id, eval_seed, e, *common,
+                              fault_kind=kind, fault_seed=e))
+    jobs.append(P7Job("phase7_active", "repeat", family, map_id, eval_seed, 0, *common))
+    started = time.perf_counter()
+    rows, errors = run_jobs(jobs, workers=workers, progress=progress)
+    rows.sort(key=lambda r: (int(r["episode"]), r["setup"], r["category"]))
+
+    def group(setup: str, cat: str) -> list[dict[str, Any]]:
+        return [r for r in rows if r["setup"] == setup and r["category"] == cat]
+
+    per: dict[str, Any] = {}
+    for setup in ("phase7_active", "phase6_priors"):
+        for cat in ("clean", "fault"):
+            rs = group(setup, cat)
+            entry = summarise_group(rs)
+            entry["loop_detections"] = sum(json.loads(str(r.get("supervisor_detections")
+                                                          or "{}")).get("transition_loop", 0)
+                                           for r in rs)
+            entry["failed_episodes"] = sum(1 for r in rs if r["outcome"] == "failed")
+            if cat == "fault":
+                entry["faults"] = {str(r["fault_kind"]): {
+                    "applied": r.get("fault_applied"), "detected": r.get("fault_detected"),
+                    "recovered": r.get("fault_recovered"), "outcome": r["outcome"]}
+                    for r in rs}
+            per[f"{setup}/{cat}"] = entry
+    first = [r for r in group("phase7_active", "clean") if int(r["episode"]) == 0]
+    again = group("phase7_active", "repeat")
+    keys = ("outcome", "chests_opened_truth", "travel_distance_m", "exploration_coverage",
+            "interaction_attempts", "recoveries", "sim_seconds")
+    reproducible = bool(first and again) and all(first[0].get(k) == again[0].get(k)
+                                                 for k in keys)
+    clean = per["phase7_active/clean"]
+    targets = {
+        "interaction_success": {"target": ACCEPTANCE_TARGETS["interaction_success"],
+                                "measured": clean["interaction_success_pooled"]},
+        "reachable_opened": {"target": None, "measured": clean["reachable_opened_pooled"]},
+        "coverage": {"target": ACCEPTANCE_TARGETS["coverage"],
+                     "measured": clean["exploration_coverage"]["mean"]},
+    }
+    for v in targets.values():
+        v["met"] = None if v["target"] is None or v["measured"] is None \
+            else v["measured"] >= v["target"]
+    rss = [float(r["peak_rss_mb"]) for r in rows if r.get("peak_rss_mb") is not None]
+    summary = {
+        "map_id": map_id, "per_group": per, "targets": targets,
+        "reproducible": reproducible, "reproducibility_keys": list(keys),
+        "phase7_minus_phase6": {cat: {m: _paired_diff(group("phase7_active", cat),
+                                                      group("phase6_priors", cat), m)
+                                      for m in (PRIMARY_METRIC, "percent_reachable_opened")}
+                                for cat in ("clean", "fault")},
+        "peak_rss_mb_max": max(rss) if rss else None, "primary_metric": PRIMARY_METRIC,
+    }
+    summary.update(_meta(settings, episodes_requested=episodes, seed=seed,
+                         evaluation_seed=eval_seed, max_ticks=max_ticks,
+                         observation=[width, height], workers=workers,
+                         memory_path=str(memory_path) if memory_path else None,
+                         wall_seconds=round(time.perf_counter() - started, 1), errors=errors))
+    if output_dir is not None:
+        write_outputs(rows, summary, Path(output_dir), format_acceptance_report(summary))
+    return summary
+
+
+def format_acceptance_report(summary: dict[str, Any]) -> str:
+    lines = ["# Phase 7 end-to-end acceptance", "",
+             f"Map {summary['map_id']} (held out: unseen layout, rooms, outdoor areas, several "
+             f"elevations, unfamiliar lighting and start). {summary.get('environment')}. "
+             f"{summary.get('episodes_requested')} episodes per group, "
+             f"{summary.get('max_ticks')} ticks.", "",
+             "| group | n | throughput | reachable opened | interaction success | coverage | "
+             "outcomes | failed | loops detected |", "|---|---|---|---|---|---|---|---|---|"]
+    for g, e in summary["per_group"].items():
+        lines.append(f"| {g} | {e['episodes']} | {_ci(e[PRIMARY_METRIC])} | "
+                     f"{_pct(e['reachable_opened_pooled'])} | "
+                     f"{_pct(e['interaction_success_pooled'])} | "
+                     f"{_ci(e['exploration_coverage'])} | {e['outcomes']} | "
+                     f"{e['failed_episodes']} | {e['loop_detections']} |")
+    lines += ["", "Engineering targets (Phase 7 agent, fault-free episodes):", ""]
+    for k, v in summary["targets"].items():
+        lines.append(f"* {k}: measured {v['measured']}, target {v['target']}, met: {v['met']}")
+    keys = ", ".join(summary["reproducibility_keys"])
+    lines += [f"* reproducible (episode 0 played twice, identical {keys}): "
+              f"{summary['reproducible']}",
+              f"* peak RSS of any worker: {summary['peak_rss_mb_max']} MB", "",
+              "Phase 7 minus Phase 6 (paired by episode):", ""]
+    for cat, d in summary["phase7_minus_phase6"].items():
+        t = d[PRIMARY_METRIC]
+        lines.append(f"* {cat}: throughput {_ci(t['difference'])}, better/worse/tied "
+                     f"{t['better']}/{t['worse']}/{t['tied']}")
+    return "\n".join(lines)
 
 
 # -- outputs --------------------------------------------------------------------------------------

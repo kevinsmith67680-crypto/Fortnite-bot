@@ -1191,7 +1191,8 @@ _COMMANDS_WITHOUT_DATABASE = frozenset({"init-db", "export-arena-3d", "record-de
                                         "train-policy", "export-policy", "evaluate-policy",
                                         "benchmark-policies", "benchmark-generalization",
                                         "benchmark-robustness", "benchmark-exploration",
-                                        "train-exploration", "check-runtime"})
+                                        "train-exploration", "check-runtime",
+                                        "acceptance-phase7"})
 
 
 def _require_database(db: DatabaseManager) -> None:
