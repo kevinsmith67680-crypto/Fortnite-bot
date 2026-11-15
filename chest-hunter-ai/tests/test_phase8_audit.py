@@ -85,6 +85,34 @@ class DefectRegressions(unittest.TestCase):
             finally:
                 db.close()
 
+    def test_f19_a_reattributed_opening_is_not_credited_twice(self) -> None:
+        # p7_mixed_test_003, evaluation seed, episode 14, deterministic controller with spawn
+        # points: the opening was reattributed from spawn point 16 to 21 (F14), but 16 stayed
+        # "unverified" and was credited again 0.1 s later while aligning on it, without an
+        # interaction (8 true openings, 9 reported, 8 attempts).
+        from chest_hunter.analytics.phase7_benchmark import P7Job, evaluation_seed, run_p7_job
+
+        row = run_p7_job(P7Job("audit_policy_deterministic", "unseen_layout", "mixed",
+                               "p7_mixed_test_003", evaluation_seed(42), 14,
+                               str(ROOT / "config" / "settings.json"), None, None, 6000, 320,
+                               180))
+        self.assertEqual(row["over_reported"], 0, row)
+        self.assertEqual(row["chests_opened_reported"], row["chests_opened_truth"])
+
+    def test_f20_mixed_visual_evidence_alone_does_not_credit_an_opening(self) -> None:
+        # p7_open_test_019, evaluation seed, episode 76, two injected interaction failures:
+        # a failed interaction was credited on two "opened" looks against two "closed" ones,
+        # with no opening notification (8 true openings, 9 reported).
+        from chest_hunter.analytics.phase7_benchmark import P7Job, evaluation_seed, run_p7_job
+
+        row = run_p7_job(P7Job("phase7_active", "fault", "open", "p7_open_test_019",
+                               evaluation_seed(42), 76, str(ROOT / "config" / "settings.json"),
+                               str(ROOT / "training" / "checkpoints" / "bc_synthetic_v1"),
+                               str(ROOT / "training" / "exploration_memory_v1.json"), 4500, 320,
+                               180, fault_kind="interaction_failure", fault_seed=76,
+                               evaluate=False))
+        self.assertEqual(row["over_reported"], 0, row)
+
     def test_f17_exploration_progress_clears_the_loop_window(self) -> None:
         # p7_indoor_test_007, evaluation seed, episode 29: 11 false "transition loop"
         # detections and 6 interventions in 150 fault-free seconds before the fix.

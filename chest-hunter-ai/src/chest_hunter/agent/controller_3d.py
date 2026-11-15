@@ -609,8 +609,14 @@ class VisualAgent3D(StateMachine[Agent3DState]):
     def _credit_open(self, location_id: int, seconds: float, reward: bool | None) -> bool:
         """Count one opening; ``False`` when this spawn point was already credited (one
         spawn point holds at most one chest per episode, so it is never counted twice)."""
-        location_id = self._opened_location(location_id)
+        resolved = self._opened_location(location_id)
+        # Both ids leave the unverified set: when the opening was reattributed (F14), the
+        # interaction's own spawn point stayed "unverified" and was credited a second time
+        # when the agent aligned on it and saw the neighbouring opened chest (Phase 8 audit
+        # F19: one phantom opening per affected episode).
         self._unverified.pop(location_id, None)
+        self._unverified.pop(resolved, None)
+        location_id = resolved
         prior = self.world.priors[location_id]
         if prior.status is PriorStatus3D.OPENED:
             if self.goal is not None and self.goal.location_id == location_id \
@@ -1270,7 +1276,10 @@ class VisualAgent3D(StateMachine[Agent3DState]):
                 self._verify["closed"] += int(closed and not opened)
         seconds = self.now - self._hold_started
         v = self._verify
-        if v["opened"] >= 2 or (v["opened"] >= 1 and v["reward"] >= 1):
+        # Visual evidence alone must be unanimous: two "opened" looks against two "closed"
+        # ones, without the opening notification, credited a chest whose interaction had
+        # failed (Phase 8 audit F20, opened/closed confusion of single frames).
+        if (v["opened"] >= 2 and v["closed"] == 0) or (v["opened"] >= 1 and v["reward"] >= 1):
             if goal.location_id is not None:
                 reward = v["reward"] > 0 and self._last_notification_reward
                 self._credit_open(goal.location_id, seconds, reward=reward)
