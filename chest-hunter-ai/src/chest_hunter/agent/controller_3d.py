@@ -44,6 +44,7 @@ from chest_hunter.runtime.profiler import NULL_PROFILER
 from chest_hunter.unreal_bridge.action_adapter import ActionCommand, look_towards, move_towards
 from chest_hunter.unreal_bridge.client import BridgeError, StepResult
 from chest_hunter.unreal_bridge.observation_adapter import Observation3D, Telemetry
+from chest_hunter.unreal_bridge.protocol import MAX_RAYS
 from chest_hunter.vision.chest_detector_3d import (
     ChestDetector3D,
     Detection3D,
@@ -925,6 +926,9 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         try:
             with self.profiler.section("frontier_selection"):
                 target = ex.select(pos, speed, length, tentative)
+                if target is None and not ex.dense_fan_done(pos):
+                    ex.add_dense_fan(pos, *self._dense_fan(pos))
+                    target = ex.select(pos, speed, length, tentative)
         except _OffMesh:
             return self._wait_to_land(S.EXPLORING)
         if target is None:
@@ -941,6 +945,22 @@ class VisualAgent3D(StateMachine[Agent3DState]):
         self.goal = Goal3D("explore", target.point, None)
         self.world.objective = f"explore {target.region} ({target.gain:.0f} cells)"
         return S.PLANNING_ROUTE
+
+    def _dense_fan(self, pos: tuple[float, float, float]
+                   ) -> tuple[list[float], list[float] | None]:
+        """The denser fan for the completion check, in requests of at most MAX_RAYS rays."""
+        ex = self.explorer
+        assert ex is not None
+        bearings = ex.dense_bearings()
+        distances: list[float] = []
+        try:
+            for i in range(0, len(bearings), MAX_RAYS):
+                distances += self.port.nav_raycast(pos, bearings[i:i + MAX_RAYS],
+                                                   max_distance=ex.cfg.ray_reach_m)
+        except BridgeError:
+            self.metrics.service_errors += 1
+            return bearings, None
+        return bearings, distances
 
     def _navigate_explore(self, goal: Goal3D, follower: PathFollower,
                           pos: tuple[float, float, float]) -> Agent3DState | None:

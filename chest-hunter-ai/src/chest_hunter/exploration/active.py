@@ -346,6 +346,7 @@ class ActiveExplorer:
         self.done = False
         self.cells_at_target_start = 0
         self._ray_enclosure: dict[Key, float] = {}
+        self._dense_fans: set[Key] = set()
         #: learning signals for the persistent memory (exploration.self_improving)
         self.cells_by_region: dict[str, float] = {r: 0.0 for r in REGION_TYPES}
         self.discoveries_by_region: dict[str, float] = {r: 0.0 for r in REGION_TYPES}
@@ -360,6 +361,28 @@ class ActiveExplorer:
 
     def bearings(self) -> list[float]:
         return [k * 360.0 / self.cfg.ray_count for k in range(self.cfg.ray_count)]
+
+    def dense_bearings(self, factor: int = 4) -> list[float]:
+        """A fan ``factor`` times denser than the regular one, offset by half a step."""
+        n = self.cfg.ray_count * factor
+        return [(k + 0.5) * 360.0 / n for k in range(n)]
+
+    def dense_fan_done(self, origin: tuple[float, float, float]) -> bool:
+        return self.map.key(*origin) in self._dense_fans
+
+    def add_dense_fan(self, origin: tuple[float, float, float], bearings: Sequence[float],
+                      distances: Sequence[float] | None) -> int:
+        """Before exploration is declared complete, a denser fan from the same place: a
+        doorway between two of the regular rays leaves no open edge and no walkable cell
+        beyond it, and the episode ended after the first scan (Phase 8 audit F21: 18 of 800
+        Phase 7 episodes, all indoor, ended at 3.9 s). Once per place; ``distances`` is
+        ``None`` when the service failed (the place still counts as tried)."""
+        self._dense_fans.add(self.map.key(*origin))
+        if distances is None:
+            return 0
+        new = self.map.integrate_fan(origin, bearings, distances, self.cfg.ray_reach_m)
+        self._candidates = None                         # rebuild with the new cells
+        return new
 
     def add_fan(self, origin: tuple[float, float, float], distances: Sequence[float]) -> int:
         bearings = self.bearings()

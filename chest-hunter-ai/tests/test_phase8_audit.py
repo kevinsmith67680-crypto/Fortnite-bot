@@ -113,6 +113,31 @@ class DefectRegressions(unittest.TestCase):
                                evaluate=False))
         self.assertEqual(row["over_reported"], 0, row)
 
+    def test_f21_a_closed_looking_start_room_does_not_end_the_episode(self) -> None:
+        # p7_indoor_test_001, evaluation seed, episode 5: none of the 16 regular rays left the
+        # start room through its doorway, the first frontier search found nothing and the
+        # episode ended as "exploration complete" after 3.9 s with no chest (18 of 800 Phase 7
+        # generalisation episodes, all indoor).
+        from chest_hunter.analytics.phase7_benchmark import P7Job, evaluation_seed, run_p7_job
+
+        row = run_p7_job(P7Job("phase7_active_deterministic", "unseen_layout", "indoor",
+                               "p7_indoor_test_001", evaluation_seed(42), 5,
+                               str(ROOT / "config" / "settings.json"), None, None, 1500, 320,
+                               180, evaluate=False))
+        self.assertEqual(row["outcome"], "tick_limit", row["end_reason"])
+        self.assertGreater(row["exploration_coverage"] or 0.0, 0.05)
+
+    def test_f21_the_dense_fan_is_tried_once_per_place(self) -> None:
+        from chest_hunter.exploration.active import ActiveExplorer, ExplorationConfig
+
+        ex = ActiveExplorer(ExplorationConfig())
+        bearings = ex.dense_bearings()
+        self.assertEqual(len(bearings), 4 * ExplorationConfig().ray_count)
+        self.assertFalse(ex.dense_fan_done((1.0, 1.0, 0.0)))
+        ex.add_dense_fan((1.0, 1.0, 0.0), bearings, None)    # service failure still counts
+        self.assertTrue(ex.dense_fan_done((1.0, 1.0, 0.0)))
+        self.assertFalse(ex.dense_fan_done((9.0, 9.0, 0.0)))
+
     def test_f17_exploration_progress_clears_the_loop_window(self) -> None:
         # p7_indoor_test_007, evaluation seed, episode 29: 11 false "transition loop"
         # detections and 6 interventions in 150 fault-free seconds before the fix.
