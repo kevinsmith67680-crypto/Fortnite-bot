@@ -1,0 +1,525 @@
+{
+ "environment": "Python reference arena in the same process (NOT Unreal Engine)",
+ "machine": {
+  "cpus": 4,
+  "platform": "linux",
+  "python": "3.13.18",
+  "platform_detail": "Linux-6.18.44-fc-v470-x86_64-with-glibc2.39"
+ },
+ "map": "held-out unseen_layout maps",
+ "seed": 900042,
+ "policy": "deterministic",
+ "exploration": "active",
+ "observation": [
+  0,
+  0
+ ],
+ "gpu": {
+  "available": false,
+  "reason": "no GPU tool (nvidia-smi) on this machine"
+ },
+ "notes": [
+  "pipeline_cpu: CPU time of the agent's own thread in the top-level profiled sections (perception, exploration update, action generation incl. planning, navigation queries and learned inference, supervision, persistence)",
+  "simulator_cpu: process CPU minus the agent thread's sections; it is the Python reference arena (physics + software renderer) plus runner overhead and the evaluation-only scoring. It is NOT a measurement of the Unreal graphics workload, which needs a GPU and was not available",
+  "memory: resident set size of the whole process after each episode"
+ ],
+ "profiles": {
+  "320x180_5fps": {
+   "episodes": 3,
+   "simulated_seconds": 600.0,
+   "wall_seconds": 35.6,
+   "pipeline_cpu_seconds": 5.75,
+   "pipeline_cpu_per_simulated_second": 0.0096,
+   "pipeline_cpu_ms_per_analysed_frame": 1.916,
+   "pipeline_share_of_one_core_at_real_time": 0.0096,
+   "bridge_client_cpu_seconds": 1.93,
+   "process_cpu_seconds": 34.27,
+   "simulator_cpu_seconds": 26.59,
+   "rss_mb": {
+    "first": 253.3,
+    "last": 261.9,
+    "max": 261.9
+   },
+   "frames_analysed": 3000,
+   "components": {
+    "preprocessing": {
+     "calls": 3000,
+     "mean_ms": 0.5397,
+     "p95_ms": 0.7702,
+     "cpu_total_s": 1.5967
+    },
+    "chest_detection": {
+     "calls": 3000,
+     "mean_ms": 0.5845,
+     "p95_ms": 1.1067,
+     "cpu_total_s": 1.7317
+    },
+    "tracking_localisation": {
+     "calls": 3000,
+     "mean_ms": 0.3686,
+     "p95_ms": 0.7914,
+     "cpu_total_s": 1.0808
+    },
+    "interaction_cues": {
+     "calls": 3000,
+     "mean_ms": 0.0382,
+     "p95_ms": 0.2336,
+     "cpu_total_s": 0.1129
+    },
+    "exploration_update": {
+     "calls": 3000,
+     "mean_ms": 0.3889,
+     "p95_ms": 1.6013,
+     "cpu_total_s": 0.6484
+    },
+    "action_generation": {
+     "calls": 9000,
+     "mean_ms": 0.3123,
+     "p95_ms": 0.1391,
+     "cpu_total_s": 0.5746
+    },
+    "database_persistence": {
+     "calls": 15,
+     "mean_ms": 0.1002,
+     "p95_ms": 0.1808,
+     "cpu_total_s": 0.0015
+    },
+    "route_selection": {
+     "calls": 133,
+     "mean_ms": 18.0629,
+     "p95_ms": 43.2775,
+     "cpu_total_s": 0.235
+    },
+    "frontier_selection": {
+     "calls": 94,
+     "mean_ms": 20.6446,
+     "p95_ms": 38.5231,
+     "cpu_total_s": 0.2233
+    },
+    "navigation_query": {
+     "calls": 386,
+     "mean_ms": 5.9382,
+     "p95_ms": 18.0468,
+     "cpu_total_s": 0.0644
+    },
+    "simulator_step": {
+     "calls": 9000,
+     "mean_ms": 2.479,
+     "p95_ms": 7.4861,
+     "cpu_total_s": 1.9266
+    }
+   },
+   "per_episode": [
+    {
+     "episode": 0,
+     "map_id": "p7_open_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.8,
+     "frames_analysed": 1000,
+     "bridge_round_trip_ms": 2.239,
+     "cpu_seconds": 10.948,
+     "wall_seconds": 11.416,
+     "rss_mb": 253.3
+    },
+    {
+     "episode": 1,
+     "map_id": "p7_indoor_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.2,
+     "frames_analysed": 1000,
+     "bridge_round_trip_ms": 2.335,
+     "cpu_seconds": 10.15,
+     "wall_seconds": 10.566,
+     "rss_mb": 255.4
+    },
+    {
+     "episode": 2,
+     "map_id": "p7_mixed_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.5,
+     "frames_analysed": 1000,
+     "bridge_round_trip_ms": 2.841,
+     "cpu_seconds": 13.168,
+     "wall_seconds": 13.581,
+     "rss_mb": 261.9
+    }
+   ]
+  },
+  "480x270_5fps": {
+   "episodes": 3,
+   "simulated_seconds": 404.3,
+   "wall_seconds": 31.1,
+   "pipeline_cpu_seconds": 7.0,
+   "pipeline_cpu_per_simulated_second": 0.0173,
+   "pipeline_cpu_ms_per_analysed_frame": 3.462,
+   "pipeline_share_of_one_core_at_real_time": 0.0173,
+   "bridge_client_cpu_seconds": 1.58,
+   "process_cpu_seconds": 30.28,
+   "simulator_cpu_seconds": 21.7,
+   "rss_mb": {
+    "first": 269.3,
+    "last": 270.2,
+    "max": 270.2
+   },
+   "frames_analysed": 2022,
+   "components": {
+    "preprocessing": {
+     "calls": 2022,
+     "mean_ms": 1.1376,
+     "p95_ms": 1.6126,
+     "cpu_total_s": 2.2801
+    },
+    "chest_detection": {
+     "calls": 2022,
+     "mean_ms": 1.2688,
+     "p95_ms": 2.0688,
+     "cpu_total_s": 2.5068
+    },
+    "tracking_localisation": {
+     "calls": 2022,
+     "mean_ms": 0.5629,
+     "p95_ms": 1.0463,
+     "cpu_total_s": 1.099
+    },
+    "interaction_cues": {
+     "calls": 2022,
+     "mean_ms": 0.0962,
+     "p95_ms": 0.5046,
+     "cpu_total_s": 0.1921
+    },
+    "exploration_update": {
+     "calls": 2022,
+     "mean_ms": 0.4444,
+     "p95_ms": 1.819,
+     "cpu_total_s": 0.4883
+    },
+    "action_generation": {
+     "calls": 6066,
+     "mean_ms": 0.2642,
+     "p95_ms": 0.1604,
+     "cpu_total_s": 0.4319
+    },
+    "database_persistence": {
+     "calls": 13,
+     "mean_ms": 0.1108,
+     "p95_ms": 0.1878,
+     "cpu_total_s": 0.0014
+    },
+    "route_selection": {
+     "calls": 107,
+     "mean_ms": 11.1242,
+     "p95_ms": 25.658,
+     "cpu_total_s": 0.1743
+    },
+    "frontier_selection": {
+     "calls": 60,
+     "mean_ms": 16.041,
+     "p95_ms": 25.9618,
+     "cpu_total_s": 0.1624
+    },
+    "navigation_query": {
+     "calls": 279,
+     "mean_ms": 4.3146,
+     "p95_ms": 12.0893,
+     "cpu_total_s": 0.0472
+    },
+    "simulator_step": {
+     "calls": 6065,
+     "mean_ms": 3.4692,
+     "p95_ms": 10.8391,
+     "cpu_total_s": 1.5805
+    }
+   },
+   "per_episode": [
+    {
+     "episode": 0,
+     "map_id": "p7_open_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 2.1,
+     "frames_analysed": 1000,
+     "bridge_round_trip_ms": 2.93,
+     "cpu_seconds": 13.534,
+     "wall_seconds": 13.847,
+     "rss_mb": 269.3
+    },
+    {
+     "episode": 1,
+     "map_id": "p7_indoor_test_000",
+     "outcome": "completed",
+     "sim_seconds": 4.33,
+     "throughput_truth_per_min": 0.0,
+     "frames_analysed": 22,
+     "bridge_round_trip_ms": 3.296,
+     "cpu_seconds": 0.392,
+     "wall_seconds": 0.403,
+     "rss_mb": 270.2
+    },
+    {
+     "episode": 2,
+     "map_id": "p7_mixed_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.8,
+     "frames_analysed": 1000,
+     "bridge_round_trip_ms": 3.705,
+     "cpu_seconds": 16.353,
+     "wall_seconds": 16.867,
+     "rss_mb": 270.2
+    }
+   ]
+  },
+  "640x360_10fps": {
+   "episodes": 3,
+   "simulated_seconds": 600.0,
+   "wall_seconds": 85.1,
+   "pipeline_cpu_seconds": 20.47,
+   "pipeline_cpu_per_simulated_second": 0.0341,
+   "pipeline_cpu_ms_per_analysed_frame": 4.549,
+   "pipeline_share_of_one_core_at_real_time": 0.0341,
+   "bridge_client_cpu_seconds": 3.47,
+   "process_cpu_seconds": 83.58,
+   "simulator_cpu_seconds": 59.63,
+   "rss_mb": {
+    "first": 293.5,
+    "last": 315.8,
+    "max": 315.8
+   },
+   "frames_analysed": 4500,
+   "components": {
+    "preprocessing": {
+     "calls": 4500,
+     "mean_ms": 1.778,
+     "p95_ms": 2.4903,
+     "cpu_total_s": 7.8697
+    },
+    "chest_detection": {
+     "calls": 4500,
+     "mean_ms": 1.8193,
+     "p95_ms": 2.6115,
+     "cpu_total_s": 8.0652
+    },
+    "tracking_localisation": {
+     "calls": 4500,
+     "mean_ms": 0.5466,
+     "p95_ms": 1.0542,
+     "cpu_total_s": 2.3777
+    },
+    "interaction_cues": {
+     "calls": 4500,
+     "mean_ms": 0.1054,
+     "p95_ms": 0.705,
+     "cpu_total_s": 0.464
+    },
+    "exploration_update": {
+     "calls": 4500,
+     "mean_ms": 0.3781,
+     "p95_ms": 1.6781,
+     "cpu_total_s": 1.0338
+    },
+    "action_generation": {
+     "calls": 9000,
+     "mean_ms": 0.2968,
+     "p95_ms": 0.1596,
+     "cpu_total_s": 0.6606
+    },
+    "database_persistence": {
+     "calls": 16,
+     "mean_ms": 0.1073,
+     "p95_ms": 0.1863,
+     "cpu_total_s": 0.0017
+    },
+    "route_selection": {
+     "calls": 151,
+     "mean_ms": 13.3259,
+     "p95_ms": 32.1556,
+     "cpu_total_s": 0.239
+    },
+    "frontier_selection": {
+     "calls": 85,
+     "mean_ms": 19.9924,
+     "p95_ms": 33.566,
+     "cpu_total_s": 0.2239
+    },
+    "navigation_query": {
+     "calls": 369,
+     "mean_ms": 5.6049,
+     "p95_ms": 18.7415,
+     "cpu_total_s": 0.0703
+    },
+    "simulator_step": {
+     "calls": 9000,
+     "mean_ms": 6.6337,
+     "p95_ms": 16.1433,
+     "cpu_total_s": 3.468
+    }
+   },
+   "per_episode": [
+    {
+     "episode": 0,
+     "map_id": "p7_open_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 2.1,
+     "frames_analysed": 1500,
+     "bridge_round_trip_ms": 5.616,
+     "cpu_seconds": 26.296,
+     "wall_seconds": 26.89,
+     "rss_mb": 293.5
+    },
+    {
+     "episode": 1,
+     "map_id": "p7_indoor_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 0.9,
+     "frames_analysed": 1500,
+     "bridge_round_trip_ms": 6.44,
+     "cpu_seconds": 28.434,
+     "wall_seconds": 28.895,
+     "rss_mb": 301.3
+    },
+    {
+     "episode": 2,
+     "map_id": "p7_mixed_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.8,
+     "frames_analysed": 1500,
+     "bridge_round_trip_ms": 6.369,
+     "cpu_seconds": 28.845,
+     "wall_seconds": 29.293,
+     "rss_mb": 315.8
+    }
+   ]
+  },
+  "320x180_adaptive": {
+   "episodes": 3,
+   "simulated_seconds": 600.0,
+   "wall_seconds": 33.4,
+   "pipeline_cpu_seconds": 5.79,
+   "pipeline_cpu_per_simulated_second": 0.0097,
+   "pipeline_cpu_ms_per_analysed_frame": 2.218,
+   "pipeline_share_of_one_core_at_real_time": 0.0097,
+   "bridge_client_cpu_seconds": 2.0,
+   "process_cpu_seconds": 31.94,
+   "simulator_cpu_seconds": 24.15,
+   "rss_mb": {
+    "first": 316.6,
+    "last": 317.6,
+    "max": 317.6
+   },
+   "frames_analysed": 2612,
+   "components": {
+    "preprocessing": {
+     "calls": 2612,
+     "mean_ms": 0.6159,
+     "p95_ms": 0.8897,
+     "cpu_total_s": 1.55
+    },
+    "chest_detection": {
+     "calls": 2612,
+     "mean_ms": 0.7073,
+     "p95_ms": 1.3919,
+     "cpu_total_s": 1.8143
+    },
+    "tracking_localisation": {
+     "calls": 2612,
+     "mean_ms": 0.4358,
+     "p95_ms": 0.9648,
+     "cpu_total_s": 1.1163
+    },
+    "interaction_cues": {
+     "calls": 2612,
+     "mean_ms": 0.0506,
+     "p95_ms": 0.2881,
+     "cpu_total_s": 0.1316
+    },
+    "exploration_update": {
+     "calls": 2612,
+     "mean_ms": 0.4467,
+     "p95_ms": 1.7755,
+     "cpu_total_s": 0.6331
+    },
+    "action_generation": {
+     "calls": 9000,
+     "mean_ms": 0.2854,
+     "p95_ms": 0.1405,
+     "cpu_total_s": 0.5476
+    },
+    "database_persistence": {
+     "calls": 14,
+     "mean_ms": 0.121,
+     "p95_ms": 0.2201,
+     "cpu_total_s": 0.0017
+    },
+    "route_selection": {
+     "calls": 137,
+     "mean_ms": 15.5085,
+     "p95_ms": 33.9344,
+     "cpu_total_s": 0.1967
+    },
+    "frontier_selection": {
+     "calls": 104,
+     "mean_ms": 19.3405,
+     "p95_ms": 34.7264,
+     "cpu_total_s": 0.1862
+    },
+    "navigation_query": {
+     "calls": 389,
+     "mean_ms": 5.3,
+     "p95_ms": 18.4974,
+     "cpu_total_s": 0.0679
+    },
+    "simulator_step": {
+     "calls": 9000,
+     "mean_ms": 2.5259,
+     "p95_ms": 8.6266,
+     "cpu_total_s": 1.9977
+    }
+   },
+   "per_episode": [
+    {
+     "episode": 0,
+     "map_id": "p7_open_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.8,
+     "frames_analysed": 895,
+     "bridge_round_trip_ms": 2.213,
+     "cpu_seconds": 9.517,
+     "wall_seconds": 10.046,
+     "rss_mb": 316.6
+    },
+    {
+     "episode": 1,
+     "map_id": "p7_indoor_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 0.9,
+     "frames_analysed": 808,
+     "bridge_round_trip_ms": 2.356,
+     "cpu_seconds": 9.597,
+     "wall_seconds": 10.044,
+     "rss_mb": 317.3
+    },
+    {
+     "episode": 2,
+     "map_id": "p7_mixed_test_000",
+     "outcome": "tick_limit",
+     "sim_seconds": 200.0,
+     "throughput_truth_per_min": 1.5,
+     "frames_analysed": 909,
+     "bridge_round_trip_ms": 2.933,
+     "cpu_seconds": 12.826,
+     "wall_seconds": 13.32,
+     "rss_mb": 317.6
+    }
+   ]
+  }
+ },
+ "note_configurations": "fps = analysed frames per simulated second in every state; adaptive = the 'efficient' vision profile with unchanged-frame skipping"
+}

@@ -1,0 +1,470 @@
+{
+ "commit": "d0612c3",
+ "generated_utc": "2026-11-15T17:38:40Z",
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server). Unreal Engine was not available: every Unreal-side component is UNVERIFIED.",
+ "sections": {
+  "static_scan": {
+   "status": "MEASURED",
+   "seconds": 0.9,
+   "error": null
+  },
+  "unreal_static": {
+   "status": "MEASURED",
+   "seconds": 0.3,
+   "error": null
+  },
+  "loop_trace": {
+   "status": "MEASURED",
+   "seconds": 11.2,
+   "error": null
+  },
+  "ground_truth_isolation": {
+   "status": "MEASURED",
+   "seconds": 22.2,
+   "error": null
+  },
+  "bridge_security": {
+   "status": "MEASURED",
+   "seconds": 3.8,
+   "error": null
+  },
+  "vision": {
+   "status": "MEASURED",
+   "seconds": 24.8,
+   "error": null
+  },
+  "navigation": {
+   "status": "MEASURED",
+   "seconds": 14.9,
+   "error": null
+  },
+  "interaction": {
+   "status": "MEASURED",
+   "seconds": 61.3,
+   "error": null
+  },
+  "policy_comparison": {
+   "status": "MEASURED",
+   "seconds": 370.3,
+   "error": null
+  },
+  "planner_comparison": {
+   "status": "MEASURED",
+   "seconds": 548.5,
+   "error": null
+  },
+  "endurance": {
+   "status": "MEASURED",
+   "seconds": 43.7,
+   "error": null
+  },
+  "generalisation": {
+   "status": "MEASURED",
+   "seconds": 0.0,
+   "error": null
+  },
+  "robustness": {
+   "status": "MEASURED",
+   "seconds": 0.0,
+   "error": null
+  },
+  "resources": {
+   "status": "MEASURED",
+   "seconds": 185.2,
+   "error": null
+  },
+  "database": {
+   "status": "MEASURED",
+   "seconds": 74.2,
+   "error": null
+  }
+ },
+ "components": [
+  {
+   "id": 1,
+   "name": "SQLite data infrastructure",
+   "status": "VERIFIED",
+   "evidence": [
+    "database_integrity.json",
+    "tests/test_database.py"
+   ],
+   "observed": "schema 7, triggers and constraints refuse invalid values, migration from v1 keeps data, two concurrent writer processes, integrity_check ok",
+   "limitations": "single-file SQLite; no network database",
+   "fixes": []
+  },
+  {
+   "id": 2,
+   "name": "Chest-location management",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_chest_repository.py",
+    "database_integrity.json"
+   ],
+   "observed": "repository validation (probability, NaN, empty map) and duplicate refusal",
+   "limitations": "",
+   "fixes": []
+  },
+  {
+   "id": 3,
+   "name": "Simulation sessions",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "database_integrity.json",
+    "tests/test_session_repository.py"
+   ],
+   "observed": "sessions finish with ended_at; interrupted episodes end aborted; finished sessions immutable",
+   "limitations": "3D sessions only in the reference arena; active-exploration openings were not persisted (F12, fixed: discovered_openings); endurance resume after a lost result line failed (F9, fixed)",
+   "fixes": [
+    "F9 (fixed)",
+    "F12 (fixed)"
+   ]
+  },
+  {
+   "id": 4,
+   "name": "2D navigation (A*)",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_astar.py",
+    "tests/test_route_planner.py"
+   ],
+   "observed": "optimality against Dijkstra, blocked goals, determinism",
+   "limitations": "",
+   "fixes": []
+  },
+  {
+   "id": 5,
+   "name": "Route optimisation (2D)",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_benchmark.py",
+    "README section 13"
+   ],
+   "observed": "paired 2D benchmark (Phase 2)",
+   "limitations": "2D only",
+   "fixes": []
+  },
+  {
+   "id": 6,
+   "name": "2D autonomous controller",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_agent.py"
+   ],
+   "observed": "every FSM path in the 2D simulator",
+   "limitations": "2D research simulator only",
+   "fixes": []
+  },
+  {
+   "id": 7,
+   "name": "Visual chest detection (3D)",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "vision_metrics.json",
+    "vision_failures/"
+   ],
+   "observed": "labelled dataset at 320x180 / 480x270 / 640x360 rendered by the reference arena",
+   "limitations": "frames from the Python renderer only (Unreal frames never seen); opened/unopened confusion; chest-appearance shift defeats the colour segmentation",
+   "fixes": [
+    "F11 (verification side)"
+   ]
+  },
+  {
+   "id": 8,
+   "name": "Object tracking (3D)",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "tests/test_vision_3d.py",
+    "integration_results.json (loop trace)"
+   ],
+   "observed": "bounded tracks, stale expiry, re-acquisition",
+   "limitations": "mock frames",
+   "fixes": []
+  },
+  {
+   "id": 9,
+   "name": "Localisation (3D)",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "navigation_metrics.json (localisation)",
+    "benchmark_results/robustness"
+   ],
+   "observed": "odometry-based (no visual correction); pose error from the reference arena's drift model; odometry jumps detected and relocalised",
+   "limitations": "the drift model is the simulator's; Unreal odometry untested; no visual relocalisation, a persistent offset stays",
+   "fixes": []
+  },
+  {
+   "id": 10,
+   "name": "Occupancy / coverage estimation",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "generalisation_results.csv (coverage)",
+    "tests/test_active_exploration.py"
+   ],
+   "observed": "coverage map from raycasts and the view wedge; true coverage scored on the evaluation side",
+   "limitations": "coverage within 200 s far below the 85 % target on 90 m maps",
+   "fixes": []
+  },
+  {
+   "id": 11,
+   "name": "Visual navigation (2D, Phase 3)",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_visual_navigation.py",
+    "tests/test_visual_benchmark.py"
+   ],
+   "observed": "2D visual agent and benchmark",
+   "limitations": "2D only",
+   "fixes": []
+  },
+  {
+   "id": 12,
+   "name": "Unreal environment",
+   "status": "UNVERIFIED",
+   "evidence": [
+    "integration_results.json (unreal)"
+   ],
+   "observed": "C++ sources and config only: no binaries, no map asset, never compiled",
+   "limitations": "nothing executed",
+   "fixes": [
+    "build and run on an Unreal machine"
+   ]
+  },
+  {
+   "id": 13,
+   "name": "Unreal communication (bridge)",
+   "status": "MOCK ONLY",
+   "evidence": [
+    "integration_results.json (bridge_security)",
+    "tests/test_unreal_bridge.py",
+    "tests/test_unreal_sources.py"
+   ],
+   "observed": "Python client fully exercised against the protocol-identical Python server; C++ server constants and checks match statically",
+   "limitations": "the C++ server never ran",
+   "fixes": []
+  },
+  {
+   "id": 14,
+   "name": "Third-person camera capture",
+   "status": "MOCK ONLY",
+   "evidence": [
+    "tests/test_renderer.py",
+    "loop_trace/episode.mp4"
+   ],
+   "observed": "Python software renderer frames",
+   "limitations": "Unreal SceneCapture never ran",
+   "fixes": []
+  },
+  {
+   "id": 15,
+   "name": "3D target localisation",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "vision_metrics.json (distance/bearing errors)"
+   ],
+   "observed": "distance error from the agent's estimator on labelled frames",
+   "limitations": "mock frames",
+   "fixes": []
+  },
+  {
+   "id": 16,
+   "name": "3D navigation",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "navigation_metrics.json"
+   ],
+   "observed": "real agent sent to goals by terrain type on held-out maps",
+   "limitations": "the reference arena's NavMesh-style grid stands in for Unreal's Recast NavMesh",
+   "fixes": []
+  },
+  {
+   "id": 17,
+   "name": "Chest interaction",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "interaction_metrics.json"
+   ],
+   "observed": "simulator interaction rules (range, facing, absent, opened, interrupted, duplicate) all as specified; agent interaction attempts",
+   "limitations": "Unreal interaction validation never ran",
+   "fixes": []
+  },
+  {
+   "id": 18,
+   "name": "Visual interaction verification",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "interaction_metrics.json (false failures)",
+    "failures.json F11"
+   ],
+   "observed": "clean episodes: false-success rate 0.000, false-failure rate 0.000 against the simulator's opening log",
+   "limitations": "as found: real openings judged closed in every look, the agent re-aligned on an opened chest and marked it failed (F11, fixed); the single-frame opened/unopened classifier is unchanged (F16)",
+   "fixes": [
+    "F11 (fixed)",
+    "F14 (fixed)"
+   ]
+  },
+  {
+   "id": 19,
+   "name": "Imitation-learning pipeline",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "tests/test_learned_policy.py",
+    "training/datasets"
+   ],
+   "observed": "dataset, splits, NumPy training, ONNX export and parity tests",
+   "limitations": "synthetic demonstrations only (no human data)",
+   "fixes": []
+  },
+  {
+   "id": 20,
+   "name": "Learned-policy inference",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "policy_comparison.csv"
+   ],
+   "observed": "ONNX CPU inference in episodes",
+   "limitations": "see the policy comparison for its value",
+   "fixes": []
+  },
+  {
+   "id": 21,
+   "name": "Adaptive exploration",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "planner_comparison.csv",
+    "benchmark_results/phase7/strategies"
+   ],
+   "observed": "Phase 5/6 planners and Phase 7 frontier strategies on identical seeds",
+   "limitations": "mock environment",
+   "fixes": []
+  },
+  {
+   "id": 22,
+   "name": "Reliability supervisor",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "benchmark_results/robustness",
+    "tests/test_supervisor.py"
+   ],
+   "observed": "ten injected fault kinds, detection and bounded recovery",
+   "limitations": "mock environment; Unreal timeouts never exercised; loop detector false alarms in active exploration (F17, fixed; residual detections remain in long episodes)",
+   "fixes": [
+    "F17 (fixed)"
+   ]
+  },
+  {
+   "id": 23,
+   "name": "Endurance execution",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "endurance_results.csv"
+   ],
+   "observed": "100 / 500 / 1000-episode runs against one long-lived reference server",
+   "limitations": "short episodes (1500 ticks); Unreal never used",
+   "fixes": [
+    "F9 (fixed)"
+   ]
+  },
+  {
+   "id": 24,
+   "name": "Generalisation testing",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "generalisation_results.csv"
+   ],
+   "observed": "8 evaluation categories, held-out seeds and maps, paired gaps with CIs",
+   "limitations": "procedural maps of one generator; mock environment",
+   "fixes": []
+  },
+  {
+   "id": 25,
+   "name": "Metrics and reporting",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "audit_summary.json",
+    "tests/test_phase7_benchmark.py"
+   ],
+   "observed": "ground-truth-scored metrics, journals and resume",
+   "limitations": "a recovery-success metric read near zero until Phase 7 (fixed); the Phase 6 benchmark lost its first run to a 2 h session limit (journal added)",
+   "fixes": []
+  }
+ ],
+ "readiness": {
+  "gates": {
+   "actual Unreal integration verified": false,
+   "autonomous control loop completes": true,
+   "chest interactions verified (simulator rules + no false successes)": true,
+   "visual verification reliable (false failures <= 5 %)": true,
+   "no critical data-integrity defects": true,
+   "no severe resource leaks": true,
+   "not entirely dependent on mocked components": false
+  },
+  "verdict": "UNVERIFIED",
+  "reason": "the intended Unreal environment has never been built or run; every end-to-end result comes from the Python mock of it",
+  "weights": {
+   "Core autonomous functionality": 0.2,
+   "Unreal integration": 0.15,
+   "Computer vision": 0.1,
+   "Navigation": 0.1,
+   "Chest interaction": 0.1,
+   "Reliability": 0.1,
+   "Performance efficiency": 0.1,
+   "Generalisation": 0.05,
+   "Data integrity": 0.05,
+   "Testing and documentation": 0.05
+  }
+ },
+ "key_metrics": {
+  "detection": {
+   "320x180": {
+    "precision": 0.9659,
+    "recall": 0.4771,
+    "f1": 0.6387,
+    "latency_mean_ms": 0.867,
+    "latency_p95_ms": 1.3913
+   },
+   "480x270": {
+    "precision": 0.9348,
+    "recall": 0.6466,
+    "f1": 0.7644,
+    "latency_mean_ms": 1.7735,
+    "latency_p95_ms": 2.4999
+   },
+   "640x360": {
+    "precision": 0.9574,
+    "recall": 0.7545,
+    "f1": 0.8439,
+    "latency_mean_ms": 2.9881,
+    "latency_p95_ms": 3.8988
+   }
+  },
+  "navigation_success_rate": 1.0,
+  "interaction": {
+   "clean": {
+    "interaction_success_rate": 0.95,
+    "false_success_rate": 0.0,
+    "false_failure_rate": 0.0
+   },
+   "failed_interactions": {
+    "interaction_success_rate": 0.7347,
+    "false_success_rate": 0.0,
+    "false_failure_rate": 0.0
+   },
+   "corrupted_view_while_verifying": {
+    "interaction_success_rate": 0.9756,
+    "false_success_rate": 0.0,
+    "false_failure_rate": 0.0
+   },
+   "frames_lost_while_verifying": {
+    "interaction_success_rate": 0.9756,
+    "false_success_rate": 0.0,
+    "false_failure_rate": 0.0
+   },
+   "connection_dropped_while_interacting": {
+    "interaction_success_rate": 0.95,
+    "false_success_rate": 0.0,
+    "false_failure_rate": 0.0
+   }
+  },
+  "generalisation_rows": 16
+ }
+}

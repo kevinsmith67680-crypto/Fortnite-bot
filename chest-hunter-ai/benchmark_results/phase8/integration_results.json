@@ -1,0 +1,2082 @@
+{
+ "loop_trace": {
+  "episode_id": "4-0-1",
+  "seed": 4,
+  "map_id": "p7_mixed_test_003",
+  "agent_version": "7.0.0",
+  "policy": "hybrid",
+  "policy_version": "bc-1794693965",
+  "environment": "Python reference arena via the localhost bridge (NOT Unreal)",
+  "outcome": "tick_limit",
+  "end_reason": "reached max_ticks=3600",
+  "sim_seconds": 120.0,
+  "stages": {
+   "environment_reset": {
+    "exercised": true,
+    "first_decision": 1
+   },
+   "agent_initialisation": {
+    "exercised": true,
+    "first_decision": 1
+   },
+   "camera_observation": {
+    "exercised": true,
+    "first_decision": 1
+   },
+   "chest_recognition": {
+    "exercised": true,
+    "first_decision": 151
+   },
+   "target_selection": {
+    "exercised": true,
+    "first_decision": 59
+   },
+   "navigation": {
+    "exercised": true,
+    "first_decision": 59
+   },
+   "chest_approach": {
+    "exercised": true,
+    "first_decision": 303
+   },
+   "interaction": {
+    "exercised": true,
+    "first_decision": 325
+   },
+   "visual_confirmation": {
+    "exercised": true,
+    "first_decision": 355
+   },
+   "database_persistence": {
+    "exercised": true,
+    "first_decision": 1800
+   },
+   "next_target_selection": {
+    "exercised": true,
+    "first_decision": 97
+   },
+   "episode_termination": {
+    "exercised": true,
+    "first_decision": 1800
+   }
+  },
+  "decisions": {
+   "n": 1800,
+   "moving": 1124,
+   "looking": 1561
+  },
+  "transitions": [
+   {
+    "t": 0.067,
+    "from": null,
+    "to": "OBSERVING",
+    "observation_time": 0.066667
+   },
+   {
+    "t": 0.133,
+    "from": "OBSERVING",
+    "to": "SCANNING",
+    "observation_time": 0.066667
+   },
+   {
+    "t": 3.933,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 3.8
+   },
+   {
+    "t": 12.333,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 12.333333
+   },
+   {
+    "t": 12.733,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 12.6
+   },
+   {
+    "t": 20.2,
+    "from": "NAVIGATING",
+    "to": "APPROACHING",
+    "observation_time": 20.133333
+   },
+   {
+    "t": 21.133,
+    "from": "APPROACHING",
+    "to": "ALIGNING",
+    "observation_time": 21.066667
+   },
+   {
+    "t": 21.6,
+    "from": "ALIGNING",
+    "to": "INTERACTING",
+    "observation_time": 21.6
+   },
+   {
+    "t": 23.667,
+    "from": "INTERACTING",
+    "to": "VERIFYING_OPEN",
+    "observation_time": 23.6
+   },
+   {
+    "t": 23.933,
+    "from": "VERIFYING_OPEN",
+    "to": "NAVIGATING",
+    "observation_time": 23.866667
+   },
+   {
+    "t": 26.867,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 26.8
+   },
+   {
+    "t": 28.667,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 28.533333
+   },
+   {
+    "t": 31.4,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 31.333333
+   },
+   {
+    "t": 33.2,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 33.066667
+   },
+   {
+    "t": 35.0,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 35.0
+   },
+   {
+    "t": 36.867,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 36.733333
+   },
+   {
+    "t": 39.933,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 39.866667
+   },
+   {
+    "t": 42.8,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 42.666667
+   },
+   {
+    "t": 45.533,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 45.466667
+   },
+   {
+    "t": 47.333,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 47.2
+   },
+   {
+    "t": 49.133,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 49.133333
+   },
+   {
+    "t": 51.267,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 51.133333
+   },
+   {
+    "t": 53.0,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 52.933333
+   },
+   {
+    "t": 55.2,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 55.066667
+   },
+   {
+    "t": 58.0,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 58.0
+   },
+   {
+    "t": 59.867,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 59.733333
+   },
+   {
+    "t": 63.333,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 63.333333
+   },
+   {
+    "t": 65.467,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 65.333333
+   },
+   {
+    "t": 67.533,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 67.466667
+   },
+   {
+    "t": 69.333,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 69.333333
+   },
+   {
+    "t": 69.8,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 69.733333
+   },
+   {
+    "t": 71.733,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 71.6
+   },
+   {
+    "t": 74.6,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 74.533333
+   },
+   {
+    "t": 76.4,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 76.266667
+   },
+   {
+    "t": 78.333,
+    "from": "NAVIGATING",
+    "to": "OBSERVING",
+    "observation_time": 78.266667
+   },
+   {
+    "t": 79.4,
+    "from": "OBSERVING",
+    "to": "NAVIGATING",
+    "observation_time": 79.333333
+   },
+   {
+    "t": 80.733,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 80.666667
+   },
+   {
+    "t": 82.667,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 82.666667
+   },
+   {
+    "t": 83.933,
+    "from": "NAVIGATING",
+    "to": "SCANNING",
+    "observation_time": 83.866667
+   },
+   {
+    "t": 85.867,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 85.866667
+   },
+   {
+    "t": 87.2,
+    "from": "NAVIGATING",
+    "to": "OBSERVING",
+    "observation_time": 87.2
+   },
+   {
+    "t": 87.4,
+    "from": "OBSERVING",
+    "to": "SCANNING",
+    "observation_time": 87.333333
+   },
+   {
+    "t": 91.2,
+    "from": "SCANNING",
+    "to": "NAVIGATING",
+    "observation_time": 91.066667
+   },
+   {
+    "t": 95.533,
+    "from": "NAVIGATING",
+    "to": "APPROACHING",
+    "observation_time": 95.466667
+   },
+   {
+    "t": 96.467,
+    "from": "APPROACHING",
+    "to": "ALIGNING",
+    "observation_time": 96.4
+   },
+   {
+    "t": 98.133,
+    "from": "ALIGNING",
+    "to": "APPROACHING",
+    "observation_time": 98.133333
+   },
+   {
+    "t": 98.2,
+    "from": "APPROACHING",
+    "to": "ALIGNING",
+    "observation_time": 98.133333
+   },
+   {
+    "t": 99.8,
+    "from": "ALIGNING",
+    "to": "NAVIGATING",
+    "observation_time": 99.733333
+   },
+   {
+    "t": 100.467,
+    "from": "NAVIGATING",
+    "to": "APPROACHING",
+    "observation_time": 100.4
+   },
+   {
+    "t": 102.2,
+    "from": "APPROACHING",
+    "to": "ALIGNING",
+    "observation_time": 102.133333
+   },
+   {
+    "t": 102.333,
+    "from": "ALIGNING",
+    "to": "INTERACTING",
+    "observation_time": 102.266667
+   },
+   {
+    "t": 104.4,
+    "from": "INTERACTING",
+    "to": "VERIFYING_OPEN",
+    "observation_time": 104.4
+   },
+   {
+    "t": 104.467,
+    "from": "VERIFYING_OPEN",
+    "to": "NAVIGATING",
+    "observation_time": 104.4
+   },
+   {
+    "t": 113.133,
+    "from": "NAVIGATING",
+    "to": "APPROACHING",
+    "observation_time": 113.066667
+   },
+   {
+    "t": 114.067,
+    "from": "APPROACHING",
+    "to": "ALIGNING",
+    "observation_time": 114.0
+   },
+   {
+    "t": 114.6,
+    "from": "ALIGNING",
+    "to": "INTERACTING",
+    "observation_time": 114.533333
+   },
+   {
+    "t": 116.667,
+    "from": "INTERACTING",
+    "to": "VERIFYING_OPEN",
+    "observation_time": 116.666667
+   },
+   {
+    "t": 116.733,
+    "from": "VERIFYING_OPEN",
+    "to": "NAVIGATING",
+    "observation_time": 116.666667
+   }
+  ],
+  "targets": [
+   {
+    "t": 3.933,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     29.0,
+     85.0,
+     0.0
+    ]
+   },
+   {
+    "t": 6.467,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     39.0,
+     87.0,
+     0.0
+    ]
+   },
+   {
+    "t": 8.0,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     45.0,
+     81.0,
+     0.0
+    ]
+   },
+   {
+    "t": 10.133,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     45.0,
+     69.0,
+     0.0
+    ]
+   },
+   {
+    "t": 12.733,
+    "kind": "inspect",
+    "location_id": -1,
+    "position": [
+     77.9,
+     60.86,
+     0.07
+    ]
+   },
+   {
+    "t": 13.667,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     78.89,
+     60.38,
+     -0.06
+    ]
+   },
+   {
+    "t": 14.333,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     78.95,
+     60.5,
+     -0.06
+    ]
+   },
+   {
+    "t": 15.0,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.06,
+     60.63,
+     -0.06
+    ]
+   },
+   {
+    "t": 16.0,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.04,
+     61.01,
+     -0.05
+    ]
+   },
+   {
+    "t": 16.333,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.05,
+     61.38,
+     -0.04
+    ]
+   },
+   {
+    "t": 16.667,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.14,
+     61.71,
+     -0.03
+    ]
+   },
+   {
+    "t": 17.0,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.23,
+     62.08,
+     -0.03
+    ]
+   },
+   {
+    "t": 17.333,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.29,
+     62.42,
+     -0.02
+    ]
+   },
+   {
+    "t": 17.667,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.29,
+     62.79,
+     -0.02
+    ]
+   },
+   {
+    "t": 18.0,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.02,
+     63.42,
+     0.02
+    ]
+   },
+   {
+    "t": 18.2,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.09,
+     63.69,
+     0.01
+    ]
+   },
+   {
+    "t": 18.333,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.18,
+     63.84,
+     0.0
+    ]
+   },
+   {
+    "t": 18.467,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.27,
+     63.93,
+     -0.01
+    ]
+   },
+   {
+    "t": 18.6,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.32,
+     63.99,
+     -0.02
+    ]
+   },
+   {
+    "t": 18.867,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.31,
+     64.07,
+     -0.02
+    ]
+   },
+   {
+    "t": 19.133,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.24,
+     64.11,
+     -0.01
+    ]
+   },
+   {
+    "t": 19.8,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.14,
+     64.12,
+     -0.01
+    ]
+   },
+   {
+    "t": 20.867,
+    "kind": "chest",
+    "location_id": -1,
+    "position": [
+     79.08,
+     64.04,
+     -0.01
+    ]
+   },
+   {
+    "t": 23.933,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     69.0,
+     75.0,
+     0.0
+    ]
+   },
+   {
+    "t": 28.667,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     57.0,
+     81.0,
+     0.0
+    ]
+   },
+   {
+    "t": 33.2,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     51.0,
+     87.0,
+     0.0
+    ]
+   },
+   {
+    "t": 36.867,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     69.0,
+     87.0,
+     0.0
+    ]
+   },
+   {
+    "t": 42.8,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     81.0,
+     81.0,
+     0.0
+    ]
+   },
+   {
+    "t": 47.333,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     87.0,
+     75.0,
+     0.0
+    ]
+   },
+   {
+    "t": 51.267,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     75.0,
+     75.0,
+     0.0
+    ]
+   },
+   {
+    "t": 55.2,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     87.0,
+     87.0,
+     0.0
+    ]
+   },
+   {
+    "t": 59.867,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     87.0,
+     67.0,
+     0.0
+    ]
+   },
+   {
+    "t": 65.467,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     87.0,
+     57.0,
+     0.0
+    ]
+   },
+   {
+    "t": 69.333,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     87.0,
+     63.0,
+     0.0
+    ]
+   },
+   {
+    "t": 71.733,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     75.0,
+     71.0,
+     0.0
+    ]
+   },
+   {
+    "t": 76.4,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     75.0,
+     81.0,
+     0.0
+    ]
+   },
+   {
+    "t": 79.4,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     75.0,
+     87.0,
+     0.0
+    ]
+   },
+   {
+    "t": 82.667,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     69.0,
+     81.0,
+     0.0
+    ]
+   },
+   {
+    "t": 85.867,
+    "kind": "explore",
+    "location_id": null,
+    "position": [
+     63.0,
+     81.0,
+     0.0
+    ]
+   },
+   {
+    "t": 91.2,
+    "kind": "inspect",
+    "location_id": -2,
+    "position": [
+     78.05,
+     60.25,
+     0.04
+    ]
+   },
+   {
+    "t": 92.133,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.37,
+     64.08,
+     0.15
+    ]
+   },
+   {
+    "t": 92.8,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.35,
+     64.12,
+     0.16
+    ]
+   },
+   {
+    "t": 94.133,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.39,
+     64.07,
+     0.15
+    ]
+   },
+   {
+    "t": 94.467,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.31,
+     64.18,
+     0.16
+    ]
+   },
+   {
+    "t": 94.6,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.32,
+     64.17,
+     0.15
+    ]
+   },
+   {
+    "t": 94.733,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.23,
+     64.3,
+     0.15
+    ]
+   },
+   {
+    "t": 94.867,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.24,
+     64.28,
+     0.14
+    ]
+   },
+   {
+    "t": 95.4,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.16,
+     64.43,
+     0.12
+    ]
+   },
+   {
+    "t": 95.533,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.1,
+     64.54,
+     0.14
+    ]
+   },
+   {
+    "t": 95.667,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.1,
+     64.56,
+     0.16
+    ]
+   },
+   {
+    "t": 95.8,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.17,
+     64.46,
+     0.13
+    ]
+   },
+   {
+    "t": 95.933,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.17,
+     64.52,
+     0.16
+    ]
+   },
+   {
+    "t": 96.067,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.22,
+     64.42,
+     0.12
+    ]
+   },
+   {
+    "t": 96.333,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.22,
+     64.45,
+     0.17
+    ]
+   },
+   {
+    "t": 96.467,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.21,
+     64.45,
+     0.18
+    ]
+   },
+   {
+    "t": 96.6,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.2,
+     64.45,
+     0.19
+    ]
+   },
+   {
+    "t": 96.733,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.2,
+     64.45,
+     0.19
+    ]
+   },
+   {
+    "t": 98.6,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.15,
+     64.6,
+     0.33
+    ]
+   },
+   {
+    "t": 98.867,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.13,
+     64.63,
+     0.39
+    ]
+   },
+   {
+    "t": 99.133,
+    "kind": "chest",
+    "location_id": -3,
+    "position": [
+     79.11,
+     64.66,
+     0.46
+    ]
+   },
+   {
+    "t": 99.8,
+    "kind": "inspect",
+    "location_id": -4,
+    "position": [
+     84.22,
+     28.63,
+     0.94
+    ]
+   },
+   {
+    "t": 100.467,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.51,
+     60.92,
+     -0.01
+    ]
+   },
+   {
+    "t": 100.733,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.48,
+     60.97,
+     0.03
+    ]
+   },
+   {
+    "t": 100.867,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.51,
+     60.75,
+     0.0
+    ]
+   },
+   {
+    "t": 101.0,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.52,
+     60.54,
+     -0.04
+    ]
+   },
+   {
+    "t": 101.133,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.53,
+     60.4,
+     -0.08
+    ]
+   },
+   {
+    "t": 101.267,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.53,
+     60.29,
+     -0.12
+    ]
+   },
+   {
+    "t": 101.4,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.52,
+     60.2,
+     -0.14
+    ]
+   },
+   {
+    "t": 101.8,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.56,
+     60.25,
+     -0.09
+    ]
+   },
+   {
+    "t": 101.933,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.59,
+     60.26,
+     -0.07
+    ]
+   },
+   {
+    "t": 102.067,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.63,
+     60.41,
+     -0.05
+    ]
+   },
+   {
+    "t": 102.2,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.69,
+     60.52,
+     0.01
+    ]
+   },
+   {
+    "t": 102.333,
+    "kind": "chest",
+    "location_id": -2,
+    "position": [
+     77.74,
+     60.6,
+     0.04
+    ]
+   },
+   {
+    "t": 104.467,
+    "kind": "inspect",
+    "location_id": -4,
+    "position": [
+     84.22,
+     28.63,
+     0.94
+    ]
+   },
+   {
+    "t": 108.467,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.36,
+     31.71,
+     1.17
+    ]
+   },
+   {
+    "t": 108.8,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.19,
+     31.19,
+     1.16
+    ]
+   },
+   {
+    "t": 109.133,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.95,
+     32.43,
+     1.2
+    ]
+   },
+   {
+    "t": 109.467,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.95,
+     32.79,
+     1.22
+    ]
+   },
+   {
+    "t": 109.8,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.98,
+     33.1,
+     1.24
+    ]
+   },
+   {
+    "t": 109.933,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.04,
+     33.12,
+     1.26
+    ]
+   },
+   {
+    "t": 110.067,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.07,
+     33.36,
+     1.28
+    ]
+   },
+   {
+    "t": 110.333,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.14,
+     33.7,
+     1.32
+    ]
+   },
+   {
+    "t": 110.467,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.17,
+     33.86,
+     1.33
+    ]
+   },
+   {
+    "t": 110.6,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.19,
+     34.01,
+     1.34
+    ]
+   },
+   {
+    "t": 110.733,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.23,
+     34.1,
+     1.35
+    ]
+   },
+   {
+    "t": 110.867,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.26,
+     34.19,
+     1.35
+    ]
+   },
+   {
+    "t": 111.0,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.29,
+     34.28,
+     1.36
+    ]
+   },
+   {
+    "t": 111.133,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.28,
+     34.42,
+     1.37
+    ]
+   },
+   {
+    "t": 111.267,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.28,
+     34.54,
+     1.37
+    ]
+   },
+   {
+    "t": 111.4,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.29,
+     34.65,
+     1.38
+    ]
+   },
+   {
+    "t": 111.667,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.36,
+     34.8,
+     1.39
+    ]
+   },
+   {
+    "t": 111.8,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     83.38,
+     34.87,
+     1.39
+    ]
+   },
+   {
+    "t": 112.6,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.96,
+     36.7,
+     1.48
+    ]
+   },
+   {
+    "t": 112.733,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.93,
+     36.85,
+     1.49
+    ]
+   },
+   {
+    "t": 112.867,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.93,
+     36.9,
+     1.49
+    ]
+   },
+   {
+    "t": 114.067,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.78,
+     36.95,
+     1.63
+    ]
+   },
+   {
+    "t": 114.2,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.82,
+     36.95,
+     1.58
+    ]
+   },
+   {
+    "t": 114.333,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.74,
+     36.97,
+     1.69
+    ]
+   },
+   {
+    "t": 114.467,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.68,
+     36.99,
+     1.77
+    ]
+   },
+   {
+    "t": 114.6,
+    "kind": "chest",
+    "location_id": -4,
+    "position": [
+     82.75,
+     36.98,
+     1.69
+    ]
+   },
+   {
+    "t": 116.733,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     80.68,
+     29.63,
+     0.7
+    ]
+   },
+   {
+    "t": 117.133,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     80.96,
+     29.69,
+     0.71
+    ]
+   },
+   {
+    "t": 117.267,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.12,
+     29.79,
+     0.72
+    ]
+   },
+   {
+    "t": 117.4,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.23,
+     29.82,
+     0.72
+    ]
+   },
+   {
+    "t": 117.533,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.34,
+     29.82,
+     0.72
+    ]
+   },
+   {
+    "t": 117.667,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.41,
+     29.81,
+     0.72
+    ]
+   },
+   {
+    "t": 117.8,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.45,
+     29.79,
+     0.72
+    ]
+   },
+   {
+    "t": 118.2,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.43,
+     29.78,
+     0.72
+    ]
+   },
+   {
+    "t": 119.8,
+    "kind": "chest",
+    "location_id": -7,
+    "position": [
+     81.49,
+     29.59,
+     0.66
+    ]
+   }
+  ],
+  "interaction_attempts": [
+   {
+    "t": 21.667,
+    "target": [
+     "chest",
+     -1,
+     [
+      79.1,
+      64.0,
+      -0.0
+     ]
+    ]
+   },
+   {
+    "t": 102.4,
+    "target": [
+     "chest",
+     -2,
+     [
+      77.7,
+      60.6,
+      0.0
+     ]
+    ]
+   },
+   {
+    "t": 114.667,
+    "target": [
+     "chest",
+     -4,
+     [
+      82.8,
+      37.0,
+      1.7
+     ]
+    ]
+   }
+  ],
+  "credited_openings": [
+   {
+    "t": 23.933,
+    "target": [
+     "explore",
+     null,
+     [
+      69.0,
+      75.0,
+      0.0
+     ]
+    ]
+   },
+   {
+    "t": 104.467,
+    "target": [
+     "inspect",
+     -4,
+     [
+      84.2,
+      28.6,
+      0.9
+     ]
+    ]
+   },
+   {
+    "t": 116.733,
+    "target": [
+     "chest",
+     -7,
+     [
+      80.7,
+      29.6,
+      0.7
+     ]
+    ]
+   }
+  ],
+  "simulator_openings": [
+   {
+    "t": 23.567,
+    "spawn_index": 15
+   },
+   {
+    "t": 104.3,
+    "spawn_index": 20
+   },
+   {
+    "t": 116.567,
+    "spawn_index": 9
+   }
+  ],
+  "credited_vs_simulator": {
+   "credited": 3,
+   "simulator": 3
+  },
+  "database": {
+   "sessions": [
+    {
+     "id": 1,
+     "map_id": "p7_mixed_test_003",
+     "status": "completed",
+     "started_at": "2026-11-15T17:16:01.839338+00:00",
+     "ended_at": "2026-11-15T17:18:01.839338+00:00",
+     "notes": "3D hybrid episode"
+    }
+   ],
+   "runs": [
+    {
+     "session_id": 1,
+     "strategy": "3d-hybrid-visual",
+     "seed": 4,
+     "episode": 0,
+     "parameters_json": "{\"adaptive_planning\": false, \"backend\": \"reference\", \"decision_ticks\": 2, \"detector\": \"hybrid\", \"environment\": \"3d\", \"fov_deg\": 90.0, \"graphics_quality\": \"low\", \"layout_hash\": \"271055a54954d017\", \"max_ticks\": 3600, \"mode\": \"hybrid\", \"model_version\": \"bc-1794693965\", \"observation\": [320, 180], \"policy\": \"hybrid\", \"supervisor\": true, \"time_basis\": \"simulated\"}",
+     "outcome": "tick_limit",
+     "failure_reason": null,
+     "ticks": 3600,
+     "simulated_seconds": 120.0,
+     "travel_distance": 322.9749305916019,
+     "recoveries": 2,
+     "unreachable_targets": 0,
+     "abandoned_targets": 1,
+     "rewards": 0,
+     "created_at": "2026-11-15T17:16:01.839338+00:00",
+     "finished_at": "2026-11-15T17:18:01.839338+00:00",
+     "navigation_failures": 0
+    }
+   ],
+   "observations": 0
+  },
+  "detections": 1092,
+  "final_metrics": {
+   "chests_opened": 3,
+   "opened_truth": 3,
+   "travel_distance_m": 323.0,
+   "recoveries": 2,
+   "analyses": 766,
+   "coverage": 0.3027,
+   "vision": {
+    "frames": 766,
+    "true_positives": 439,
+    "false_positives": 24,
+    "false_negatives": 58,
+    "class_errors": 54,
+    "precision": 0.9482,
+    "recall": 0.8833,
+    "distance_mean_abs_error_m": 0.7613,
+    "distance_median_abs_error_m": 0.2246,
+    "distance_by_range": {
+     "0-5m": {
+      "n": 96,
+      "mean_abs_error_m": 0.2464,
+      "median_abs_error_m": 0.1352
+     },
+     "5-10m": {
+      "n": 107,
+      "mean_abs_error_m": 0.4354,
+      "median_abs_error_m": 0.163
+     },
+     "10-20m": {
+      "n": 186,
+      "mean_abs_error_m": 0.9277,
+      "median_abs_error_m": 0.2842
+     },
+     "20-40m": {
+      "n": 47,
+      "mean_abs_error_m": 1.8965,
+      "median_abs_error_m": 1.278
+     }
+    },
+    "distance_failure_rate": 0.0068,
+    "pose_error_mean_m": 0.027,
+    "pose_error_max_m": 0.0558
+   }
+  },
+  "video": "benchmark_results/phase8/loop_trace/episode.mp4"
+ },
+ "ground_truth_isolation": {
+  "static": [
+   {
+    "check": "agent port exposes only permitted calls",
+    "pass": true,
+    "detail": [
+     "nav_query",
+     "nav_raycast",
+     "observe",
+     "rules",
+     "step"
+    ]
+   },
+   {
+    "check": "agent/controller_3d.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "localization/world_model_3d.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "vision/chest_detector_3d.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "vision/tracker_3d.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "vision/depth_estimation.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "navigation/navigation_3d.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "exploration/active.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "exploration/advanced_planner.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "exploration/adaptive_planner.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "learning/policy_selector.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "learning/learned_policy.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   },
+   {
+    "check": "runtime/supervisor.py: no simulator imports, no privileged requests",
+    "pass": true,
+    "detail": {
+     "forbidden_imports": [],
+     "privileged_names": []
+    }
+   }
+  ],
+  "static_pass": true,
+  "runtime_call_audit": {
+   "privileged_calls": {
+    "evaluation_labels": 209,
+    "oracle_state": 1
+   },
+   "decisions": 450,
+   "callers": [
+    "audit/leakage.py > agent/runner_3d.py > agent/runner_3d.py",
+    "audit/leakage.py > audit/leakage.py > agent/runner_3d.py"
+   ],
+   "calls_from_agent_modules": 0,
+   "pass": true
+  },
+  "counterfactual": {
+   "map_id": "p7_mixed_test_003",
+   "seed": 4,
+   "flipped_spawn": 12,
+   "flipped_distance_m": 67.9,
+   "decisions": 1200,
+   "first_decision_with_flipped_chest_in_view": 138,
+   "first_divergence_before_view": null,
+   "hidden_presence_isolated": true,
+   "decisions_compared": 138,
+   "evaluation_channel_isolated": true,
+   "first_divergence_with_vs_without_labels": null,
+   "outcomes": [
+    "tick_limit",
+    "tick_limit"
+   ]
+  }
+ },
+ "bridge_security": {
+  "checks": [
+   {
+    "check": "server refuses to bind a non-loopback address",
+    "pass": true,
+    "detail": "the research server only listens on the loopback interface"
+   },
+   {
+    "check": "client refuses a non-loopback server",
+    "pass": true,
+    "detail": "ValidationError"
+   },
+   {
+    "check": "oversized header is refused",
+    "pass": true,
+    "detail": {
+     "type": "response",
+     "command": null,
+     "request_id": null,
+     "status": "error",
+     "error": {
+      "code": "too_large",
+      "message": "header length 10485760 outside [2, 65536]"
+     }
+    }
+   },
+   {
+    "check": "oversized payload is refused without reading it",
+    "pass": true,
+    "detail": {
+     "type": "response",
+     "command": null,
+     "request_id": null,
+     "status": "error",
+     "error": {
+      "code": "too_large",
+      "message": "payload length 536870912 exceeds 8388608"
+     }
+    }
+   },
+   {
+    "check": "malformed JSON header is refused",
+    "pass": true,
+    "detail": {
+     "type": "response",
+     "command": null,
+     "request_id": null,
+     "status": "error",
+     "error": {
+      "code": "bad_json",
+      "message": "header is not valid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+     }
+    }
+   },
+   {
+    "check": "wrong magic bytes close the connection",
+    "pass": true,
+    "detail": {
+     "code": "bad_magic",
+     "message": "expected b'CHRB', got b'XXXX'"
+    }
+   },
+   {
+    "check": "protocol version mismatch is refused",
+    "pass": true,
+    "detail": {
+     "code": "version_mismatch",
+     "message": "client protocol version 999, server 1"
+    }
+   },
+   {
+    "check": "invalid actions are refused by the server",
+    "pass": true,
+    "detail": {
+     "NaN": "error",
+     "infinity": "error",
+     "out of range": "error",
+     "wrong type": "error",
+     "unknown action key": "error",
+     "ticks above the per-step limit": "error"
+    }
+   },
+   {
+    "check": "a replayed step is not applied twice",
+    "pass": true,
+    "detail": {
+     "first": 0.033333,
+     "replayed": 0.033333
+    }
+   },
+   {
+    "check": "stale and out-of-order steps are refused",
+    "pass": true,
+    "detail": [
+     {
+      "code": "stale_step",
+      "message": "step 1 is older than 2"
+     },
+     {
+      "code": "out_of_order",
+      "message": "expected step 3, got 9"
+     }
+    ]
+   },
+   {
+    "check": "privileged requests are refused without the server flag",
+    "pass": true,
+    "detail": [
+     {
+      "code": "forbidden",
+      "message": "the server was not started in oracle or evaluation mode"
+     },
+     {
+      "code": "forbidden",
+      "message": "the server was not started in evaluation mode"
+     }
+    ]
+   },
+   {
+    "check": "a second concurrent client is refused (busy)",
+    "pass": true,
+    "detail": {
+     "code": "busy",
+     "message": "another client is connected"
+    }
+   },
+   {
+    "check": "server recovers from an abrupt client disconnect",
+    "pass": true,
+    "detail": null
+   },
+   {
+    "check": "a stalled partial message is dropped after the read timeout",
+    "pass": true,
+    "detail": 1.0
+   },
+   {
+    "check": "server stop releases its thread and listener",
+    "pass": true,
+    "detail": {
+     "running": false
+    }
+   }
+  ],
+  "passed": 15,
+  "total": 15,
+  "server": "Python reference server (MockUnrealServer); the C++ server was checked statically only"
+ },
+ "unreal": {
+  "project_dir": "/home/user/Fortnite-bot/chest-hunter-ai/unreal/ChestHunterResearch",
+  "uproject": {
+   "valid_json": true,
+   "engine": "5.4",
+   "modules": [
+    "ChestHunterResearch"
+   ],
+   "plugins": {
+    "PythonScriptPlugin": true,
+    "EditorScriptingUtilities": true,
+    "OnlineSubsystem": false,
+    "OnlineSubsystemUtils": false
+   }
+  },
+  "build_dependencies": [
+   "Core",
+   "CoreUObject",
+   "Engine",
+   "InputCore",
+   "Json",
+   "JsonUtilities",
+   "Sockets",
+   "Networking",
+   "NavigationSystem",
+   "AIModule",
+   "RenderCore"
+  ],
+  "cpp_files": 17,
+  "cpp_lines": 3143,
+  "binaries_present": false,
+  "maps_present": [],
+  "uassets_present": 0,
+  "asset_references": [
+   "/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial",
+   "/Engine/BasicShapes/Cube.Cube"
+  ],
+  "asset_references_outside_engine_content": [],
+  "layouts": [
+   "p7_complex_test_000",
+   "p7_complex_test_000_unfamiliar",
+   "p7_indoor_test_000",
+   "p7_mixed_test_000",
+   "p7_open_test_000",
+   "proc_test_000",
+   "proc_test_001",
+   "proc_test_002",
+   "proc_test_003",
+   "proc_train_000",
+   "proc_train_001",
+   "proc_train_002",
+   "proc_train_003",
+   "research_arena_3d"
+  ],
+  "default_map": "/Game/Maps/ResearchArena3D.ResearchArena3D",
+  "default_map_exists": false,
+  "unreal_engine": {
+   "executables_on_path": {},
+   "environment": [],
+   "installed": false
+  },
+  "host_cpp_compiler": "/usr/bin/g++",
+  "source_consistency_tests": {
+   "returncode": 0,
+   "results": [
+    "test_chest_dimensions_and_character_parameters_match (tests.test_unreal_sources.TestArenaAndRandomnessConsistency.test_chest_dimensions_and_character_parameters_match) ... ok",
+    "test_cpp_randomness_is_bit_identical_to_python (tests.test_unreal_sources.TestArenaAndRandomnessConsistency.test_cpp_randomness_is_bit_identical_to_python) ... ok",
+    "test_reference_vectors_in_the_cpp_tests_match_python (tests.test_unreal_sources.TestArenaAndRandomnessConsistency.test_reference_vectors_in_the_cpp_tests_match_python) ... ok",
+    "test_project_layout (tests.test_unreal_sources.TestProjectLayout.test_project_layout) ... ok",
+    "test_action_keys_match (tests.test_unreal_sources.TestProtocolConsistency.test_action_keys_match) ... ok",
+    "test_error_codes_and_commands_match (tests.test_unreal_sources.TestProtocolConsistency.test_error_codes_and_commands_match) ... ok",
+    "test_observation_sizes_navigation_modes_and_qualities_match (tests.test_unreal_sources.TestProtocolConsistency.test_observation_sizes_navigation_modes_and_qualities_match) ... ok",
+    "test_protocol_constants_match (tests.test_unreal_sources.TestProtocolConsistency.test_protocol_constants_match) ... ok",
+    "test_agent_capture_is_a_scene_capture_not_a_screenshot (tests.test_unreal_sources.TestSecurityProperties.test_agent_capture_is_a_scene_capture_not_a_screenshot) ... ok",
+    "test_privileged_commands_are_gated (tests.test_unreal_sources.TestSecurityProperties.test_privileged_commands_are_gated) ... ok",
+    "test_server_is_loopback_only_and_has_no_remote_execution (tests.test_unreal_sources.TestSecurityProperties.test_server_is_loopback_only_and_has_no_remote_execution) ... ok"
+   ],
+   "summary": [
+    "Ran 11 tests in 0.087s",
+    "OK"
+   ]
+  },
+  "blocked": [
+   "compiling the ChestHunterResearch C++ module (UnrealBuildTool)",
+   "running the C++ automation tests (ResearchProtocolTests.cpp)",
+   "creating /Game/Maps/ResearchArena3D with Scripts/create_research_map.py",
+   "loading the research map, spawning the third-person character and the chests",
+   "camera capture (SceneCapture2D render target) and frame encoding",
+   "the C++ bridge server accepting the Python client (HELLO, RESET_EPISODE, STEP, ...)",
+   "Unreal interaction validation, chest state change and the opened-chest mesh",
+   "episode reset and termination inside Unreal",
+   "every Python benchmark against --backend unreal",
+   "Unreal frame time, GPU load and memory"
+  ],
+  "commands_for_unreal_machine": [
+   "# On a machine with Unreal Engine 5.4 (Windows or Linux), from the repository root:",
+   "python -m chest_hunter export-arena-3d --map research_arena_3d --map p7_complex_test_000_unfamiliar",
+   "<UE>/Engine/Build/BatchFiles/Build.(bat|sh) ChestHunterResearchEditor <Platform> Development -Project=$PWD/unreal/ChestHunterResearch/ChestHunterResearch.uproject",
+   "<UE>/Engine/Binaries/<Platform>/UnrealEditor-Cmd unreal/ChestHunterResearch/ChestHunterResearch.uproject -run=pythonscript -script=$PWD/unreal/ChestHunterResearch/Scripts/create_research_map.py -unattended",
+   "<UE>/Engine/Binaries/<Platform>/UnrealEditor-Cmd unreal/ChestHunterResearch/ChestHunterResearch.uproject -ExecCmds=\"Automation RunTests ChestHunter; Quit\" -unattended -nullrhi",
+   "<UE>/Engine/Binaries/<Platform>/UnrealEditor unreal/ChestHunterResearch/ChestHunterResearch.uproject -game -ResearchEvaluation -windowed -ResX=640 -ResY=360   # bridge on by default (-ResearchBridgeOff disables); -ResearchEvaluation implies the oracle channel, for scoring only",
+   "python -m chest_hunter check-runtime --backend unreal",
+   "python -m chest_hunter simulate-3d --backend unreal --agent hybrid --map research_arena_3d --evaluate",
+   "python -m chest_hunter simulate-3d --backend unreal --exploration active --map p7_complex_test_000_unfamiliar --evaluate"
+  ],
+  "verdict": "UNVERIFIED: the Unreal project is source and configuration only (no binaries, no map asset); it has never been compiled or run. Protocol and parameter consistency with the Python side is checked statically."
+ }
+}

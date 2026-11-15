@@ -1,0 +1,153 @@
+{
+ "checks": [
+  {
+   "check": "one session per episode",
+   "pass": true,
+   "detail": 6
+  },
+  {
+   "check": "every session finished with ended_at",
+   "pass": true,
+   "detail": [
+    "completed"
+   ]
+  },
+  {
+   "check": "integrity_check ok",
+   "pass": true,
+   "detail": null
+  },
+  {
+   "check": "no foreign-key violations",
+   "pass": true,
+   "detail": null
+  },
+  {
+   "check": "no duplicated openings",
+   "pass": true,
+   "detail": []
+  },
+  {
+   "check": "database openings equal the agent's credited openings",
+   "pass": true,
+   "detail": null
+  },
+  {
+   "check": "no recorded opening that did not happen",
+   "pass": true,
+   "detail": []
+  },
+  {
+   "check": "every true opening recorded",
+   "pass": false,
+   "detail": {
+    "missing": 1,
+    "true_openings": 39
+   }
+  },
+  {
+   "check": "session statistics equal raw observation rows",
+   "pass": true,
+   "detail": []
+  },
+  {
+   "check": "an interrupted episode's session ends aborted",
+   "pass": true,
+   "detail": {
+    "status": "aborted",
+    "ended_at": "2026-11-15T17:38:36.279120+00:00"
+   }
+  },
+  {
+   "check": "active-exploration openings reach the database",
+   "pass": true,
+   "detail": {
+    "discovered_opening_rows": 4,
+    "credited": 4,
+    "true_openings": 4
+   }
+  },
+  {
+   "check": "invalid values are refused",
+   "pass": true,
+   "detail": {
+    "probability 1.5": "ValidationError",
+    "NaN coordinate": "ValidationError",
+    "empty map id": "ValidationError",
+    "negative open time": "ValidationError",
+    "observation without session/location, opened without present": "DatabaseIntegrityError"
+   }
+  },
+  {
+   "check": "migration from schema 1 keeps data",
+   "pass": true,
+   "detail": {
+    "schema": 7,
+    "rows": 1
+   }
+  },
+  {
+   "check": "two concurrent writer processes",
+   "pass": true,
+   "detail": {
+    "sessions": 4,
+    "integrity": true,
+    "errors": [
+     [],
+     []
+    ]
+   }
+  }
+ ],
+ "passed": 13,
+ "total": 14,
+ "episodes": 6,
+ "max_ticks": 2400,
+ "per_session": [
+  {
+   "session": 1,
+   "recorded": 4,
+   "truth": 5,
+   "recorded_not_true": [],
+   "true_not_recorded": [
+    15
+   ]
+  },
+  {
+   "session": 2,
+   "recorded": 7,
+   "truth": 7,
+   "recorded_not_true": [],
+   "true_not_recorded": []
+  },
+  {
+   "session": 3,
+   "recorded": 7,
+   "truth": 7,
+   "recorded_not_true": [],
+   "true_not_recorded": []
+  },
+  {
+   "session": 4,
+   "recorded": 7,
+   "truth": 7,
+   "recorded_not_true": [],
+   "true_not_recorded": []
+  },
+  {
+   "session": 5,
+   "recorded": 5,
+   "truth": 5,
+   "recorded_not_true": [],
+   "true_not_recorded": []
+  },
+  {
+   "session": 6,
+   "recorded": 8,
+   "truth": 8,
+   "recorded_not_true": [],
+   "true_not_recorded": []
+  }
+ ],
+ "environment": "Python reference arena, SQLite files on local disk"
+}

@@ -1,0 +1,1641 @@
+{
+ "commit": "d0612c3",
+ "python": "3.13.18",
+ "static_scan": {
+  "files": 214,
+  "lines": 51563,
+  "counts": {
+   "marker": 1,
+   "growth_candidate": 58,
+   "stub": 15,
+   "constant_return": 6,
+   "broad_except:re-raised": 5,
+   "broad_except:recorded": 20
+  }
+ },
+ "static_findings": [
+  {
+   "kind": "marker",
+   "where": "src/chest_hunter/audit/static_scan.py:7",
+   "detail": "* markers - ``TODO``, ``FIXME``, ``XXX``, ``HACK`` in Python and C++ sources;"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller.py:100",
+   "detail": "AgentController.observations"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/controller_3d.py:203",
+   "detail": "__call__"
+  },
+  {
+   "kind": "constant_return",
+   "where": "src/chest_hunter/agent/controller_3d.py:1526",
+   "detail": "wants_observation -> False"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:263",
+   "detail": "VisualAgent3D._attempts"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:264",
+   "detail": "VisualAgent3D._align_failures"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:279",
+   "detail": "VisualAgent3D._plan_failures"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:284",
+   "detail": "VisualAgent3D._lookbacks"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:286",
+   "detail": "VisualAgent3D._rescans"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:287",
+   "detail": "VisualAgent3D._approach_losses"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/controller_3d.py:288",
+   "detail": "VisualAgent3D._uncertain_checks"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/objectives.py:28",
+   "detail": "ObjectiveTracker._candidates"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/objectives.py:32",
+   "detail": "ObjectiveTracker._attempts"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/operations_panel.py:46",
+   "detail": "OperationsPanel.values"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/recorder.py:26",
+   "detail": "time"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/recorder.py:69",
+   "detail": "ObservationRecorder._pending"
+  },
+  {
+   "kind": "broad_except:re-raised",
+   "where": "src/chest_hunter/agent/runner_3d.py:426",
+   "detail": "BaseException"
+  },
+  {
+   "kind": "broad_except:re-raised",
+   "where": "src/chest_hunter/agent/runner_3d.py:239",
+   "detail": "BaseException"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/agent/runner_3d.py:462",
+   "detail": "Exception"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:64",
+   "detail": "map_width"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:66",
+   "detail": "map_height"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:68",
+   "detail": "dt"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:70",
+   "detail": "time"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:71",
+   "detail": "capture"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:72",
+   "detail": "move"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/agent/visual_controller.py:73",
+   "detail": "hold_interact"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/visual_controller.py:137",
+   "detail": "VisualAgentController._attempts"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/agent/visual_controller.py:142",
+   "detail": "VisualAgentController._inspections"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/endurance.py:423",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/endurance.py:300",
+   "detail": "Exception"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/analytics/endurance.py:162",
+   "detail": "EnduranceRunner.warnings"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/analytics/journal.py:25",
+   "detail": "RowJournal.rows"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/phase6_benchmark.py:266",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/phase6_benchmark.py:276",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/phase7_benchmark.py:448",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/phase7_benchmark.py:458",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/analytics/policy_comparison.py:252",
+   "detail": "Exception"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/analytics/resource_monitor.py:126",
+   "detail": "ResourceMonitor._seen"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/audit/bridge_security.py:75",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/audit/bridge_security.py:90",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/audit/db_integrity.py:186",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/audit/db_integrity.py:178",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/audit/db_integrity.py:66",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/audit/system.py:82",
+   "detail": "Exception"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/audit/system.py:72",
+   "detail": "Audit.sections"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/audit/system.py:73",
+   "detail": "Audit.failures"
+  },
+  {
+   "kind": "broad_except:re-raised",
+   "where": "src/chest_hunter/database.py:464",
+   "detail": "BaseException"
+  },
+  {
+   "kind": "broad_except:re-raised",
+   "where": "src/chest_hunter/database.py:576",
+   "detail": "BaseException"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/active.py:108",
+   "detail": "CoverageMap.cells"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/active.py:348",
+   "detail": "ActiveExplorer._ray_enclosure"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/route_memory.py:86",
+   "detail": "RouteMemory.pending"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/route_memory.py:87",
+   "detail": "RouteMemory._pairs"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/route_memory.py:88",
+   "detail": "RouteMemory._dest"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/route_memory.py:89",
+   "detail": "RouteMemory._locations"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/route_memory.py:90",
+   "detail": "RouteMemory._all_ratios"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/self_improving.py:71",
+   "detail": "StrategyBandit.stats"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/exploration/self_improving.py:126",
+   "detail": "ExplorationMemory.categories"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/learning/dataset.py:73",
+   "detail": "DemonstrationDataset.samples"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/learning/dataset.py:74",
+   "detail": "DemonstrationDataset.episodes"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/learning/demonstration_recorder.py:133",
+   "detail": "DemonstrationRecorder._steps"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/learning/demonstration_recorder.py:134",
+   "detail": "DemonstrationRecorder._hashes"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/learning/model_export.py:150",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/learning/policy_selector.py:331",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/learning/reliability.py:149",
+   "detail": "Exception"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/navigation/astar.py:222",
+   "detail": "_clear"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/navigation/local_controller.py:30",
+   "detail": "move"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/navigation/navigation_3d.py:39",
+   "detail": "nav_query"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/navigation/navigation_3d.py:42",
+   "detail": "nav_raycast"
+  },
+  {
+   "kind": "constant_return",
+   "where": "src/chest_hunter/navigation/navigation_3d.py:106",
+   "detail": "observe -> None"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/navigation/navigation_3d.py:126",
+   "detail": "LocalNavigator.grids"
+  },
+  {
+   "kind": "broad_except:re-raised",
+   "where": "src/chest_hunter/runtime/checkpoint.py:74",
+   "detail": "BaseException"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/runtime/operations.py:38",
+   "detail": "OperationsControl.messages"
+  },
+  {
+   "kind": "constant_return",
+   "where": "src/chest_hunter/runtime/profiler.py:127",
+   "detail": "add -> None"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/runtime/profiler.py:61",
+   "detail": "Profiler._series"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/runtime/startup.py:167",
+   "detail": "Exception"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/runtime/startup.py:231",
+   "detail": "Exception"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/runtime/supervisor.py:181",
+   "detail": "Supervisor._cooldown"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/camera.py:161",
+   "detail": "FrameRenderer._noise_pos"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/camera.py:162",
+   "detail": "FrameRenderer._noise_neg"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/environment.py:216",
+   "detail": "TokenRewardModel.awarded"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/environment.py:257",
+   "detail": "Environment.chests"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/environment.py:261",
+   "detail": "Environment.events"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/environment.py:262",
+   "detail": "Environment._interaction_rngs"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/renderer.py:86",
+   "detail": "SimulationApp._chest_items"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/renderer.py:87",
+   "detail": "SimulationApp._chest_colours"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/renderer.py:97",
+   "detail": "SimulationApp.info_vars"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/renderer.py:99",
+   "detail": "SimulationApp.debug_vars"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation/renderer.py:102",
+   "detail": "SimulationApp._debug_items"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/environment3d.py:181",
+   "detail": "Environment3D.chests"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/environment3d.py:188",
+   "detail": "Environment3D.extra_obstacles"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/environment3d.py:195",
+   "detail": "Environment3D.events"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/environment3d.py:196",
+   "detail": "Environment3D.opened_log"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/generator7.py:154",
+   "detail": "_Space.rects"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/generator7.py:188",
+   "detail": "_Builder.spawns"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/generator7.py:189",
+   "detail": "_Builder.regions"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/generator7.py:190",
+   "detail": "_Builder.rooms"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/procedural.py:92",
+   "detail": "_Footprints.rects"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/renderer3d.py:134",
+   "detail": "Renderer3D._noise_pos"
+  },
+  {
+   "kind": "growth_candidate",
+   "where": "src/chest_hunter/simulation3d/renderer3d.py:135",
+   "detail": "Renderer3D._noise_neg"
+  },
+  {
+   "kind": "broad_except:recorded",
+   "where": "src/chest_hunter/unreal_bridge/mock_server.py:233",
+   "detail": "Exception"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/vision/chest_detector.py:108",
+   "detail": "_detect"
+  },
+  {
+   "kind": "stub",
+   "where": "src/chest_hunter/vision/observation.py:71",
+   "detail": "capture"
+  },
+  {
+   "kind": "constant_return",
+   "where": "tests/test_policy_selector.py:134",
+   "detail": "wants_observation -> True"
+  },
+  {
+   "kind": "constant_return",
+   "where": "tests/test_visual_tracker.py:14",
+   "detail": "always -> True"
+  },
+  {
+   "kind": "constant_return",
+   "where": "tests/test_visual_tracker.py:18",
+   "detail": "never -> False"
+  }
+ ],
+ "modules": {
+  "chest_hunter": {
+   "file": "src/chest_hunter/__init__.py",
+   "imported": true,
+   "lines": 68
+  },
+  "chest_hunter.__main__": {
+   "file": "src/chest_hunter/__main__.py",
+   "imported": false,
+   "lines": 6
+  },
+  "chest_hunter.agent": {
+   "file": "src/chest_hunter/agent/__init__.py",
+   "imported": true,
+   "lines": 20
+  },
+  "chest_hunter.agent.controller": {
+   "file": "src/chest_hunter/agent/controller.py",
+   "imported": true,
+   "lines": 355
+  },
+  "chest_hunter.agent.controller_3d": {
+   "file": "src/chest_hunter/agent/controller_3d.py",
+   "imported": true,
+   "lines": 1615
+  },
+  "chest_hunter.agent.dashboard_3d": {
+   "file": "src/chest_hunter/agent/dashboard_3d.py",
+   "imported": true,
+   "lines": 478
+  },
+  "chest_hunter.agent.fsm": {
+   "file": "src/chest_hunter/agent/fsm.py",
+   "imported": true,
+   "lines": 164
+  },
+  "chest_hunter.agent.objectives": {
+   "file": "src/chest_hunter/agent/objectives.py",
+   "imported": true,
+   "lines": 76
+  },
+  "chest_hunter.agent.operations_panel": {
+   "file": "src/chest_hunter/agent/operations_panel.py",
+   "imported": true,
+   "lines": 139
+  },
+  "chest_hunter.agent.recorder": {
+   "file": "src/chest_hunter/agent/recorder.py",
+   "imported": true,
+   "lines": 105
+  },
+  "chest_hunter.agent.recovery_3d": {
+   "file": "src/chest_hunter/agent/recovery_3d.py",
+   "imported": true,
+   "lines": 101
+  },
+  "chest_hunter.agent.runner": {
+   "file": "src/chest_hunter/agent/runner.py",
+   "imported": true,
+   "lines": 415
+  },
+  "chest_hunter.agent.runner_3d": {
+   "file": "src/chest_hunter/agent/runner_3d.py",
+   "imported": true,
+   "lines": 555
+  },
+  "chest_hunter.agent.states": {
+   "file": "src/chest_hunter/agent/states.py",
+   "imported": true,
+   "lines": 145
+  },
+  "chest_hunter.agent.visual_controller": {
+   "file": "src/chest_hunter/agent/visual_controller.py",
+   "imported": true,
+   "lines": 689
+  },
+  "chest_hunter.analytics": {
+   "file": "src/chest_hunter/analytics/__init__.py",
+   "imported": true,
+   "lines": 5
+  },
+  "chest_hunter.analytics.benchmark": {
+   "file": "src/chest_hunter/analytics/benchmark.py",
+   "imported": true,
+   "lines": 244
+  },
+  "chest_hunter.analytics.benchmark_3d": {
+   "file": "src/chest_hunter/analytics/benchmark_3d.py",
+   "imported": true,
+   "lines": 278
+  },
+  "chest_hunter.analytics.endurance": {
+   "file": "src/chest_hunter/analytics/endurance.py",
+   "imported": true,
+   "lines": 679
+  },
+  "chest_hunter.analytics.generalization_benchmark": {
+   "file": "src/chest_hunter/analytics/generalization_benchmark.py",
+   "imported": true,
+   "lines": 82
+  },
+  "chest_hunter.analytics.journal": {
+   "file": "src/chest_hunter/analytics/journal.py",
+   "imported": true,
+   "lines": 56
+  },
+  "chest_hunter.analytics.learning_metrics": {
+   "file": "src/chest_hunter/analytics/learning_metrics.py",
+   "imported": true,
+   "lines": 65
+  },
+  "chest_hunter.analytics.metrics": {
+   "file": "src/chest_hunter/analytics/metrics.py",
+   "imported": true,
+   "lines": 115
+  },
+  "chest_hunter.analytics.phase6_benchmark": {
+   "file": "src/chest_hunter/analytics/phase6_benchmark.py",
+   "imported": true,
+   "lines": 408
+  },
+  "chest_hunter.analytics.phase7_benchmark": {
+   "file": "src/chest_hunter/analytics/phase7_benchmark.py",
+   "imported": true,
+   "lines": 1024
+  },
+  "chest_hunter.analytics.policy_comparison": {
+   "file": "src/chest_hunter/analytics/policy_comparison.py",
+   "imported": true,
+   "lines": 394
+  },
+  "chest_hunter.analytics.resource_monitor": {
+   "file": "src/chest_hunter/analytics/resource_monitor.py",
+   "imported": true,
+   "lines": 271
+  },
+  "chest_hunter.analytics.robustness": {
+   "file": "src/chest_hunter/analytics/robustness.py",
+   "imported": true,
+   "lines": 164
+  },
+  "chest_hunter.analytics.stats": {
+   "file": "src/chest_hunter/analytics/stats.py",
+   "imported": true,
+   "lines": 103
+  },
+  "chest_hunter.analytics.vision_metrics": {
+   "file": "src/chest_hunter/analytics/vision_metrics.py",
+   "imported": true,
+   "lines": 178
+  },
+  "chest_hunter.analytics.vision_metrics_3d": {
+   "file": "src/chest_hunter/analytics/vision_metrics_3d.py",
+   "imported": true,
+   "lines": 111
+  },
+  "chest_hunter.analytics.visual_benchmark": {
+   "file": "src/chest_hunter/analytics/visual_benchmark.py",
+   "imported": true,
+   "lines": 448
+  },
+  "chest_hunter.audit": {
+   "file": "src/chest_hunter/audit/__init__.py",
+   "imported": true,
+   "lines": 0
+  },
+  "chest_hunter.audit.bridge_security": {
+   "file": "src/chest_hunter/audit/bridge_security.py",
+   "imported": true,
+   "lines": 279
+  },
+  "chest_hunter.audit.components": {
+   "file": "src/chest_hunter/audit/components.py",
+   "imported": true,
+   "lines": 227
+  },
+  "chest_hunter.audit.db_integrity": {
+   "file": "src/chest_hunter/audit/db_integrity.py",
+   "imported": true,
+   "lines": 237
+  },
+  "chest_hunter.audit.interaction_eval": {
+   "file": "src/chest_hunter/audit/interaction_eval.py",
+   "imported": true,
+   "lines": 208
+  },
+  "chest_hunter.audit.leakage": {
+   "file": "src/chest_hunter/audit/leakage.py",
+   "imported": true,
+   "lines": 200
+  },
+  "chest_hunter.audit.loop_trace": {
+   "file": "src/chest_hunter/audit/loop_trace.py",
+   "imported": true,
+   "lines": 172
+  },
+  "chest_hunter.audit.navigation_eval": {
+   "file": "src/chest_hunter/audit/navigation_eval.py",
+   "imported": true,
+   "lines": 275
+  },
+  "chest_hunter.audit.static_scan": {
+   "file": "src/chest_hunter/audit/static_scan.py",
+   "imported": true,
+   "lines": 216
+  },
+  "chest_hunter.audit.system": {
+   "file": "src/chest_hunter/audit/system.py",
+   "imported": true,
+   "lines": 365
+  },
+  "chest_hunter.audit.unreal_static": {
+   "file": "src/chest_hunter/audit/unreal_static.py",
+   "imported": true,
+   "lines": 110
+  },
+  "chest_hunter.audit.vision_eval": {
+   "file": "src/chest_hunter/audit/vision_eval.py",
+   "imported": true,
+   "lines": 337
+  },
+  "chest_hunter.chest_repository": {
+   "file": "src/chest_hunter/chest_repository.py",
+   "imported": true,
+   "lines": 490
+  },
+  "chest_hunter.cli": {
+   "file": "src/chest_hunter/cli.py",
+   "imported": true,
+   "lines": 1277
+  },
+  "chest_hunter.cli_learning": {
+   "file": "src/chest_hunter/cli_learning.py",
+   "imported": true,
+   "lines": 459
+  },
+  "chest_hunter.cli_phase6": {
+   "file": "src/chest_hunter/cli_phase6.py",
+   "imported": true,
+   "lines": 415
+  },
+  "chest_hunter.cli_phase7": {
+   "file": "src/chest_hunter/cli_phase7.py",
+   "imported": true,
+   "lines": 420
+  },
+  "chest_hunter.config": {
+   "file": "src/chest_hunter/config.py",
+   "imported": true,
+   "lines": 863
+  },
+  "chest_hunter.database": {
+   "file": "src/chest_hunter/database.py",
+   "imported": true,
+   "lines": 621
+  },
+  "chest_hunter.demo_data": {
+   "file": "src/chest_hunter/demo_data.py",
+   "imported": true,
+   "lines": 123
+  },
+  "chest_hunter.exceptions": {
+   "file": "src/chest_hunter/exceptions.py",
+   "imported": true,
+   "lines": 52
+  },
+  "chest_hunter.exploration": {
+   "file": "src/chest_hunter/exploration/__init__.py",
+   "imported": true,
+   "lines": 1
+  },
+  "chest_hunter.exploration.active": {
+   "file": "src/chest_hunter/exploration/active.py",
+   "imported": true,
+   "lines": 598
+  },
+  "chest_hunter.exploration.adaptive_planner": {
+   "file": "src/chest_hunter/exploration/adaptive_planner.py",
+   "imported": true,
+   "lines": 167
+  },
+  "chest_hunter.exploration.advanced_planner": {
+   "file": "src/chest_hunter/exploration/advanced_planner.py",
+   "imported": true,
+   "lines": 315
+  },
+  "chest_hunter.exploration.experience": {
+   "file": "src/chest_hunter/exploration/experience.py",
+   "imported": true,
+   "lines": 77
+  },
+  "chest_hunter.exploration.frontier_scoring": {
+   "file": "src/chest_hunter/exploration/frontier_scoring.py",
+   "imported": true,
+   "lines": 72
+  },
+  "chest_hunter.exploration.route_memory": {
+   "file": "src/chest_hunter/exploration/route_memory.py",
+   "imported": true,
+   "lines": 224
+  },
+  "chest_hunter.exploration.self_improving": {
+   "file": "src/chest_hunter/exploration/self_improving.py",
+   "imported": true,
+   "lines": 238
+  },
+  "chest_hunter.exploration.spawn_estimator": {
+   "file": "src/chest_hunter/exploration/spawn_estimator.py",
+   "imported": true,
+   "lines": 202
+  },
+  "chest_hunter.learning": {
+   "file": "src/chest_hunter/learning/__init__.py",
+   "imported": true,
+   "lines": 7
+  },
+  "chest_hunter.learning.behavior_cloning": {
+   "file": "src/chest_hunter/learning/behavior_cloning.py",
+   "imported": true,
+   "lines": 497
+  },
+  "chest_hunter.learning.dataset": {
+   "file": "src/chest_hunter/learning/dataset.py",
+   "imported": true,
+   "lines": 302
+  },
+  "chest_hunter.learning.demo_generation": {
+   "file": "src/chest_hunter/learning/demo_generation.py",
+   "imported": true,
+   "lines": 108
+  },
+  "chest_hunter.learning.demonstration_recorder": {
+   "file": "src/chest_hunter/learning/demonstration_recorder.py",
+   "imported": true,
+   "lines": 376
+  },
+  "chest_hunter.learning.learned_policy": {
+   "file": "src/chest_hunter/learning/learned_policy.py",
+   "imported": true,
+   "lines": 146
+  },
+  "chest_hunter.learning.model_export": {
+   "file": "src/chest_hunter/learning/model_export.py",
+   "imported": true,
+   "lines": 242
+  },
+  "chest_hunter.learning.policy_selector": {
+   "file": "src/chest_hunter/learning/policy_selector.py",
+   "imported": true,
+   "lines": 465
+  },
+  "chest_hunter.learning.reliability": {
+   "file": "src/chest_hunter/learning/reliability.py",
+   "imported": true,
+   "lines": 187
+  },
+  "chest_hunter.learning.teleop": {
+   "file": "src/chest_hunter/learning/teleop.py",
+   "imported": true,
+   "lines": 185
+  },
+  "chest_hunter.localization": {
+   "file": "src/chest_hunter/localization/__init__.py",
+   "imported": true,
+   "lines": 1
+  },
+  "chest_hunter.localization.pose_estimator": {
+   "file": "src/chest_hunter/localization/pose_estimator.py",
+   "imported": true,
+   "lines": 200
+  },
+  "chest_hunter.localization.world_model_3d": {
+   "file": "src/chest_hunter/localization/world_model_3d.py",
+   "imported": true,
+   "lines": 326
+  },
+  "chest_hunter.localization.world_state": {
+   "file": "src/chest_hunter/localization/world_state.py",
+   "imported": true,
+   "lines": 240
+  },
+  "chest_hunter.logging_config": {
+   "file": "src/chest_hunter/logging_config.py",
+   "imported": true,
+   "lines": 66
+  },
+  "chest_hunter.models": {
+   "file": "src/chest_hunter/models.py",
+   "imported": true,
+   "lines": 424
+  },
+  "chest_hunter.navigation": {
+   "file": "src/chest_hunter/navigation/__init__.py",
+   "imported": true,
+   "lines": 39
+  },
+  "chest_hunter.navigation.astar": {
+   "file": "src/chest_hunter/navigation/astar.py",
+   "imported": true,
+   "lines": 313
+  },
+  "chest_hunter.navigation.local_controller": {
+   "file": "src/chest_hunter/navigation/local_controller.py",
+   "imported": true,
+   "lines": 126
+  },
+  "chest_hunter.navigation.movement": {
+   "file": "src/chest_hunter/navigation/movement.py",
+   "imported": true,
+   "lines": 236
+  },
+  "chest_hunter.navigation.navigation_3d": {
+   "file": "src/chest_hunter/navigation/navigation_3d.py",
+   "imported": true,
+   "lines": 353
+  },
+  "chest_hunter.navigation.route_planner": {
+   "file": "src/chest_hunter/navigation/route_planner.py",
+   "imported": true,
+   "lines": 183
+  },
+  "chest_hunter.navigation.visual_planner": {
+   "file": "src/chest_hunter/navigation/visual_planner.py",
+   "imported": true,
+   "lines": 228
+  },
+  "chest_hunter.run_repository": {
+   "file": "src/chest_hunter/run_repository.py",
+   "imported": true,
+   "lines": 171
+  },
+  "chest_hunter.runtime": {
+   "file": "src/chest_hunter/runtime/__init__.py",
+   "imported": true,
+   "lines": 2
+  },
+  "chest_hunter.runtime.checkpoint": {
+   "file": "src/chest_hunter/runtime/checkpoint.py",
+   "imported": true,
+   "lines": 232
+  },
+  "chest_hunter.runtime.configurations": {
+   "file": "src/chest_hunter/runtime/configurations.py",
+   "imported": true,
+   "lines": 189
+  },
+  "chest_hunter.runtime.events": {
+   "file": "src/chest_hunter/runtime/events.py",
+   "imported": true,
+   "lines": 108
+  },
+  "chest_hunter.runtime.faults": {
+   "file": "src/chest_hunter/runtime/faults.py",
+   "imported": true,
+   "lines": 456
+  },
+  "chest_hunter.runtime.operations": {
+   "file": "src/chest_hunter/runtime/operations.py",
+   "imported": true,
+   "lines": 150
+  },
+  "chest_hunter.runtime.profiler": {
+   "file": "src/chest_hunter/runtime/profiler.py",
+   "imported": true,
+   "lines": 152
+  },
+  "chest_hunter.runtime.startup": {
+   "file": "src/chest_hunter/runtime/startup.py",
+   "imported": true,
+   "lines": 299
+  },
+  "chest_hunter.runtime.state_spec": {
+   "file": "src/chest_hunter/runtime/state_spec.py",
+   "imported": true,
+   "lines": 219
+  },
+  "chest_hunter.runtime.supervisor": {
+   "file": "src/chest_hunter/runtime/supervisor.py",
+   "imported": true,
+   "lines": 608
+  },
+  "chest_hunter.scenarios": {
+   "file": "src/chest_hunter/scenarios.py",
+   "imported": true,
+   "lines": 119
+  },
+  "chest_hunter.session_repository": {
+   "file": "src/chest_hunter/session_repository.py",
+   "imported": true,
+   "lines": 398
+  },
+  "chest_hunter.simulation": {
+   "file": "src/chest_hunter/simulation/__init__.py",
+   "imported": true,
+   "lines": 30
+  },
+  "chest_hunter.simulation.camera": {
+   "file": "src/chest_hunter/simulation/camera.py",
+   "imported": true,
+   "lines": 249
+  },
+  "chest_hunter.simulation.collision": {
+   "file": "src/chest_hunter/simulation/collision.py",
+   "imported": true,
+   "lines": 232
+  },
+  "chest_hunter.simulation.entities": {
+   "file": "src/chest_hunter/simulation/entities.py",
+   "imported": true,
+   "lines": 178
+  },
+  "chest_hunter.simulation.environment": {
+   "file": "src/chest_hunter/simulation/environment.py",
+   "imported": true,
+   "lines": 467
+  },
+  "chest_hunter.simulation.interface": {
+   "file": "src/chest_hunter/simulation/interface.py",
+   "imported": true,
+   "lines": 90
+  },
+  "chest_hunter.simulation.map_generator": {
+   "file": "src/chest_hunter/simulation/map_generator.py",
+   "imported": true,
+   "lines": 174
+  },
+  "chest_hunter.simulation.renderer": {
+   "file": "src/chest_hunter/simulation/renderer.py",
+   "imported": true,
+   "lines": 581
+  },
+  "chest_hunter.simulation.sprites": {
+   "file": "src/chest_hunter/simulation/sprites.py",
+   "imported": true,
+   "lines": 138
+  },
+  "chest_hunter.simulation3d": {
+   "file": "src/chest_hunter/simulation3d/__init__.py",
+   "imported": true,
+   "lines": 11
+  },
+  "chest_hunter.simulation3d.arena": {
+   "file": "src/chest_hunter/simulation3d/arena.py",
+   "imported": true,
+   "lines": 440
+  },
+  "chest_hunter.simulation3d.character": {
+   "file": "src/chest_hunter/simulation3d/character.py",
+   "imported": true,
+   "lines": 245
+  },
+  "chest_hunter.simulation3d.environment3d": {
+   "file": "src/chest_hunter/simulation3d/environment3d.py",
+   "imported": true,
+   "lines": 458
+  },
+  "chest_hunter.simulation3d.generator7": {
+   "file": "src/chest_hunter/simulation3d/generator7.py",
+   "imported": true,
+   "lines": 572
+  },
+  "chest_hunter.simulation3d.geometry": {
+   "file": "src/chest_hunter/simulation3d/geometry.py",
+   "imported": true,
+   "lines": 233
+  },
+  "chest_hunter.simulation3d.navmesh": {
+   "file": "src/chest_hunter/simulation3d/navmesh.py",
+   "imported": true,
+   "lines": 401
+  },
+  "chest_hunter.simulation3d.procedural": {
+   "file": "src/chest_hunter/simulation3d/procedural.py",
+   "imported": true,
+   "lines": 296
+  },
+  "chest_hunter.simulation3d.renderer3d": {
+   "file": "src/chest_hunter/simulation3d/renderer3d.py",
+   "imported": true,
+   "lines": 316
+  },
+  "chest_hunter.unreal_bridge": {
+   "file": "src/chest_hunter/unreal_bridge/__init__.py",
+   "imported": true,
+   "lines": 14
+  },
+  "chest_hunter.unreal_bridge.action_adapter": {
+   "file": "src/chest_hunter/unreal_bridge/action_adapter.py",
+   "imported": true,
+   "lines": 67
+  },
+  "chest_hunter.unreal_bridge.client": {
+   "file": "src/chest_hunter/unreal_bridge/client.py",
+   "imported": true,
+   "lines": 360
+  },
+  "chest_hunter.unreal_bridge.mock_server": {
+   "file": "src/chest_hunter/unreal_bridge/mock_server.py",
+   "imported": true,
+   "lines": 369
+  },
+  "chest_hunter.unreal_bridge.observation_adapter": {
+   "file": "src/chest_hunter/unreal_bridge/observation_adapter.py",
+   "imported": true,
+   "lines": 129
+  },
+  "chest_hunter.unreal_bridge.protocol": {
+   "file": "src/chest_hunter/unreal_bridge/protocol.py",
+   "imported": true,
+   "lines": 333
+  },
+  "chest_hunter.vision": {
+   "file": "src/chest_hunter/vision/__init__.py",
+   "imported": true,
+   "lines": 13
+  },
+  "chest_hunter.vision.chest_detector": {
+   "file": "src/chest_hunter/vision/chest_detector.py",
+   "imported": true,
+   "lines": 288
+  },
+  "chest_hunter.vision.chest_detector_3d": {
+   "file": "src/chest_hunter/vision/chest_detector_3d.py",
+   "imported": true,
+   "lines": 338
+  },
+  "chest_hunter.vision.depth_estimation": {
+   "file": "src/chest_hunter/vision/depth_estimation.py",
+   "imported": true,
+   "lines": 159
+  },
+  "chest_hunter.vision.interaction_cues_3d": {
+   "file": "src/chest_hunter/vision/interaction_cues_3d.py",
+   "imported": true,
+   "lines": 71
+  },
+  "chest_hunter.vision.interaction_detector": {
+   "file": "src/chest_hunter/vision/interaction_detector.py",
+   "imported": true,
+   "lines": 136
+  },
+  "chest_hunter.vision.observation": {
+   "file": "src/chest_hunter/vision/observation.py",
+   "imported": true,
+   "lines": 125
+  },
+  "chest_hunter.vision.obstacle_detector": {
+   "file": "src/chest_hunter/vision/obstacle_detector.py",
+   "imported": true,
+   "lines": 121
+  },
+  "chest_hunter.vision.perception_pipeline": {
+   "file": "src/chest_hunter/vision/perception_pipeline.py",
+   "imported": true,
+   "lines": 95
+  },
+  "chest_hunter.vision.perspective": {
+   "file": "src/chest_hunter/vision/perspective.py",
+   "imported": true,
+   "lines": 216
+  },
+  "chest_hunter.vision.preprocessing": {
+   "file": "src/chest_hunter/vision/preprocessing.py",
+   "imported": true,
+   "lines": 164
+  },
+  "chest_hunter.vision.templates": {
+   "file": "src/chest_hunter/vision/templates.py",
+   "imported": true,
+   "lines": 106
+  },
+  "chest_hunter.vision.tracker_3d": {
+   "file": "src/chest_hunter/vision/tracker_3d.py",
+   "imported": true,
+   "lines": 233
+  },
+  "chest_hunter.vision.visual_tracker": {
+   "file": "src/chest_hunter/vision/visual_tracker.py",
+   "imported": true,
+   "lines": 175
+  }
+ },
+ "components": [
+  {
+   "id": 1,
+   "name": "SQLite data infrastructure",
+   "status": "VERIFIED",
+   "evidence": [
+    "database_integrity.json",
+    "tests/test_database.py"
+   ],
+   "observed": "schema 7, triggers and constraints refuse invalid values, migration from v1 keeps data, two concurrent writer processes, integrity_check ok",
+   "limitations": "single-file SQLite; no network database",
+   "fixes": []
+  },
+  {
+   "id": 2,
+   "name": "Chest-location management",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_chest_repository.py",
+    "database_integrity.json"
+   ],
+   "observed": "repository validation (probability, NaN, empty map) and duplicate refusal",
+   "limitations": "",
+   "fixes": []
+  },
+  {
+   "id": 3,
+   "name": "Simulation sessions",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "database_integrity.json",
+    "tests/test_session_repository.py"
+   ],
+   "observed": "sessions finish with ended_at; interrupted episodes end aborted; finished sessions immutable",
+   "limitations": "3D sessions only in the reference arena; active-exploration openings were not persisted (F12, fixed: discovered_openings); endurance resume after a lost result line failed (F9, fixed)",
+   "fixes": [
+    "F9 (fixed)",
+    "F12 (fixed)"
+   ]
+  },
+  {
+   "id": 4,
+   "name": "2D navigation (A*)",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_astar.py",
+    "tests/test_route_planner.py"
+   ],
+   "observed": "optimality against Dijkstra, blocked goals, determinism",
+   "limitations": "",
+   "fixes": []
+  },
+  {
+   "id": 5,
+   "name": "Route optimisation (2D)",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_benchmark.py",
+    "README section 13"
+   ],
+   "observed": "paired 2D benchmark (Phase 2)",
+   "limitations": "2D only",
+   "fixes": []
+  },
+  {
+   "id": 6,
+   "name": "2D autonomous controller",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_agent.py"
+   ],
+   "observed": "every FSM path in the 2D simulator",
+   "limitations": "2D research simulator only",
+   "fixes": []
+  },
+  {
+   "id": 7,
+   "name": "Visual chest detection (3D)",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "vision_metrics.json",
+    "vision_failures/"
+   ],
+   "observed": "labelled dataset at 320x180 / 480x270 / 640x360 rendered by the reference arena",
+   "limitations": "frames from the Python renderer only (Unreal frames never seen); opened/unopened confusion; chest-appearance shift defeats the colour segmentation",
+   "fixes": [
+    "F11 (verification side)"
+   ]
+  },
+  {
+   "id": 8,
+   "name": "Object tracking (3D)",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "tests/test_vision_3d.py",
+    "integration_results.json (loop trace)"
+   ],
+   "observed": "bounded tracks, stale expiry, re-acquisition",
+   "limitations": "mock frames",
+   "fixes": []
+  },
+  {
+   "id": 9,
+   "name": "Localisation (3D)",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "navigation_metrics.json (localisation)",
+    "benchmark_results/robustness"
+   ],
+   "observed": "odometry-based (no visual correction); pose error from the reference arena's drift model; odometry jumps detected and relocalised",
+   "limitations": "the drift model is the simulator's; Unreal odometry untested; no visual relocalisation, a persistent offset stays",
+   "fixes": []
+  },
+  {
+   "id": 10,
+   "name": "Occupancy / coverage estimation",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "generalisation_results.csv (coverage)",
+    "tests/test_active_exploration.py"
+   ],
+   "observed": "coverage map from raycasts and the view wedge; true coverage scored on the evaluation side",
+   "limitations": "coverage within 200 s far below the 85 % target on 90 m maps",
+   "fixes": []
+  },
+  {
+   "id": 11,
+   "name": "Visual navigation (2D, Phase 3)",
+   "status": "VERIFIED",
+   "evidence": [
+    "tests/test_visual_navigation.py",
+    "tests/test_visual_benchmark.py"
+   ],
+   "observed": "2D visual agent and benchmark",
+   "limitations": "2D only",
+   "fixes": []
+  },
+  {
+   "id": 12,
+   "name": "Unreal environment",
+   "status": "UNVERIFIED",
+   "evidence": [
+    "integration_results.json (unreal)"
+   ],
+   "observed": "C++ sources and config only: no binaries, no map asset, never compiled",
+   "limitations": "nothing executed",
+   "fixes": [
+    "build and run on an Unreal machine"
+   ]
+  },
+  {
+   "id": 13,
+   "name": "Unreal communication (bridge)",
+   "status": "MOCK ONLY",
+   "evidence": [
+    "integration_results.json (bridge_security)",
+    "tests/test_unreal_bridge.py",
+    "tests/test_unreal_sources.py"
+   ],
+   "observed": "Python client fully exercised against the protocol-identical Python server; C++ server constants and checks match statically",
+   "limitations": "the C++ server never ran",
+   "fixes": []
+  },
+  {
+   "id": 14,
+   "name": "Third-person camera capture",
+   "status": "MOCK ONLY",
+   "evidence": [
+    "tests/test_renderer.py",
+    "loop_trace/episode.mp4"
+   ],
+   "observed": "Python software renderer frames",
+   "limitations": "Unreal SceneCapture never ran",
+   "fixes": []
+  },
+  {
+   "id": 15,
+   "name": "3D target localisation",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "vision_metrics.json (distance/bearing errors)"
+   ],
+   "observed": "distance error from the agent's estimator on labelled frames",
+   "limitations": "mock frames",
+   "fixes": []
+  },
+  {
+   "id": 16,
+   "name": "3D navigation",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "navigation_metrics.json"
+   ],
+   "observed": "real agent sent to goals by terrain type on held-out maps",
+   "limitations": "the reference arena's NavMesh-style grid stands in for Unreal's Recast NavMesh",
+   "fixes": []
+  },
+  {
+   "id": 17,
+   "name": "Chest interaction",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "interaction_metrics.json"
+   ],
+   "observed": "simulator interaction rules (range, facing, absent, opened, interrupted, duplicate) all as specified; agent interaction attempts",
+   "limitations": "Unreal interaction validation never ran",
+   "fixes": []
+  },
+  {
+   "id": 18,
+   "name": "Visual interaction verification",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "interaction_metrics.json (false failures)",
+    "failures.json F11"
+   ],
+   "observed": "clean episodes: false-success rate 0.000, false-failure rate 0.000 against the simulator's opening log",
+   "limitations": "as found: real openings judged closed in every look, the agent re-aligned on an opened chest and marked it failed (F11, fixed); the single-frame opened/unopened classifier is unchanged (F16)",
+   "fixes": [
+    "F11 (fixed)",
+    "F14 (fixed)"
+   ]
+  },
+  {
+   "id": 19,
+   "name": "Imitation-learning pipeline",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "tests/test_learned_policy.py",
+    "training/datasets"
+   ],
+   "observed": "dataset, splits, NumPy training, ONNX export and parity tests",
+   "limitations": "synthetic demonstrations only (no human data)",
+   "fixes": []
+  },
+  {
+   "id": 20,
+   "name": "Learned-policy inference",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "policy_comparison.csv"
+   ],
+   "observed": "ONNX CPU inference in episodes",
+   "limitations": "see the policy comparison for its value",
+   "fixes": []
+  },
+  {
+   "id": 21,
+   "name": "Adaptive exploration",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "planner_comparison.csv",
+    "benchmark_results/phase7/strategies"
+   ],
+   "observed": "Phase 5/6 planners and Phase 7 frontier strategies on identical seeds",
+   "limitations": "mock environment",
+   "fixes": []
+  },
+  {
+   "id": 22,
+   "name": "Reliability supervisor",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "benchmark_results/robustness",
+    "tests/test_supervisor.py"
+   ],
+   "observed": "ten injected fault kinds, detection and bounded recovery",
+   "limitations": "mock environment; Unreal timeouts never exercised; loop detector false alarms in active exploration (F17, fixed; residual detections remain in long episodes)",
+   "fixes": [
+    "F17 (fixed)"
+   ]
+  },
+  {
+   "id": 23,
+   "name": "Endurance execution",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "endurance_results.csv"
+   ],
+   "observed": "100 / 500 / 1000-episode runs against one long-lived reference server",
+   "limitations": "short episodes (1500 ticks); Unreal never used",
+   "fixes": [
+    "F9 (fixed)"
+   ]
+  },
+  {
+   "id": 24,
+   "name": "Generalisation testing",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "generalisation_results.csv"
+   ],
+   "observed": "8 evaluation categories, held-out seeds and maps, paired gaps with CIs",
+   "limitations": "procedural maps of one generator; mock environment",
+   "fixes": []
+  },
+  {
+   "id": 25,
+   "name": "Metrics and reporting",
+   "status": "PARTIALLY VERIFIED",
+   "evidence": [
+    "audit_summary.json",
+    "tests/test_phase7_benchmark.py"
+   ],
+   "observed": "ground-truth-scored metrics, journals and resume",
+   "limitations": "a recovery-success metric read near zero until Phase 7 (fixed); the Phase 6 benchmark lost its first run to a 2 h session limit (journal added)",
+   "fixes": []
+  }
+ ],
+ "unreal": {
+  "project_dir": "/home/user/Fortnite-bot/chest-hunter-ai/unreal/ChestHunterResearch",
+  "uproject": {
+   "valid_json": true,
+   "engine": "5.4",
+   "modules": [
+    "ChestHunterResearch"
+   ],
+   "plugins": {
+    "PythonScriptPlugin": true,
+    "EditorScriptingUtilities": true,
+    "OnlineSubsystem": false,
+    "OnlineSubsystemUtils": false
+   }
+  },
+  "build_dependencies": [
+   "Core",
+   "CoreUObject",
+   "Engine",
+   "InputCore",
+   "Json",
+   "JsonUtilities",
+   "Sockets",
+   "Networking",
+   "NavigationSystem",
+   "AIModule",
+   "RenderCore"
+  ],
+  "cpp_files": 17,
+  "cpp_lines": 3143,
+  "binaries_present": false,
+  "maps_present": [],
+  "uassets_present": 0,
+  "asset_references": [
+   "/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial",
+   "/Engine/BasicShapes/Cube.Cube"
+  ],
+  "asset_references_outside_engine_content": [],
+  "layouts": [
+   "p7_complex_test_000",
+   "p7_complex_test_000_unfamiliar",
+   "p7_indoor_test_000",
+   "p7_mixed_test_000",
+   "p7_open_test_000",
+   "proc_test_000",
+   "proc_test_001",
+   "proc_test_002",
+   "proc_test_003",
+   "proc_train_000",
+   "proc_train_001",
+   "proc_train_002",
+   "proc_train_003",
+   "research_arena_3d"
+  ],
+  "default_map": "/Game/Maps/ResearchArena3D.ResearchArena3D",
+  "default_map_exists": false,
+  "unreal_engine": {
+   "executables_on_path": {},
+   "environment": [],
+   "installed": false
+  },
+  "host_cpp_compiler": "/usr/bin/g++",
+  "source_consistency_tests": {
+   "returncode": 0,
+   "results": [
+    "test_chest_dimensions_and_character_parameters_match (tests.test_unreal_sources.TestArenaAndRandomnessConsistency.test_chest_dimensions_and_character_parameters_match) ... ok",
+    "test_cpp_randomness_is_bit_identical_to_python (tests.test_unreal_sources.TestArenaAndRandomnessConsistency.test_cpp_randomness_is_bit_identical_to_python) ... ok",
+    "test_reference_vectors_in_the_cpp_tests_match_python (tests.test_unreal_sources.TestArenaAndRandomnessConsistency.test_reference_vectors_in_the_cpp_tests_match_python) ... ok",
+    "test_project_layout (tests.test_unreal_sources.TestProjectLayout.test_project_layout) ... ok",
+    "test_action_keys_match (tests.test_unreal_sources.TestProtocolConsistency.test_action_keys_match) ... ok",
+    "test_error_codes_and_commands_match (tests.test_unreal_sources.TestProtocolConsistency.test_error_codes_and_commands_match) ... ok",
+    "test_observation_sizes_navigation_modes_and_qualities_match (tests.test_unreal_sources.TestProtocolConsistency.test_observation_sizes_navigation_modes_and_qualities_match) ... ok",
+    "test_protocol_constants_match (tests.test_unreal_sources.TestProtocolConsistency.test_protocol_constants_match) ... ok",
+    "test_agent_capture_is_a_scene_capture_not_a_screenshot (tests.test_unreal_sources.TestSecurityProperties.test_agent_capture_is_a_scene_capture_not_a_screenshot) ... ok",
+    "test_privileged_commands_are_gated (tests.test_unreal_sources.TestSecurityProperties.test_privileged_commands_are_gated) ... ok",
+    "test_server_is_loopback_only_and_has_no_remote_execution (tests.test_unreal_sources.TestSecurityProperties.test_server_is_loopback_only_and_has_no_remote_execution) ... ok"
+   ],
+   "summary": [
+    "Ran 11 tests in 0.087s",
+    "OK"
+   ]
+  },
+  "blocked": [
+   "compiling the ChestHunterResearch C++ module (UnrealBuildTool)",
+   "running the C++ automation tests (ResearchProtocolTests.cpp)",
+   "creating /Game/Maps/ResearchArena3D with Scripts/create_research_map.py",
+   "loading the research map, spawning the third-person character and the chests",
+   "camera capture (SceneCapture2D render target) and frame encoding",
+   "the C++ bridge server accepting the Python client (HELLO, RESET_EPISODE, STEP, ...)",
+   "Unreal interaction validation, chest state change and the opened-chest mesh",
+   "episode reset and termination inside Unreal",
+   "every Python benchmark against --backend unreal",
+   "Unreal frame time, GPU load and memory"
+  ],
+  "commands_for_unreal_machine": [
+   "# On a machine with Unreal Engine 5.4 (Windows or Linux), from the repository root:",
+   "python -m chest_hunter export-arena-3d --map research_arena_3d --map p7_complex_test_000_unfamiliar",
+   "<UE>/Engine/Build/BatchFiles/Build.(bat|sh) ChestHunterResearchEditor <Platform> Development -Project=$PWD/unreal/ChestHunterResearch/ChestHunterResearch.uproject",
+   "<UE>/Engine/Binaries/<Platform>/UnrealEditor-Cmd unreal/ChestHunterResearch/ChestHunterResearch.uproject -run=pythonscript -script=$PWD/unreal/ChestHunterResearch/Scripts/create_research_map.py -unattended",
+   "<UE>/Engine/Binaries/<Platform>/UnrealEditor-Cmd unreal/ChestHunterResearch/ChestHunterResearch.uproject -ExecCmds=\"Automation RunTests ChestHunter; Quit\" -unattended -nullrhi",
+   "<UE>/Engine/Binaries/<Platform>/UnrealEditor unreal/ChestHunterResearch/ChestHunterResearch.uproject -game -ResearchEvaluation -windowed -ResX=640 -ResY=360   # bridge on by default (-ResearchBridgeOff disables); -ResearchEvaluation implies the oracle channel, for scoring only",
+   "python -m chest_hunter check-runtime --backend unreal",
+   "python -m chest_hunter simulate-3d --backend unreal --agent hybrid --map research_arena_3d --evaluate",
+   "python -m chest_hunter simulate-3d --backend unreal --exploration active --map p7_complex_test_000_unfamiliar --evaluate"
+  ],
+  "verdict": "UNVERIFIED: the Unreal project is source and configuration only (no binaries, no map asset); it has never been compiled or run. Protocol and parameter consistency with the Python side is checked statically."
+ }
+}

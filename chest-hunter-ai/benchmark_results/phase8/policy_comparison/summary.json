@@ -1,0 +1,738 @@
+{
+ "per_setup": {
+  "audit_policy_deterministic": {
+   "episodes": 40,
+   "throughput_truth_per_min": {
+    "n": 40,
+    "mean": 3.8444,
+    "median": 3.758,
+    "std": 1.039,
+    "ci_low": 3.5121,
+    "ci_high": 4.1767,
+    "min": 1.3483,
+    "max": 6.6667
+   },
+   "percent_reachable_opened": {
+    "n": 40,
+    "mean": 76.1232,
+    "median": 76.39,
+    "std": 14.5757,
+    "ci_low": 71.4617,
+    "ci_high": 80.7848,
+    "min": 40.0,
+    "max": 100.0
+   },
+   "percent_reachable_found": {
+    "n": 40,
+    "mean": 88.591,
+    "median": 88.565,
+    "std": 10.0775,
+    "ci_low": 85.3681,
+    "ci_high": 91.8139,
+    "min": 60.0,
+    "max": 100.0
+   },
+   "exploration_coverage": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "interaction_success_rate": {
+    "n": 40,
+    "mean": 0.9936,
+    "median": 1.0,
+    "std": 0.0297,
+    "ci_low": 0.9841,
+    "ci_high": 1.0031,
+    "min": 0.8333,
+    "max": 1.0
+   },
+   "navigation_success_rate": {
+    "n": 40,
+    "mean": 0.9961,
+    "median": 1.0,
+    "std": 0.0142,
+    "ci_low": 0.9915,
+    "ci_high": 1.0006,
+    "min": 0.9362,
+    "max": 1.0
+   },
+   "recovery_success_rate": {
+    "n": 28,
+    "mean": 0.6605,
+    "median": 0.8,
+    "std": 0.3788,
+    "ci_low": 0.5136,
+    "ci_high": 0.8074,
+    "min": 0.0,
+    "max": 1.0
+   },
+   "detection_precision": {
+    "n": 40,
+    "mean": 0.9516,
+    "median": 0.9842,
+    "std": 0.0806,
+    "ci_low": 0.9258,
+    "ci_high": 0.9774,
+    "min": 0.6033,
+    "max": 1.0
+   },
+   "detection_recall": {
+    "n": 40,
+    "mean": 0.8858,
+    "median": 0.9253,
+    "std": 0.0832,
+    "ci_low": 0.8592,
+    "ci_high": 0.9125,
+    "min": 0.711,
+    "max": 0.99
+   },
+   "chest_distance_error_m": {
+    "n": 40,
+    "mean": 0.3942,
+    "median": 0.346,
+    "std": 0.2504,
+    "ci_low": 0.3141,
+    "ci_high": 0.4742,
+    "min": 0.131,
+    "max": 1.2746
+   },
+   "pose_error_mean_m": {
+    "n": 40,
+    "mean": 0.0285,
+    "median": 0.0284,
+    "std": 0.0126,
+    "ci_low": 0.0245,
+    "ci_high": 0.0326,
+    "min": 0.0079,
+    "max": 0.0708
+   },
+   "travel_distance_m": {
+    "n": 40,
+    "mean": 364.28,
+    "median": 321.75,
+    "std": 130.7211,
+    "ci_low": 322.4734,
+    "ci_high": 406.0866,
+    "min": 151.0,
+    "max": 616.3
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 40,
+    "mean": 0.0108,
+    "median": 0.0106,
+    "std": 0.0015,
+    "ci_low": 0.0103,
+    "ci_high": 0.0113,
+    "min": 0.0074,
+    "max": 0.0144
+   },
+   "frontier_selection_ms_mean": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "inference_mean_ms": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "peak_rss_mb": {
+    "n": 40,
+    "mean": 263.8875,
+    "median": 258.25,
+    "std": 37.8055,
+    "ci_low": 251.7967,
+    "ci_high": 275.9783,
+    "min": 202.8,
+    "max": 331.9
+   },
+   "sim_seconds": {
+    "n": 40,
+    "mean": 119.686,
+    "median": 109.565,
+    "std": 43.2996,
+    "ci_low": 105.8381,
+    "ci_high": 133.5339,
+    "min": 50.93,
+    "max": 200.0
+   },
+   "wall_seconds": {
+    "n": 40,
+    "mean": 9.602,
+    "median": 7.675,
+    "std": 4.6714,
+    "ci_low": 8.108,
+    "ci_high": 11.096,
+    "min": 3.7,
+    "max": 19.93
+   },
+   "detection_precision_pooled": 0.9345,
+   "detection_recall_pooled": 0.874,
+   "recovery_success_pooled": 0.5263,
+   "interaction_success_pooled": 0.9934,
+   "reachable_opened_pooled": 0.7407,
+   "outcomes": {
+    "completed": 38,
+    "tick_limit": 2
+   },
+   "over_reported_total": 0,
+   "supervisor_aborts": 0,
+   "strategies_used": {
+    "None": 40
+   }
+  },
+  "audit_policy_learned": {
+   "episodes": 40,
+   "throughput_truth_per_min": {
+    "n": 40,
+    "mean": 1.2413,
+    "median": 1.2,
+    "std": 0.4945,
+    "ci_low": 1.0831,
+    "ci_high": 1.3994,
+    "min": 0.3,
+    "max": 2.4
+   },
+   "percent_reachable_opened": {
+    "n": 40,
+    "mean": 46.0667,
+    "median": 37.5,
+    "std": 23.8659,
+    "ci_low": 38.4341,
+    "ci_high": 53.6994,
+    "min": 16.67,
+    "max": 100.0
+   },
+   "percent_reachable_found": {
+    "n": 40,
+    "mean": 64.2062,
+    "median": 65.69,
+    "std": 23.2335,
+    "ci_low": 56.7758,
+    "ci_high": 71.6367,
+    "min": 28.57,
+    "max": 100.0
+   },
+   "exploration_coverage": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "interaction_success_rate": {
+    "n": 40,
+    "mean": 0.9333,
+    "median": 1.0,
+    "std": 0.1001,
+    "ci_low": 0.9013,
+    "ci_high": 0.9653,
+    "min": 0.75,
+    "max": 1.0
+   },
+   "navigation_success_rate": {
+    "n": 40,
+    "mean": 0.7488,
+    "median": 0.7573,
+    "std": 0.0672,
+    "ci_low": 0.7273,
+    "ci_high": 0.7703,
+    "min": 0.6111,
+    "max": 0.9167
+   },
+   "recovery_success_rate": {
+    "n": 40,
+    "mean": 0.4131,
+    "median": 0.4,
+    "std": 0.2772,
+    "ci_low": 0.3244,
+    "ci_high": 0.5017,
+    "min": 0.0,
+    "max": 1.0
+   },
+   "detection_precision": {
+    "n": 40,
+    "mean": 0.9464,
+    "median": 0.9705,
+    "std": 0.0773,
+    "ci_low": 0.9216,
+    "ci_high": 0.9711,
+    "min": 0.6456,
+    "max": 1.0
+   },
+   "detection_recall": {
+    "n": 40,
+    "mean": 0.8701,
+    "median": 0.8692,
+    "std": 0.0739,
+    "ci_low": 0.8464,
+    "ci_high": 0.8937,
+    "min": 0.6473,
+    "max": 0.9901
+   },
+   "chest_distance_error_m": {
+    "n": 40,
+    "mean": 0.5767,
+    "median": 0.4879,
+    "std": 0.336,
+    "ci_low": 0.4692,
+    "ci_high": 0.6842,
+    "min": 0.0872,
+    "max": 1.5313
+   },
+   "pose_error_mean_m": {
+    "n": 40,
+    "mean": 0.029,
+    "median": 0.0284,
+    "std": 0.0122,
+    "ci_low": 0.0251,
+    "ci_high": 0.0329,
+    "min": 0.0122,
+    "max": 0.058
+   },
+   "travel_distance_m": {
+    "n": 40,
+    "mean": 387.14,
+    "median": 378.4,
+    "std": 91.1286,
+    "ci_low": 357.9957,
+    "ci_high": 416.2843,
+    "min": 204.7,
+    "max": 634.2
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 40,
+    "mean": 0.0161,
+    "median": 0.0161,
+    "std": 0.0017,
+    "ci_low": 0.0156,
+    "ci_high": 0.0166,
+    "min": 0.0133,
+    "max": 0.021
+   },
+   "frontier_selection_ms_mean": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "inference_mean_ms": {
+    "n": 40,
+    "mean": 0.6808,
+    "median": 0.678,
+    "std": 0.0248,
+    "ci_low": 0.6729,
+    "ci_high": 0.6888,
+    "min": 0.6446,
+    "max": 0.7695
+   },
+   "peak_rss_mb": {
+    "n": 40,
+    "mean": 267.165,
+    "median": 257.7,
+    "std": 38.8155,
+    "ci_low": 254.7512,
+    "ci_high": 279.5788,
+    "min": 215.7,
+    "max": 343.0
+   },
+   "sim_seconds": {
+    "n": 40,
+    "mean": 197.2085,
+    "median": 200.0,
+    "std": 11.3116,
+    "ci_low": 193.5909,
+    "ci_high": 200.8261,
+    "min": 132.27,
+    "max": 200.0
+   },
+   "wall_seconds": {
+    "n": 40,
+    "mean": 16.1035,
+    "median": 15.645,
+    "std": 2.9364,
+    "ci_low": 15.1644,
+    "ci_high": 17.0426,
+    "min": 8.95,
+    "max": 22.09
+   },
+   "detection_precision_pooled": 0.929,
+   "detection_recall_pooled": 0.8652,
+   "recovery_success_pooled": 0.3882,
+   "interaction_success_pooled": 0.9261,
+   "reachable_opened_pooled": 0.4025,
+   "outcomes": {
+    "tick_limit": 35,
+    "completed": 5
+   },
+   "over_reported_total": 0,
+   "supervisor_aborts": 0,
+   "strategies_used": {
+    "None": 40
+   }
+  },
+  "audit_policy_hybrid": {
+   "episodes": 40,
+   "throughput_truth_per_min": {
+    "n": 40,
+    "mean": 3.3889,
+    "median": 3.3363,
+    "std": 0.913,
+    "ci_low": 3.0969,
+    "ci_high": 3.6809,
+    "min": 1.5598,
+    "max": 5.5964
+   },
+   "percent_reachable_opened": {
+    "n": 40,
+    "mean": 74.0837,
+    "median": 73.215,
+    "std": 15.1397,
+    "ci_low": 69.2418,
+    "ci_high": 78.9257,
+    "min": 41.67,
+    "max": 100.0
+   },
+   "percent_reachable_found": {
+    "n": 40,
+    "mean": 88.6415,
+    "median": 88.195,
+    "std": 10.1239,
+    "ci_low": 85.4037,
+    "ci_high": 91.8793,
+    "min": 60.0,
+    "max": 100.0
+   },
+   "exploration_coverage": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "interaction_success_rate": {
+    "n": 40,
+    "mean": 0.9933,
+    "median": 1.0,
+    "std": 0.0296,
+    "ci_low": 0.9838,
+    "ci_high": 1.0028,
+    "min": 0.8571,
+    "max": 1.0
+   },
+   "navigation_success_rate": {
+    "n": 40,
+    "mean": 0.9822,
+    "median": 1.0,
+    "std": 0.0345,
+    "ci_low": 0.9712,
+    "ci_high": 0.9932,
+    "min": 0.875,
+    "max": 1.0
+   },
+   "recovery_success_rate": {
+    "n": 35,
+    "mean": 0.7669,
+    "median": 1.0,
+    "std": 0.3074,
+    "ci_low": 0.6612,
+    "ci_high": 0.8725,
+    "min": 0.0,
+    "max": 1.0
+   },
+   "detection_precision": {
+    "n": 40,
+    "mean": 0.9574,
+    "median": 0.9768,
+    "std": 0.0589,
+    "ci_low": 0.9386,
+    "ci_high": 0.9762,
+    "min": 0.7592,
+    "max": 1.0
+   },
+   "detection_recall": {
+    "n": 40,
+    "mean": 0.8806,
+    "median": 0.8988,
+    "std": 0.0787,
+    "ci_low": 0.8555,
+    "ci_high": 0.9058,
+    "min": 0.687,
+    "max": 0.982
+   },
+   "chest_distance_error_m": {
+    "n": 40,
+    "mean": 0.3649,
+    "median": 0.292,
+    "std": 0.237,
+    "ci_low": 0.2891,
+    "ci_high": 0.4407,
+    "min": 0.1208,
+    "max": 0.9685
+   },
+   "pose_error_mean_m": {
+    "n": 40,
+    "mean": 0.028,
+    "median": 0.029,
+    "std": 0.0117,
+    "ci_low": 0.0242,
+    "ci_high": 0.0317,
+    "min": 0.0099,
+    "max": 0.0615
+   },
+   "travel_distance_m": {
+    "n": 40,
+    "mean": 366.7875,
+    "median": 362.75,
+    "std": 120.9321,
+    "ci_low": 328.1116,
+    "ci_high": 405.4634,
+    "min": 154.6,
+    "max": 577.0
+   },
+   "agent_cpu_per_sim_second": {
+    "n": 40,
+    "mean": 0.0126,
+    "median": 0.0125,
+    "std": 0.0022,
+    "ci_low": 0.0119,
+    "ci_high": 0.0133,
+    "min": 0.0089,
+    "max": 0.0168
+   },
+   "frontier_selection_ms_mean": {
+    "n": 0,
+    "mean": null,
+    "median": null,
+    "std": null,
+    "ci_low": null,
+    "ci_high": null,
+    "min": null,
+    "max": null
+   },
+   "inference_mean_ms": {
+    "n": 40,
+    "mean": 0.6869,
+    "median": 0.6832,
+    "std": 0.0338,
+    "ci_low": 0.6761,
+    "ci_high": 0.6977,
+    "min": 0.6284,
+    "max": 0.7778
+   },
+   "peak_rss_mb": {
+    "n": 40,
+    "mean": 267.4075,
+    "median": 262.45,
+    "std": 35.4867,
+    "ci_low": 256.0583,
+    "ci_high": 278.7567,
+    "min": 217.6,
+    "max": 332.2
+   },
+   "sim_seconds": {
+    "n": 40,
+    "mean": 131.2438,
+    "median": 122.63,
+    "std": 45.6322,
+    "ci_low": 116.6499,
+    "ci_high": 145.8376,
+    "min": 59.8,
+    "max": 200.0
+   },
+   "wall_seconds": {
+    "n": 40,
+    "mean": 10.6602,
+    "median": 9.005,
+    "std": 5.4224,
+    "ci_low": 8.9261,
+    "ci_high": 12.3944,
+    "min": 4.02,
+    "max": 21.13
+   },
+   "detection_precision_pooled": 0.9491,
+   "detection_recall_pooled": 0.8835,
+   "recovery_success_pooled": 0.6988,
+   "interaction_success_pooled": 0.9932,
+   "reachable_opened_pooled": 0.7259,
+   "outcomes": {
+    "completed": 33,
+    "tick_limit": 7
+   },
+   "over_reported_total": 0,
+   "supervisor_aborts": 0,
+   "strategies_used": {
+    "None": 40
+   }
+  }
+ },
+ "paired_minus_audit_policy_deterministic": {
+  "audit_policy_learned": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 40,
+     "mean": -2.6031,
+     "median": -2.5381,
+     "std": 0.9181,
+     "ci_low": -2.8968,
+     "ci_high": -2.3095,
+     "min": -4.2667,
+     "max": -0.4483
+    },
+    "better": 0,
+    "worse": 40,
+    "tied": 0,
+    "significant_at_95": true
+   },
+   "exploration_coverage": {
+    "difference": {
+     "n": 0,
+     "mean": null,
+     "median": null,
+     "std": null,
+     "ci_low": null,
+     "ci_high": null,
+     "min": null,
+     "max": null
+    },
+    "better": 0,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": false
+   },
+   "travel_distance_m": {
+    "difference": {
+     "n": 40,
+     "mean": 22.86,
+     "median": 45.9,
+     "std": 160.7566,
+     "ci_low": -28.5525,
+     "ci_high": 74.2725,
+     "min": -263.6,
+     "max": 389.9
+    },
+    "better": 23,
+    "worse": 17,
+    "tied": 0,
+    "significant_at_95": false
+   }
+  },
+  "audit_policy_hybrid": {
+   "throughput_truth_per_min": {
+    "difference": {
+     "n": 40,
+     "mean": -0.4555,
+     "median": -0.4234,
+     "std": 0.7658,
+     "ci_low": -0.7004,
+     "ci_high": -0.2106,
+     "min": -2.7423,
+     "max": 1.0144
+    },
+    "better": 9,
+    "worse": 30,
+    "tied": 1,
+    "significant_at_95": true
+   },
+   "exploration_coverage": {
+    "difference": {
+     "n": 0,
+     "mean": null,
+     "median": null,
+     "std": null,
+     "ci_low": null,
+     "ci_high": null,
+     "min": null,
+     "max": null
+    },
+    "better": 0,
+    "worse": 0,
+    "tied": 0,
+    "significant_at_95": false
+   },
+   "travel_distance_m": {
+    "difference": {
+     "n": 40,
+     "mean": 2.5075,
+     "median": 4.6,
+     "std": 50.0286,
+     "ci_low": -13.4924,
+     "ci_high": 18.5074,
+     "min": -142.7,
+     "max": 193.1
+    },
+    "better": 28,
+    "worse": 11,
+    "tied": 1,
+    "significant_at_95": false
+   }
+  }
+ },
+ "reference": "audit_policy_deterministic",
+ "bandit_choice": {
+  "open": [
+   "max_information",
+   "no exploration memory"
+  ],
+  "indoor": [
+   "max_information",
+   "no exploration memory"
+  ],
+  "mixed": [
+   "max_information",
+   "no exploration memory"
+  ],
+  "complex": [
+   "max_information",
+   "no exploration memory"
+  ]
+ },
+ "bandit_posteriors": null,
+ "primary_metric": "throughput_truth_per_min",
+ "agent_version": "7.0.0",
+ "generator_version": "7.0",
+ "environment": "Python reference arena (protocol-identical mock of the Unreal research server); NOT Unreal Engine",
+ "time_basis": "throughput per simulated minute; CPU and wall seconds are real time",
+ "config": "/home/user/Fortnite-bot/chest-hunter-ai/config/settings.json",
+ "categories": [
+  "unseen_layout"
+ ],
+ "episodes_requested": 40,
+ "episodes_completed": 120,
+ "seed": 42,
+ "evaluation_seed": 900042,
+ "max_ticks": 6000,
+ "observation": [
+  320,
+  180
+ ],
+ "workers": 4,
+ "wall_seconds": 370.3,
+ "errors": []
+}

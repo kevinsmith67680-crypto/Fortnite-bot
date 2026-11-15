@@ -1,0 +1,17 @@
+configuration,category,episodes,throughput_mean,throughput_ci_low,throughput_ci_high,detection_precision,detection_recall,navigation_success_mean,reachable_opened,coverage_mean,recovery_success,outcomes,gap_G,gap_ci_low,gap_ci_high
+phase7_active,familiar,100,1.578,1.4263,1.7297,0.8815,0.8914,0.9782,0.4962,0.5136,0.3715,"{""tick_limit"": 98, ""completed"": 2}",,,
+phase7_active,obstacles,100,1.593,1.4651,1.7209,0.8825,0.8919,0.9744,0.5048,0.5192,0.3347,"{""tick_limit"": 100}",-0.0095,-0.1006,0.0705
+phase7_active,unseen_layout,100,1.4961,1.3646,1.6277,0.9376,0.8834,0.9766,0.4783,0.4988,0.3624,"{""tick_limit"": 97, ""completed"": 3}",0.0519,-0.0837,0.1667
+phase7_active,lighting,100,1.398,1.265,1.531,0.9355,0.8016,0.9724,0.4396,0.5052,0.3631,"{""tick_limit"": 98, ""completed"": 2}",0.1141,0.0402,0.1829
+phase7_active,appearance,100,1.131,0.9855,1.2765,0.5817,0.572,0.975,0.3557,0.4902,0.2554,"{""tick_limit"": 99, ""completed"": 1}",0.2833,0.208,0.3603
+phase7_active,start,100,1.5489,1.4167,1.6811,0.8919,0.8787,0.9868,0.4849,0.499,0.4167,"{""tick_limit"": 97, ""completed"": 3}",0.0184,-0.0576,0.0938
+phase7_active,elevation,100,1.65,1.4978,1.8022,0.8705,0.8819,0.9621,0.4799,0.4698,0.3425,"{""tick_limit"": 98, ""completed"": 2}",-0.0456,-0.1222,0.0255
+phase7_active,combined,100,0.987,0.8154,1.1586,0.6043,0.4556,0.9614,0.2919,0.4453,0.2531,"{""tick_limit"": 95, ""completed"": 5}",0.3745,0.2495,0.4926
+phase6_priors,familiar,100,3.3459,3.1915,3.5003,0.933,0.8815,0.9742,0.6906,,0.5918,"{""completed"": 86, ""tick_limit"": 14}",,,
+phase6_priors,obstacles,100,3.2613,3.0957,3.4268,0.9311,0.8811,0.9747,0.674,,0.4871,"{""completed"": 82, ""tick_limit"": 18}",0.0253,-0.0248,0.0757
+phase6_priors,unseen_layout,100,3.3639,3.1752,3.5527,0.956,0.8734,0.9754,0.7136,,0.6142,"{""completed"": 82, ""tick_limit"": 18}",-0.0054,-0.0806,0.0641
+phase6_priors,lighting,100,2.9093,2.7072,3.1115,0.964,0.8174,0.9629,0.6057,,0.4689,"{""completed"": 82, ""tick_limit"": 18}",0.1305,0.0785,0.1844
+phase6_priors,appearance,100,2.2023,1.9501,2.4545,0.4954,0.6046,0.9696,0.483,,0.4602,"{""completed"": 81, ""tick_limit"": 19}",0.3418,0.2683,0.4193
+phase6_priors,start,100,3.3882,3.2242,3.5522,0.945,0.87,0.9818,0.6972,,0.6203,"{""completed"": 82, ""tick_limit"": 18}",-0.0126,-0.0612,0.0361
+phase6_priors,elevation,100,3.3164,3.1426,3.4902,0.9321,0.8833,0.9672,0.6937,,0.5357,"{""completed"": 75, ""tick_limit"": 25}",0.0088,-0.0402,0.0573
+phase6_priors,combined,100,1.6989,1.4297,1.9681,0.541,0.4848,0.968,0.3949,,0.3973,"{""completed"": 80, ""tick_limit"": 20}",0.4922,0.4082,0.574
