@@ -246,8 +246,12 @@ def run_p7_job(job: P7Job) -> dict[str, Any]:
             thresholds=thresholds_from_settings(settings) if setup.exploration else None)
         result = runner.run()
         row = episode_row(job, runner, result, profiler)
+        from chest_hunter.runtime.configurations import AGENT_VERSION
+
         row.update({"strategy_used": strategy, "strategy_reason": why,
-                    "peak_rss_mb": round(peak_rss_mb(), 1)})
+                    "peak_rss_mb": round(peak_rss_mb(), 1), "agent_version": AGENT_VERSION,
+                    "model_version": getattr(policy, "version", None),
+                    "generator_version": GENERATOR_VERSION})
         if injector is not None:
             a = injector.assess(result)
             row.update({"fault_injected": a.get("injected"), "fault_applied": a.get("applied"),
@@ -341,6 +345,7 @@ FIELDS: Final = (
     "frontiers_selected", "frontier_selection_ms_mean", "camera_scans", "inference_mean_ms",
     "learned_share", "frames_analysed", "agent_cpu_seconds", "agent_cpu_per_sim_second",
     "process_cpu_seconds", "wall_seconds", "peak_rss_mb", "strategy_used", "strategy_reason",
+    "agent_version", "model_version", "generator_version",
     "fault_kind", "fault_injected", "fault_applied", "fault_detected", "fault_recovered",
     "fault_terminated_cleanly", "fault_start_s", "fault_details",
 )

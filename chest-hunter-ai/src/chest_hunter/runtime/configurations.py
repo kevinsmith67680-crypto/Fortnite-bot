@@ -23,7 +23,7 @@ from chest_hunter.runtime.checkpoint import config_hash
 
 #: Version of the agent's decision logic. Bump it when a change alters behaviour, so new
 #: experience is not mixed with records from an older controller.
-AGENT_VERSION: Final = "6.0.0"
+AGENT_VERSION: Final = "7.0.0"
 
 PLANNERS: Final = ("none", "adaptive", "greedy", "short_horizon")
 
