@@ -218,6 +218,18 @@ class Runs(unittest.TestCase):
         self.assertIn("could not be reset safely", summary["stopped_early"])
         self.assertEqual(summary["environment_resets_failed"], 2)
 
+    def test_preserved_estimates_accumulate_in_the_run_database(self) -> None:
+        from chest_hunter.database import DatabaseManager
+
+        self._run(config(episodes=2, preserve_estimates=True))
+        db = DatabaseManager(self.dir / "endurance.db")
+        self.addCleanup(db.close)
+        routes = db.query_all("SELECT DISTINCT partition_key FROM route_memory")
+        self.assertEqual(len(routes), 1)
+        self.assertTrue(routes[0]["partition_key"].startswith("env="))
+        n = db.query_all("SELECT COUNT(*) AS n FROM episode_experience")[0]["n"]
+        self.assertEqual(n, 2)
+
     def test_time_budget(self) -> None:
         summary = self._run(config(episodes=50, max_total_seconds=0.001))
         self.assertIn("time budget", summary["stopped_early"])

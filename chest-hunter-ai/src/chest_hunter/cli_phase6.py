@@ -127,8 +127,6 @@ def register(add: AddCommand) -> None:
     sub.add_argument("--observation-height", type=_positive, default=180)
     sub.add_argument("--backend", choices=("reference", "unreal"), default="reference")
     sub.add_argument("--model", metavar="DIR")
-    sub.add_argument("--experience-db", metavar="PATH",
-                     help="history for the planner (read only unless --preserve-estimates)")
     sub.add_argument("--preserve-estimates", action="store_true",
                      help="carry spawn estimates and route statistics across the episodes of "
                           "this run (stored in the run's own database)")
@@ -195,7 +193,6 @@ def cmd_endurance_test(args: argparse.Namespace, ctx: Any) -> int:
     settings = ctx.settings
     en = settings.endurance
     model = str(_model_dir(ctx, args.model)) if args.policy != "deterministic" else None
-    exp = str(_experience_db(ctx, args.experience_db))
     config = EnduranceConfig(
         episodes=args.episodes or en.default_episodes, max_total_seconds=args.max_total_seconds,
         max_ticks_per_episode=args.max_ticks_per_episode or min(18000, en.max_ticks_per_episode),
@@ -205,8 +202,7 @@ def cmd_endurance_test(args: argparse.Namespace, ctx: Any) -> int:
         height=args.observation_height, backend=args.backend,
         preserve_estimates=args.preserve_estimates, allow_test_maps=args.allow_test_maps,
         checkpoint_every=args.checkpoint_every or en.save_checkpoint_every,
-        max_reset_attempts=en.max_reset_attempts, model_dir=model,
-        experience_db=exp if Path(exp).exists() else None)
+        max_reset_attempts=en.max_reset_attempts, model_dir=model)
     panel = None
     control = None
     on_decision = None

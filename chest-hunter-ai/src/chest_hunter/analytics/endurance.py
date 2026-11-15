@@ -5,8 +5,9 @@ server and **one** bridge connection, the way a persistent Unreal research envir
 be used: between episodes the environment is reset (``RESET_EPISODE``) and the agent is
 rebuilt from scratch, so no target, track, route or interaction state can leak from one
 episode into the next. Estimates learned from earlier episodes (spawn probabilities, route
-statistics) are carried over only with ``preserve_estimates`` and only within one experience
-partition; held-out test maps are refused unless explicitly allowed.
+statistics) are carried over only with ``preserve_estimates``, in the run's own database and
+within one experience partition; held-out test maps are refused unless explicitly allowed.
+Without it the planner starts every episode without history.
 
 Per episode it writes one JSON line (``episodes.jsonl``, fsync-ed) with the outcome,
 throughput (ground truth via the evaluation channel, used for scoring only), supervisor
@@ -92,7 +93,6 @@ class EnduranceConfig:
     checkpoint_every: int = 10
     max_reset_attempts: int = 3
     model_dir: str | None = None
-    experience_db: str | None = None
 
     def __post_init__(self) -> None:
         if self.episodes < 1:
@@ -350,7 +350,6 @@ class EnduranceRunner:
 
     def _episode(self, db: DatabaseManager, episode: int) -> dict[str, Any]:
         from chest_hunter.agent.runner_3d import Runner3D, _layout_hash
-        from chest_hunter.analytics.policy_comparison import _memory_copy
         from chest_hunter.scenarios import ARENA_3D_ID, seed_arena_3d
 
         cfg = self.config
@@ -365,7 +364,14 @@ class EnduranceRunner:
                          height=cfg.height, fov_deg=self.settings.simulation_3d.fov_deg,
                          decision_ticks=self.settings.simulation_3d.decision_ticks)
         layout = _layout_hash(map_id)
-        history_db = db if cfg.preserve_estimates else _memory_copy(cfg.experience_db, map_id)
+        # History must use this run's spawn-point ids: with preserve_estimates it is the run's
+        # own database (earlier episodes of this run); otherwise the planner starts every
+        # episode without history (configured spawn probabilities, default reliabilities).
+        if cfg.preserve_estimates:
+            history_db = db
+        else:
+            history_db = DatabaseManager(":memory:")
+            history_db.initialize()
         planner = make_planner(self.settings, setup, history_db, map_id, layout,
                                partition_key=part["key"])
         cpu0, wall0 = time.process_time(), time.perf_counter()
