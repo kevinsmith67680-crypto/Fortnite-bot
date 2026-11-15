@@ -1115,8 +1115,8 @@ start (1,175 chests in 50 episodes). Paired against the oracle, the hybrid
 agent was slower in all 50 episodes (mean −3.75 chests/min) and visual-nav in
 all 50 (mean −5.84).
 
-**Openings checked against ground truth.** No mode ever recorded an opening
-that did not happen (0 over-reported). Oracle recorded 1,175 of 1,175 real
+**Openings checked against ground truth.** No episode of any mode counted more
+openings than it really made (0 over-reported; the check compares counts per episode). Oracle recorded 1,175 of 1,175 real
 openings. Hybrid opened 1,000 chests and recorded 934. Visual-nav opened 537
 and recorded 492. The gap is chests the agent opened but could not confirm
 visually (for example, seeing the opened chest only from behind), so it did
@@ -1325,9 +1325,10 @@ from the `learning` configuration section (`deterministic`).
     * bounded handovers when a learned policy is stuck;
     * when the deterministic controller takes over again, an interaction or opening
       check it was paused in is dropped (stale timers could credit an unopened chest).
-    * an opening notification is credited by the selector only after a learned action.
-      After a step the deterministic controller drove, its own verification handles it,
-      so one chest cannot be counted at two spawn points.
+    * in learned mode, each opening notification is credited once, at the spawn point
+      next to the agent. If it arrives during an interaction the deterministic controller
+      started itself, that interaction ends without its own opening check, so one chest
+      cannot be counted at two spawn points (or at none).
 
 ### 16.3 Adaptive exploration
 

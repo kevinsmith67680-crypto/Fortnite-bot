@@ -231,12 +231,16 @@ benchmark load are in section 13.
 
 * **deterministic:** Phase 4.
 * **learned:** the model drives every decision. The deterministic agent still runs
-  perception and bookkeeping. Openings are credited when the agent's own notification
-  arrives within 2.5 m of an unresolved spawn point, after a step the learned policy
-  drove. After a step the state machine drove (a stuck handover, a fallback or a disabled
-  model), the notification is left to the state machine's own verification
-  (`notifications_to_state_machine` counts these). Before this rule, both could credit
-  the same chest at two different spawn points (section 13.2).
+  perception and bookkeeping. Each of the agent's own opening notifications is credited
+  at the nearest unresolved spawn point within 2.5 m of the agent.
+  * If the notification arrives during an interaction the state machine started itself
+    (in a stuck handover, a fallback or with the model disabled), that interaction ends
+    at once, together with any pending late verification of its goal. Otherwise its
+    verification, aimed at its goal, could credit the same chest again at a neighbouring
+    spawn point (`interactions_closed_after_attribution` counts these).
+  * Only a notification with no spawn point within 2.5 m is left to the state machine's
+    verification (`notifications_to_state_machine`).
+  * Section 13.2 describes the two counting errors that led to this rule.
 * **hybrid:** the deterministic agent drives. In APPROACHING and ALIGNING its movement and
   camera commands are replaced by the learned ones, but only if:
   * the model passed validation (its validation MAE beats the mean-action baseline), and
